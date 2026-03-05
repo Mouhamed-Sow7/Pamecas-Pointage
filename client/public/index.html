@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <title>GDS Pointage</title>
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#2E7D32" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+
+    <style>
+      *, *::before, *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      html, body {
+        width: 100%;
+        height: 100%;
+      }
+
+      body {
+        font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont,
+          'Segoe UI', sans-serif;
+        background-color: #f5f5f5;
+        color: #1f2933;
+        overflow: hidden;
+      }
+
+      :root {
+        --color-primary: #2e7d32;
+        --color-secondary: #4caf50;
+        --color-white: #ffffff;
+        --color-gray: #f5f5f5;
+        --color-danger: #e53935;
+        --color-warning: #fb8c00;
+        --color-info: #1976d2;
+        --sidebar-width: 220px;
+      }
+
+      #app {
+        display: flex;
+        height: 100vh;
+        width: 100vw;
+        background: var(--color-gray);
+      }
+
+      .layout-with-sidebar {
+        display: flex;
+        flex: 1;
+      }
+
+      .sidebar {
+        width: var(--sidebar-width);
+        background: var(--color-primary);
+        color: var(--color-white);
+        display: flex;
+        flex-direction: column;
+        padding: 16px 12px;
+      }
+
+      .main-content {
+        flex: 1;
+        padding: 16px 20px;
+        overflow-y: auto;
+      }
+
+      .btn-primary {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 8px 16px;
+        border-radius: 6px;
+        border: none;
+        background: linear-gradient(135deg, #2e7d32, #4caf50);
+        color: #fff;
+        font-weight: 500;
+        cursor: pointer;
+        transition: transform 0.1s ease, box-shadow 0.1s ease,
+          background 0.2s ease;
+      }
+
+      .btn-primary:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+
+      .btn-primary:hover:not(:disabled) {
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.18);
+        transform: translateY(-1px);
+      }
+
+      .btn-danger {
+        background: #e53935;
+        color: #fff;
+        border-radius: 6px;
+        padding: 8px 14px;
+        border: none;
+        cursor: pointer;
+      }
+
+      .card {
+        background: #ffffff;
+        border-radius: 10px;
+        padding: 16px 18px;
+        box-shadow: 0 6px 12px rgba(15, 23, 42, 0.08);
+        border: 1px solid #e0e0e0;
+      }
+
+      .badge-present {
+        display: inline-flex;
+        align-items: center;
+        padding: 3px 8px;
+        border-radius: 999px;
+        background: rgba(46, 125, 50, 0.08);
+        color: #2e7d32;
+        font-size: 12px;
+        font-weight: 500;
+      }
+
+      .badge-absent {
+        display: inline-flex;
+        align-items: center;
+        padding: 3px 8px;
+        border-radius: 999px;
+        background: rgba(229, 57, 53, 0.08);
+        color: #e53935;
+        font-size: 12px;
+        font-weight: 500;
+      }
+
+      .badge-retard {
+        display: inline-flex;
+        align-items: center;
+        padding: 3px 8px;
+        border-radius: 999px;
+        background: rgba(251, 140, 0, 0.08);
+        color: #fb8c00;
+        font-size: 12px;
+        font-weight: 500;
+      }
+
+      .badge-synced {
+        display: inline-flex;
+        align-items: center;
+        padding: 3px 8px;
+        border-radius: 999px;
+        background: rgba(46, 125, 50, 0.1);
+        color: #2e7d32;
+        font-size: 12px;
+        font-weight: 500;
+      }
+
+      .badge-pending {
+        display: inline-flex;
+        align-items: center;
+        padding: 3px 8px;
+        border-radius: 999px;
+        background: rgba(229, 57, 53, 0.1);
+        color: #e53935;
+        font-size: 12px;
+        font-weight: 500;
+      }
+
+      .offline-banner {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 30;
+        background: #c62828;
+        color: #fff;
+        text-align: center;
+        padding: 6px 10px;
+        font-size: 13px;
+        display: none;
+      }
+
+      .offline-banner.visible {
+        display: block;
+      }
+
+      @media (max-width: 768px) {
+        #app {
+          flex-direction: column;
+        }
+
+        .sidebar {
+          width: 100%;
+          flex-direction: row;
+          align-items: center;
+          justify-content: space-between;
+        }
+
+        .main-content {
+          padding: 12px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="offline-banner" class="offline-banner">
+      Hors ligne — certaines fonctionnalités sont limitées.
+    </div>
+    <div id="app"></div>
+
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker
+            .register('/sw.js')
+            .catch((err) => console.error('SW registration failed', err));
+        });
+      }
+    </script>
+
+    <script type="module" src="/src/app.js"></script>
+  </body>
+  </html>
+
