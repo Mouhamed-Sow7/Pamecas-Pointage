@@ -45,10 +45,23 @@ io.on('connection', (socket) => {
 
 // Connexion à la base de données
 connectDB();
-
+app.get('*', (req, res) => {
+  res.sendFile(path.join(publicPath, 'index.html'));
+});
 // Middlewares globaux
 app.use(cors({ origin: CLIENT_URL, credentials: true }));
-app.use(helmet());
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-hashes'", "https://cdn.jsdelivr.net"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      imgSrc: ["'self'", "data:", "blob:"],
+      connectSrc: ["'self'", "ws:", "wss:", "https://fonts.googleapis.com", "https://cdn.jsdelivr.net"]
+    },
+  },
+}));
 app.use(compression());
 app.use(express.json({ limit: '10mb' }));
 app.use(morgan('dev'));

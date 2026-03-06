@@ -1,7 +1,7 @@
 {
-  "name": "GDS Pointage",
-  "short_name": "GDS",
-  "description": "Système de pointage Grands Domaines du Sénégal",
+  "name": "PAMECAS Pointage",
+  "short_name": "PAMECAS",
+  "description": "Système de pointage pour les Agences PAMECAS au Sénégal.",
   "start_url": "/",
   "display": "standalone",
   "orientation": "landscape",

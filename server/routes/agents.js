@@ -20,10 +20,10 @@ const createAgentSchema = Joi.object({
     'any.required': 'Le site est requis.'
   }),
   type_contrat: Joi.string()
-    .valid('permanent', 'journalier', 'saisonnier')
+    .valid('CDI', 'CDD', 'stage', 'prestataire')
     .required()
     .messages({
-      'any.only': 'Le type de contrat doit être permanent, journalier ou saisonnier.',
+      'any.only': 'Le type de contrat doit être CDI, CDD, stage ou prestataire.',
       'any.required': 'Le type de contrat est requis.'
     }),
   telephone: Joi.string()
@@ -45,7 +45,7 @@ const updateAgentSchema = Joi.object({
   nom: Joi.string().trim(),
   prenom: Joi.string().trim(),
   site_id: Joi.string(),
-  type_contrat: Joi.string().valid('permanent', 'journalier', 'saisonnier'),
+  type_contrat: Joi.string().valid('CDI', 'CDD', 'stage', 'prestataire'),
   telephone: Joi.string()
     .pattern(/^(77|78|76|75|70|33)[0-9]{7}$/)
     .allow(null, '')

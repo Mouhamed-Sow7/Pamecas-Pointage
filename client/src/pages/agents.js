@@ -10,7 +10,7 @@ function renderTable(root, agents) {
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td style="padding:6px 8px; border-bottom:1px solid #eee;">${
-        agent.matricule
+        agent.numero_employe
       }</td>
       <td style="padding:6px 8px; border-bottom:1px solid #eee;">${
         agent.nom
@@ -120,15 +120,18 @@ function openAgentModal(mode, agent, sites) {
           <select name="type_contrat" ${
             isView ? 'disabled' : ''
           } style="width:100%; padding:6px 8px; border-radius:6px; border:1px solid #cfd8dc;">
-            <option value="permanent" ${
-              agent?.type_contrat === 'permanent' ? 'selected' : ''
-            }>Permanent</option>
-            <option value="journalier" ${
-              agent?.type_contrat === 'journalier' ? 'selected' : ''
-            }>Journalier</option>
-            <option value="saisonnier" ${
-              agent?.type_contrat === 'saisonnier' ? 'selected' : ''
-            }>Saisonnier</option>
+            <option value="CDI" ${
+              agent?.type_contrat === 'CDI' ? 'selected' : ''
+            }>CDI</option>
+            <option value="CDD" ${
+              agent?.type_contrat === 'CDD' ? 'selected' : ''
+            }>CDD</option>
+            <option value="stage" ${
+              agent?.type_contrat === 'stage' ? 'selected' : ''
+            }>Stage</option>
+            <option value="prestataire" ${
+              agent?.type_contrat === 'prestataire' ? 'selected' : ''
+            }>Prestataire</option>
           </select>
         </div>
         <div>
@@ -166,7 +169,7 @@ function openAgentModal(mode, agent, sites) {
         }
       </div>
       ${
-        agent && agent.matricule
+        agent && agent.numero_employe
           ? `<div style="margin-top:6px;">
               <div style="font-size:13px; margin-bottom:4px;">QR Code</div>
               <img id="agent-qr-img" alt="QR" />
@@ -268,9 +271,10 @@ export async function renderAgents(root, user) {
         <input id="filter-search" placeholder="Recherche (nom, prénom, matricule)" style="flex:1; padding:6px 8px; border-radius:6px; border:1px solid #cfd8dc;" />
         <select id="filter-type" style="padding:6px 8px; border-radius:6px; border:1px solid #cfd8dc;">
           <option value="">Type</option>
-          <option value="permanent">Permanent</option>
-          <option value="journalier">Journalier</option>
-          <option value="saisonnier">Saisonnier</option>
+          <option value="CDI">CDI</option>
+          <option value="CDD">CDD</option>
+          <option value="stage">Stage</option>
+          <option value="prestataire">Prestataire</option>
         </select>
         <select id="filter-statut" style="padding:6px 8px; border-radius:6px; border:1px solid #cfd8dc;">
           <option value="">Statut</option>
