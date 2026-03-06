@@ -5,7 +5,7 @@ dotenv.config();
 
 const DEFAULT_LOCAL_URI = 'mongodb://localhost:27017/gds_pointage';
 
-const MONGODB_URI = process.env.MONGODB_URI || DEFAULT_LOCAL_URI;
+const MONGODB_URI = process.env.MONGODB_URI || process.env.MONGO_URI || DEFAULT_LOCAL_URI;
 
 let isConnectedBefore = false;
 
@@ -50,4 +50,3 @@ module.exports = {
   connectDB,
   mongoose
 };
-

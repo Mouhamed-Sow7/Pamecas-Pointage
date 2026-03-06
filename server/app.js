@@ -45,9 +45,7 @@ io.on('connection', (socket) => {
 
 // Connexion à la base de données
 connectDB();
-app.get('*', (req, res) => {
-  res.sendFile(path.join(publicPath, 'index.html'));
-});
+
 // Middlewares globaux
 app.use(cors({ origin: CLIENT_URL, credentials: true }));
 app.use(helmet({
@@ -92,6 +90,10 @@ app.use('/api/pointages', pointagesRouter);
 app.use('/api/sites', sitesRouter);
 app.use('/api/rapports', rapportsRouter);
 app.use('/api/sync', routerFactory('sync'));
+
+app.get('*', (req, res) => {
+  res.sendFile(path.join(publicPath, 'index.html'));
+});
 
 // 404
 app.use((req, res, next) => {
