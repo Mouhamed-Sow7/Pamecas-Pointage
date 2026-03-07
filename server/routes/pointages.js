@@ -1,413 +1,235 @@
-import { post, get } from '../api.js';
-import { savePointage } from '../store/indexedDB.js';
-import { showModal } from '../components/modal.js';
-import { showToast } from '../components/toast.js';
+﻿const express = require('express');
+const mongoose = require('mongoose');
 
-let animationId = null;
-let isProcessing = false;
-let scanFrame = null;
+const Pointage = require('../models/Pointage');
+const { authenticate, authorizeRoles } = require('../middleware/auth');
 
-function playBeep() {
-  try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.frequency.value = 880;
-    osc.type = 'square';
-    gain.gain.setValueAtTime(0.2, ctx.currentTime);
-    osc.start();
-    osc.stop(ctx.currentTime + 0.15);
-  } catch (e) {}
-}
+const router = express.Router();
 
-function getCurrentUser() {
-  try { return JSON.parse(localStorage.getItem('gds_user')); } catch { return null; }
-}
+router.use(authenticate);
 
-function isAdmin() {
-  const u = getCurrentUser();
-  return u && (u.role === 'admin' || u.role === 'superadmin');
-}
-
-async function enregistrerPointage(agent, methode, type = 'arrivee') {
+function todayString() {
   const now = new Date();
-  const user = getCurrentUser();
-  const payload = {
-    local_id: crypto.randomUUID(),
-    agent_id: agent._id || agent.id,
-    site_id: agent.site_id?._id || agent.site_id || user?.site_id,
-    date: now.toISOString().split('T')[0],
-    heure_arrivee: now.toTimeString().slice(0, 5),
-    methode,
-    type
-  };
+  return now.toISOString().slice(0, 10);
+}
 
+router.post('/', async (req, res) => {
   try {
-    if (navigator.onLine) {
-      await post('/api/pointages', payload);
-      const action = type === 'depart' ? 'Départ' : 'Arrivée';
-      showToast(`✅ ${agent.prenom || ''} ${agent.nom || ''} — ${action} enregistrée`, 'success');
-    } else {
-      await savePointage({ ...payload, sync_status: 'local' });
-      showToast(`📶 ${agent.prenom || ''} ${agent.nom || ''} — Sauvegardé hors ligne`, 'success');
-    }
-    playBeep();
-    return true;
-  } catch (err) {
-    showToast("Erreur lors de l'enregistrement du pointage.", 'error');
-    return false;
-  }
-}
+    const { agent_id, site_id, statut, methode, note } = req.body || {};
 
-async function rechercherAgentParMatricule(matricule) {
-  const response = await fetch(
-    `/api/agents/search?matricule=${encodeURIComponent(matricule)}`,
-    { headers: { Authorization: `Bearer ${localStorage.getItem('gds_token') || ''}` } }
-  );
-  if (!response.ok) throw new Error('Agent introuvable');
-  return await response.json();
-}
-
-function stopScanner() {
-  if (animationId) { cancelAnimationFrame(animationId); animationId = null; }
-}
-
-function resumeScanner() {
-  isProcessing = false;
-  if (scanFrame) animationId = requestAnimationFrame(scanFrame);
-}
-
-// ✅ Charger pointages : tous les sites si superadmin, sinon filtrer par site
-async function reloadPointagesList(container) {
-  try {
-    const user = getCurrentUser();
-    const dateStr = new Date().toISOString().split('T')[0];
-
-    let url = `/api/pointages?date=${dateStr}`;
-    if (user?.site_id) url += `&site_id=${user.site_id}`;
-    // si superadmin sans site_id → on charge tout (pas de filtre site)
-
-    const response = await get(url);
-    const pointages = response?.data || [];
-
-    if (!Array.isArray(pointages) || pointages.length === 0) {
-      container.innerHTML = '<div style="color:#999;text-align:center;padding:20px;">Aucun pointage pour aujourd\'hui.</div>';
-      return;
-    }
-
-    pointages.sort((a, b) => (a.heure_arrivee || '').localeCompare(b.heure_arrivee || ''));
-
-    const admin = isAdmin();
-    let html = `
-      <div style="display:flex;font-weight:600;padding:8px 10px;background:#f5f5f5;border-radius:8px;margin-bottom:6px;font-size:0.78rem;gap:4px;">
-        <div style="flex:2;">Agent</div>
-        <div style="flex:1;">Arrivée</div>
-        <div style="flex:1;">Statut</div>
-        ${admin ? '<div style="flex:1;">Action</div>' : ''}
-      </div>
-    `;
-
-    pointages.forEach(p => {
-      const agent = p.agent_id || {};
-      const methode = p.methode === 'qr_code' ? '📱' : '✋';
-      const statutColors = { present: '#2e7d32', absent: '#c62828', retard: '#e65100' };
-      const couleur = statutColors[p.statut] || '#555';
-
-      html += `
-        <div style="display:flex;align-items:center;padding:10px;border:1px solid #eee;border-radius:8px;font-size:0.82rem;gap:4px;">
-          <div style="flex:2;font-weight:500;">${agent.prenom || ''} ${agent.nom || ''} ${methode}<br>
-            <span style="font-size:0.75rem;color:#888;">${p.site_id?.nom || ''}</span>
-          </div>
-          <div style="flex:1;">${p.heure_arrivee || '—'}</div>
-          <div style="flex:1;font-weight:600;color:${couleur};">${p.statut || '—'}</div>
-          ${admin ? `
-          <div style="flex:1;">
-            <button onclick="window._editPointage('${p._id}', '${p.statut}', '${p.note || ''}')"
-              style="font-size:0.75rem;padding:4px 8px;background:#1565c0;color:white;border:none;border-radius:6px;cursor:pointer;">
-              Modifier
-            </button>
-          </div>` : ''}
-        </div>
-      `;
-    });
-
-    container.innerHTML = html;
-  } catch (err) {
-    container.innerHTML = '<div style="color:#c62828;text-align:center;padding:20px;">Erreur lors du chargement.</div>';
-  }
-}
-
-// ✅ Modal modification statut (admin only)
-function setupEditPointage(listePointages) {
-  window._editPointage = (id, currentStatut, currentNote) => {
-    const content = `
-      <div style="display:flex;flex-direction:column;gap:12px;">
-        <div>
-          <label style="font-size:0.85rem;font-weight:500;display:block;margin-bottom:4px;">Statut</label>
-          <select id="edit-statut" style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;">
-            <option value="present" ${currentStatut==='present'?'selected':''}>✅ Présent</option>
-            <option value="absent" ${currentStatut==='absent'?'selected':''}>❌ Absent</option>
-            <option value="retard" ${currentStatut==='retard'?'selected':''}>⏰ Retard</option>
-          </select>
-        </div>
-        <div>
-          <label style="font-size:0.85rem;font-weight:500;display:block;margin-bottom:4px;">Justification / Note</label>
-          <textarea id="edit-note" rows="3" placeholder="Ex: Absence justifiée — certificat médical"
-            style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;resize:vertical;box-sizing:border-box;">${currentNote}</textarea>
-        </div>
-      </div>
-    `;
-    showModal({
-      title: 'Modifier le pointage',
-      content,
-      confirmText: 'Enregistrer',
-      cancelText: 'Annuler',
-      onConfirm: async (close) => {
-        const statut = document.getElementById('edit-statut').value;
-        const note = document.getElementById('edit-note').value;
-        try {
-          const token = localStorage.getItem('gds_token');
-          const res = await fetch(`/api/pointages/${id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-            body: JSON.stringify({ statut, note })
-          });
-          if (!res.ok) throw new Error();
-          showToast('✅ Pointage mis à jour', 'success');
-          await reloadPointagesList(listePointages);
-          close();
-        } catch {
-          showToast('Erreur lors de la mise à jour.', 'error');
-        }
-      }
-    });
-  };
-}
-
-// ✅ Modal QR agrandi + téléchargement
-function showQRModal(agent) {
-  const qrUrl = `/api/agents/${agent._id || agent.id}/qr`;
-  const content = `
-    <div style="text-align:center;">
-      <div style="font-weight:600;font-size:1rem;margin-bottom:4px;">${agent.prenom} ${agent.nom}</div>
-      <div style="color:#666;font-size:0.85rem;margin-bottom:16px;">${agent.matricule || ''}</div>
-      <img id="qr-img-large" src="${qrUrl}" alt="QR Code"
-        style="width:220px;height:220px;border:2px solid #eee;border-radius:10px;display:block;margin:0 auto 16px;">
-      <a id="btn-dl-qr" href="${qrUrl}" download="qr-${agent.matricule || agent._id}.png"
-        style="display:inline-block;padding:10px 20px;background:#2e7d32;color:white;border-radius:8px;text-decoration:none;font-size:0.9rem;">
-        ⬇️ Télécharger le QR
-      </a>
-    </div>
-  `;
-  showModal({ title: 'QR Code agent', content, confirmText: null, cancelText: 'Fermer' });
-}
-
-function startCamera(video, canvas, onCodeDetected) {
-  const ctx = canvas.getContext('2d', { willReadFrequently: true });
-  navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
-    .then((stream) => {
-      video.srcObject = stream;
-      video.setAttribute('playsinline', 'true');
-      video.play();
-
-      scanFrame = function () {
-        if (isProcessing) return;
-        if (video.readyState === video.HAVE_ENOUGH_DATA) {
-          canvas.height = video.videoHeight;
-          canvas.width = video.videoWidth;
-          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-          const jsqrFn = window.jsQR || (typeof jsQR === 'function' ? jsQR : null);
-          if (!jsqrFn) { showToast("jsQR non disponible — rechargez la page.", 'error'); return; }
-          const code = jsqrFn(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'dontInvert' });
-          if (code && code.data) {
-            isProcessing = true;
-            stopScanner();
-            onCodeDetected(code.data);
-            return;
-          }
-        }
-        animationId = requestAnimationFrame(scanFrame);
-      };
-
-      animationId = requestAnimationFrame(scanFrame);
-    })
-    .catch(() => showToast("Impossible d'accéder à la caméra.", 'error'));
-}
-
-export function renderPointage(root) {
-  const admin = isAdmin();
-
-  root.innerHTML = `
-    <div style="display:flex;flex-direction:column;gap:16px;">
-
-      <!-- Pointage Manuel -->
-      <div class="card">
-        <h2 style="font-size:1rem;font-weight:600;margin-bottom:12px;">Pointage Manuel</h2>
-        <div style="text-align:center;margin-bottom:16px;">
-          <div id="current-time" style="font-size:2rem;font-weight:700;color:#2E7D32;"></div>
-          <div id="current-date" style="font-size:0.9rem;color:#666;"></div>
-        </div>
-        <div style="display:flex;gap:8px;margin-bottom:8px;">
-          <input id="input-search" placeholder="Rechercher par nom ou matricule" style="flex:1;" />
-          <button id="btn-search-agent" class="btn-primary" style="flex:0 0 auto;padding:10px 14px;">Chercher</button>
-        </div>
-        <select id="select-agent" style="width:100%;padding:10px;margin-bottom:8px;border:1.5px solid #ddd;border-radius:8px;display:none;"></select>
-        <div id="action-buttons" style="display:none;flex-direction:row;gap:8px;">
-          <button id="btn-arrivee" style="flex:1;padding:11px;background:#4CAF50;color:white;border:none;border-radius:8px;font-size:0.9rem;cursor:pointer;font-weight:500;">✅ Arrivée</button>
-          <button id="btn-depart" style="flex:1;padding:11px;background:#1976D2;color:white;border:none;border-radius:8px;font-size:0.9rem;cursor:pointer;font-weight:500;">🚪 Départ</button>
-        </div>
-        <div id="manuel-result" style="font-size:0.85rem;color:#666;margin-top:6px;"></div>
-      </div>
-
-      <!-- Scan QR -->
-      <div class="card">
-        <details>
-          <summary style="cursor:pointer;font-weight:600;padding:4px 0;">📷 Scan QR Code</summary>
-          <div style="margin-top:12px;">
-            <button id="btn-start-camera" class="btn-primary" style="width:100%;margin-bottom:12px;">Activer Caméra</button>
-            <div id="camera-area" style="width:100%;aspect-ratio:4/3;max-height:60vw;background:#000;border-radius:10px;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;">
-              <video id="video" style="width:100%;height:100%;object-fit:cover;" playsinline></video>
-              <canvas id="canvas" style="display:none;"></canvas>
-              <div style="position:absolute;border:3px solid #4CAF50;width:60%;height:60%;border-radius:8px;pointer-events:none;"></div>
-            </div>
-          </div>
-        </details>
-      </div>
-
-      <!-- Pointages du jour -->
-      <div class="card">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-          <h2 style="font-size:1rem;font-weight:600;">Pointages du jour</h2>
-          <div style="display:flex;gap:8px;align-items:center;">
-            <span id="badge-pending" class="badge-pending" style="display:none;">0 en attente</span>
-            <button id="btn-refresh" style="padding:5px 10px;background:#e8f5e9;color:#2e7d32;border:1px solid #c8e6c9;border-radius:6px;cursor:pointer;font-size:0.8rem;">🔄 Actualiser</button>
-          </div>
-        </div>
-        <div id="liste-pointages" style="display:flex;flex-direction:column;gap:8px;">
-          <div style="color:#999;text-align:center;padding:20px;">Chargement...</div>
-        </div>
-      </div>
-    </div>
-  `;
-
-  // Horloge
-  function updateClock() {
-    const now = new Date();
-    const timeEl = root.querySelector('#current-time');
-    const dateEl = root.querySelector('#current-date');
-    if (timeEl) timeEl.textContent = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-    if (dateEl) dateEl.textContent = now.toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-  }
-  updateClock();
-  setInterval(updateClock, 1000);
-
-  const btnSearchAgent = root.querySelector('#btn-search-agent');
-  const inputSearch = root.querySelector('#input-search');
-  const selectAgent = root.querySelector('#select-agent');
-  const actionButtons = root.querySelector('#action-buttons');
-  const btnArrivee = root.querySelector('#btn-arrivee');
-  const btnDepart = root.querySelector('#btn-depart');
-  const manuelResult = root.querySelector('#manuel-result');
-  const btnCamera = root.querySelector('#btn-start-camera');
-  const video = root.querySelector('#video');
-  const canvas = root.querySelector('#canvas');
-  const listePointages = root.querySelector('#liste-pointages');
-  const btnRefresh = root.querySelector('#btn-refresh');
-
-  setupEditPointage(listePointages);
-
-  // Recherche agents
-  btnSearchAgent.addEventListener('click', async () => {
-    const query = inputSearch.value.trim();
-    if (!query) { manuelResult.textContent = 'Veuillez entrer un nom ou matricule.'; return; }
-    try {
-      const response = await get(`/api/agents?search=${encodeURIComponent(query)}&limit=10`);
-      const agents = response?.data || [];
-      if (agents.length === 0) {
-        manuelResult.textContent = 'Aucun agent trouvé.';
-        selectAgent.style.display = 'none';
-        actionButtons.style.display = 'none';
-        return;
-      }
-      selectAgent.innerHTML = '<option value="">Sélectionner un agent</option>';
-      agents.forEach(agent => {
-        const opt = document.createElement('option');
-        opt.value = agent._id;
-        opt.textContent = `${agent.prenom} ${agent.nom} (${agent.matricule || ''})`;
-        opt.dataset.agent = JSON.stringify(agent);
-        selectAgent.appendChild(opt);
+    if (!agent_id || !site_id) {
+      return res.status(400).json({
+        message: "Les champs agent_id et site_id sont obligatoires."
       });
-      selectAgent.style.display = 'block';
-      actionButtons.style.display = 'none';
-      manuelResult.textContent = `${agents.length} agent(s) trouvé(s).`;
-    } catch { manuelResult.textContent = "Erreur lors de la recherche."; }
-  });
+    }
 
-  inputSearch.addEventListener('keydown', (e) => { if (e.key === 'Enter') btnSearchAgent.click(); });
-  selectAgent.addEventListener('change', () => {
-    actionButtons.style.display = selectAgent.value ? 'flex' : 'none';
-  });
+    const dateStr = todayString();
+    const heure = new Date().toTimeString().slice(0, 5);
 
-  async function handlePointageManuel(type) {
-    const selectedOption = selectAgent.options[selectAgent.selectedIndex];
-    if (!selectedOption?.dataset?.agent) return;
-    const agent = JSON.parse(selectedOption.dataset.agent);
-    const success = await enregistrerPointage(agent, 'manuel', type);
-    if (success) await reloadPointagesList(listePointages);
-  }
-
-  btnArrivee.addEventListener('click', () => handlePointageManuel('arrivee'));
-  btnDepart.addEventListener('click', () => handlePointageManuel('depart'));
-  btnRefresh.addEventListener('click', () => reloadPointagesList(listePointages));
-
-  // Camera QR
-  btnCamera.addEventListener('click', () => {
-    isProcessing = false;
-    stopScanner();
-    startCamera(video, canvas, async (matricule) => {
-      showToast(`QR détecté : ${matricule}`, 'info');
-      try {
-        const agent = await rechercherAgentParMatricule(matricule);
-        if (!agent) { showToast('Agent introuvable.', 'error'); resumeScanner(); return; }
-
-        const content = `
-          <div style="display:flex;gap:14px;align-items:center;padding:8px 0;">
-            <div onclick="window._showQR(${JSON.stringify(agent).replace(/"/g, '&quot;')})"
-              style="width:70px;height:70px;border-radius:10px;background:#e8f5e9;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;overflow:hidden;border:2px solid #c8e6c9;">
-              <img src="/api/agents/${agent._id || agent.id}/qr" style="width:100%;height:100%;object-fit:cover;" title="Cliquer pour agrandir">
-            </div>
-            <div>
-              <div style="font-weight:600;font-size:1rem;">${agent.prenom || ''} ${agent.nom || ''}</div>
-              <div style="color:#546e7a;font-size:0.85rem;">${agent.matricule || ''}</div>
-              <div style="color:#78909c;font-size:0.82rem;">${agent.type_contrat || ''} — ${agent.site_id?.nom || ''}</div>
-            </div>
-          </div>
-        `;
-
-        window._showQR = (a) => showQRModal(a);
-
-        showModal({
-          title: 'Confirmer la présence',
-          content,
-          confirmText: '✅ Confirmer présence',
-          cancelText: 'Annuler',
-          onConfirm: async (close) => {
-            const success = await enregistrerPointage(agent, 'qr_code', 'arrivee');
-            if (success) await reloadPointagesList(listePointages);
-            close();
-            resumeScanner();
-          },
-          onCancel: () => resumeScanner()
-        });
-      } catch {
-        showToast("Agent introuvable pour ce QR code.", 'error');
-        resumeScanner();
-      }
+    let pointage = await Pointage.findOne({
+      agent_id,
+      site_id,
+      date: dateStr
     });
-  });
 
-  reloadPointagesList(listePointages);
-}
+    if (!pointage) {
+      pointage = new Pointage({
+        agent_id,
+        site_id,
+        date: dateStr,
+        heure_arrivee: heure,
+        statut: statut || 'present',
+        methode: methode || 'qr_code',
+        note: note || '',
+        superviseur_id: req.user && req.user.id ? req.user.id : undefined,
+        sync_status: 'synced',
+        synced_at: new Date()
+      });
+    } else {
+      pointage.statut = statut || pointage.statut;
+      pointage.methode = methode || pointage.methode;
+      pointage.note = note || pointage.note;
+      if (!pointage.heure_arrivee) {
+        pointage.heure_arrivee = heure;
+      }
+      pointage.sync_status = 'synced';
+      pointage.synced_at = new Date();
+    }
+
+    await pointage.save();
+
+    return res.status(201).json(pointage);
+  } catch (err) {
+    console.error("Erreur lors de l'enregistrement du pointage:", err);
+    return res.status(500).json({
+      message: "Erreur lors de l'enregistrement du pointage."
+    });
+  }
+});
+
+router.post('/sync', async (req, res) => {
+  try {
+    const { pointages } = req.body || {};
+    if (!Array.isArray(pointages) || !pointages.length) {
+      return res
+        .status(400)
+        .json({ message: 'Aucun pointage à synchroniser.' });
+    }
+
+    const syncedLocalIds = [];
+
+    // eslint-disable-next-line no-restricted-syntax
+    for (const p of pointages) {
+      try {
+        const dateStr = p.date || todayString();
+        const filter = {
+          agent_id: p.agent_id,
+          site_id: p.site_id,
+          date: dateStr
+        };
+
+        let pointage = await Pointage.findOne(filter);
+
+        if (!pointage) {
+          pointage = new Pointage({
+            ...filter,
+            local_id: p.local_id,
+            heure_arrivee: p.heure_arrivee,
+            heure_depart: p.heure_depart,
+            statut: p.statut || 'present',
+            methode: p.methode || 'qr_code',
+            note: p.note || '',
+            superviseur_id: req.user && req.user.id ? req.user.id : undefined,
+            sync_status: 'synced',
+            synced_at: new Date()
+          });
+        } else {
+          pointage.heure_arrivee = p.heure_arrivee || pointage.heure_arrivee;
+          pointage.heure_depart = p.heure_depart || pointage.heure_depart;
+          pointage.statut = p.statut || pointage.statut;
+          pointage.methode = p.methode || pointage.methode;
+          pointage.note = p.note || pointage.note;
+          pointage.sync_status = 'synced';
+          pointage.synced_at = new Date();
+        }
+
+        await pointage.save();
+        if (p.local_id) {
+          syncedLocalIds.push(p.local_id);
+        }
+      } catch (e) {
+        // On continue malgré les erreurs individuelles pour les autres enregistrements
+        // eslint-disable-next-line no-console
+        console.error('Erreur sur un pointage en sync:', e);
+      }
+    }
+
+    return res.json({
+      message: 'Synchronisation terminée.',
+      synced: syncedLocalIds
+    });
+  } catch (err) {
+    console.error('Erreur lors de la synchronisation des pointages:', err);
+    return res.status(500).json({
+      message: 'Erreur lors de la synchronisation des pointages.'
+    });
+  }
+});
+
+router.get('/', async (req, res) => {
+  try {
+    const { site_id, date } = req.query;
+    const dateStr = date || todayString();
+
+    const query = { date: dateStr };
+    if (site_id && mongoose.Types.ObjectId.isValid(site_id)) {
+      query.site_id = site_id;
+    }
+
+    const list = await Pointage.find(query)
+      .populate('agent_id', 'nom prenom matricule')
+      .populate('site_id', 'nom code')
+      .sort({ createdAt: -1 });
+
+    return res.json({ data: list });
+  } catch (err) {
+    console.error('Erreur lors de la récupération des pointages:', err);
+    return res.status(500).json({
+      message: 'Erreur lors de la récupération des pointages.'
+    });
+  }
+});
+
+router.get('/stats', async (req, res) => {
+  try {
+    const { site_id, date } = req.query;
+    const dateStr = date || todayString();
+
+    const filter = { date: dateStr };
+    if (site_id && mongoose.Types.ObjectId.isValid(site_id)) {
+      filter.site_id = site_id;
+    }
+
+    const [total, presents, absents, retards] = await Promise.all([
+      Pointage.countDocuments(filter),
+      Pointage.countDocuments({ ...filter, statut: 'present' }),
+      Pointage.countDocuments({ ...filter, statut: 'absent' }),
+      Pointage.countDocuments({ ...filter, statut: 'retard' })
+    ]);
+
+    const taux_presence =
+      total > 0 ? Math.round((presents / total) * 100) : 0;
+
+    return res.json({
+      total,
+      presents,
+      absents,
+      retards,
+      taux_presence
+    });
+  } catch (err) {
+    console.error('Erreur lors du calcul des statistiques de pointage:', err);
+    return res.status(500).json({
+      message: 'Erreur lors du calcul des statistiques de pointage.'
+    });
+  }
+});
+
+router.put(
+  '/:id',
+  authorizeRoles('superviseur', 'admin', 'superadmin'),
+  async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { statut, note } = req.body || {};
+
+      const updates = {};
+      if (statut) updates.statut = statut;
+      if (typeof note === 'string') updates.note = note;
+
+      if (!Object.keys(updates).length) {
+        return res.status(400).json({
+          message: 'Aucune donnée à mettre à jour.'
+        });
+      }
+
+      const pointage = await Pointage.findByIdAndUpdate(id, updates, {
+        new: true
+      });
+
+      if (!pointage) {
+        return res.status(404).json({ message: 'Pointage non trouvé.' });
+      }
+
+      return res.json(pointage);
+    } catch (err) {
+      console.error('Erreur lors de la mise à jour du pointage:', err);
+      return res.status(500).json({
+        message: 'Erreur lors de la mise à jour du pointage.'
+      });
+    }
+  }
+);
+
+module.exports = router;
+
