@@ -25,34 +25,24 @@ const io = new Server(server, {
   }
 });
 
-// Exposer io pour d'autres modules si besoin
 app.set('io', io);
 
 io.on('connection', (socket) => {
-  console.log('🔌 Nouvelle connexion Socket.io:', socket.id);
-
   socket.on('join_site', (siteCode) => {
-    if (siteCode) {
-      socket.join(`site:${siteCode}`);
-      console.log(`Socket ${socket.id} a rejoint la salle site:${siteCode}`);
-    }
-  });
-
-  socket.on('disconnect', () => {
-    console.log('🔌 Déconnexion Socket.io:', socket.id);
+    if (siteCode) socket.join(`site:${siteCode}`);
   });
 });
 
-// Connexion à la base de données
 connectDB();
 
-// Middlewares globaux
 app.use(cors({ origin: CLIENT_URL, credentials: true }));
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
       scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-hashes'", "https://cdn.jsdelivr.net"],
+      // ✅ Fix: autoriser les event handlers inline (data-* via JS = ok, mais au cas où)
+      scriptSrcAttr: ["'unsafe-inline'"],
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
       imgSrc: ["'self'", "data:", "blob:"],
@@ -68,42 +58,34 @@ app.use(morgan('dev'));
 const publicPath = path.join(__dirname, '..', 'client', 'public');
 app.use(express.static(publicPath));
 
-// Routes
+// Routes API
 const agentsRouter = require('./routes/agents');
 const authRouter = require('./routes/auth');
 const pointagesRouter = require('./routes/pointages');
 const sitesRouter = require('./routes/sites');
 const rapportsRouter = require('./routes/rapports');
 
-// Routes de base (stubs pour les modules non encore implémentés)
-const routerFactory = (name) => {
-  const router = express.Router();
-  router.all('*', (req, res) => {
-    res.status(501).json({ message: `Route ${name} non implémentée` });
-  });
-  return router;
-};
-
 app.use('/api/auth', authRouter);
 app.use('/api/agents', agentsRouter);
 app.use('/api/pointages', pointagesRouter);
 app.use('/api/sites', sitesRouter);
 app.use('/api/rapports', rapportsRouter);
-app.use('/api/sync', routerFactory('sync'));
 
-app.get('*', (req, res) => {
+// ✅ SPA catch-all — uniquement pour les routes non-API et non-fichiers statiques
+app.get('*', (req, res, next) => {
+  // Ne pas intercepter les appels API ni les fichiers avec extension
+  if (req.path.startsWith('/api/') || req.path.includes('.')) {
+    return next();
+  }
   res.sendFile(path.join(publicPath, 'index.html'));
 });
 
 // 404
-app.use((req, res, next) => {
-  res.status(404).json({
-    message: 'Route non trouvée'
-  });
+app.use((req, res) => {
+  res.status(404).json({ message: 'Route non trouvée' });
 });
 
-// Gestion globale des erreurs
-// eslint-disable-next-line no-unused-vars
+// Erreurs globales
 app.use((err, req, res, next) => {
   console.error('❌ Erreur serveur:', err);
   res.status(err.status || 500).json({
@@ -112,10 +94,8 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 3000;
-
 server.listen(PORT, () => {
   console.log(`🚀 Serveur démarré sur le port ${PORT}`);
 });
 
 module.exports = { app, server, io };
-
