@@ -43,7 +43,6 @@ async function enregistrerPointage(agent, methode, type = 'arrivee') {
     methode,
     type
   };
-
   try {
     if (navigator.onLine) {
       await post('/api/pointages', payload);
@@ -55,7 +54,7 @@ async function enregistrerPointage(agent, methode, type = 'arrivee') {
     }
     playBeep();
     return true;
-  } catch (err) {
+  } catch {
     showToast("Erreur lors de l'enregistrement du pointage.", 'error');
     return false;
   }
@@ -79,15 +78,73 @@ function resumeScanner() {
   if (scanFrame) animationId = requestAnimationFrame(scanFrame);
 }
 
-// ✅ Charger pointages : tous les sites si superadmin, sinon filtrer par site
+function showQRModal(agent) {
+  const qrUrl = `/api/agents/${agent._id || agent.id}/qr`;
+  const content = `
+    <div style="text-align:center;">
+      <div style="font-weight:600;font-size:1rem;margin-bottom:4px;">${agent.prenom} ${agent.nom}</div>
+      <div style="color:#666;font-size:0.85rem;margin-bottom:16px;">${agent.matricule || ''}</div>
+      <img src="${qrUrl}" alt="QR Code"
+        style="width:220px;height:220px;border:2px solid #eee;border-radius:10px;display:block;margin:0 auto 16px;">
+      <a href="${qrUrl}" download="qr-${agent.matricule || agent._id}.png"
+        style="display:inline-block;padding:10px 20px;background:#2e7d32;color:white;border-radius:8px;text-decoration:none;font-size:0.9rem;">
+        ⬇️ Télécharger le QR
+      </a>
+    </div>
+  `;
+  showModal({ title: 'QR Code agent', content, cancelText: 'Fermer' });
+}
+
+function openEditModal(id, currentStatut, currentNote, listePointages) {
+  const content = `
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div>
+        <label style="font-size:0.85rem;font-weight:500;display:block;margin-bottom:4px;">Statut</label>
+        <select id="edit-statut" style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;">
+          <option value="present" ${currentStatut==='present'?'selected':''}>✅ Présent</option>
+          <option value="absent" ${currentStatut==='absent'?'selected':''}>❌ Absent</option>
+          <option value="retard" ${currentStatut==='retard'?'selected':''}>⏰ Retard</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size:0.85rem;font-weight:500;display:block;margin-bottom:4px;">Justification / Note</label>
+        <textarea id="edit-note" rows="3" placeholder="Ex: Absence justifiée — certificat médical"
+          style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;resize:vertical;box-sizing:border-box;">${currentNote}</textarea>
+      </div>
+    </div>
+  `;
+  showModal({
+    title: 'Modifier le pointage',
+    content,
+    confirmText: 'Enregistrer',
+    cancelText: 'Annuler',
+    onConfirm: async (close) => {
+      const statut = document.getElementById('edit-statut').value;
+      const note = document.getElementById('edit-note').value;
+      try {
+        const token = localStorage.getItem('gds_token');
+        const res = await fetch(`/api/pointages/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ statut, note })
+        });
+        if (!res.ok) throw new Error();
+        showToast('✅ Pointage mis à jour', 'success');
+        await reloadPointagesList(listePointages);
+        close();
+      } catch {
+        showToast('Erreur lors de la mise à jour.', 'error');
+      }
+    }
+  });
+}
+
 async function reloadPointagesList(container) {
   try {
     const user = getCurrentUser();
     const dateStr = new Date().toISOString().split('T')[0];
-
     let url = `/api/pointages?date=${dateStr}`;
     if (user?.site_id) url += `&site_id=${user.site_id}`;
-    // si superadmin sans site_id → on charge tout (pas de filtre site)
 
     const response = await get(url);
     const pointages = response?.data || [];
@@ -100,8 +157,11 @@ async function reloadPointagesList(container) {
     pointages.sort((a, b) => (a.heure_arrivee || '').localeCompare(b.heure_arrivee || ''));
 
     const admin = isAdmin();
+    const statutColors = { present: '#2e7d32', absent: '#c62828', retard: '#e65100' };
+
+    // ✅ Pas de onclick inline — on utilise data-attributes + delegation
     let html = `
-      <div style="display:flex;font-weight:600;padding:8px 10px;background:#f5f5f5;border-radius:8px;margin-bottom:6px;font-size:0.78rem;gap:4px;">
+      <div style="display:flex;font-weight:600;padding:8px 10px;background:#f5f5f5;border-radius:8px;margin-bottom:6px;font-size:0.78rem;">
         <div style="flex:2;">Agent</div>
         <div style="flex:1;">Arrivée</div>
         <div style="flex:1;">Statut</div>
@@ -112,19 +172,19 @@ async function reloadPointagesList(container) {
     pointages.forEach(p => {
       const agent = p.agent_id || {};
       const methode = p.methode === 'qr_code' ? '📱' : '✋';
-      const statutColors = { present: '#2e7d32', absent: '#c62828', retard: '#e65100' };
       const couleur = statutColors[p.statut] || '#555';
-
       html += `
-        <div style="display:flex;align-items:center;padding:10px;border:1px solid #eee;border-radius:8px;font-size:0.82rem;gap:4px;">
+        <div style="display:flex;align-items:center;padding:10px;border:1px solid #eee;border-radius:8px;font-size:0.82rem;">
           <div style="flex:2;font-weight:500;">${agent.prenom || ''} ${agent.nom || ''} ${methode}<br>
             <span style="font-size:0.75rem;color:#888;">${p.site_id?.nom || ''}</span>
           </div>
           <div style="flex:1;">${p.heure_arrivee || '—'}</div>
           <div style="flex:1;font-weight:600;color:${couleur};">${p.statut || '—'}</div>
-          ${admin ? `
-          <div style="flex:1;">
-            <button onclick="window._editPointage('${p._id}', '${p.statut}', '${p.note || ''}')"
+          ${admin ? `<div style="flex:1;">
+            <button class="btn-edit-pointage"
+              data-id="${p._id}"
+              data-statut="${p.statut}"
+              data-note="${(p.note || '').replace(/"/g, '&quot;')}"
               style="font-size:0.75rem;padding:4px 8px;background:#1565c0;color:white;border:none;border-radius:6px;cursor:pointer;">
               Modifier
             </button>
@@ -134,74 +194,19 @@ async function reloadPointagesList(container) {
     });
 
     container.innerHTML = html;
-  } catch (err) {
+
+    // ✅ Event delegation — pas de onclick inline
+    if (admin) {
+      container.querySelectorAll('.btn-edit-pointage').forEach(btn => {
+        btn.addEventListener('click', () => {
+          openEditModal(btn.dataset.id, btn.dataset.statut, btn.dataset.note, container);
+        });
+      });
+    }
+
+  } catch {
     container.innerHTML = '<div style="color:#c62828;text-align:center;padding:20px;">Erreur lors du chargement.</div>';
   }
-}
-
-// ✅ Modal modification statut (admin only)
-function setupEditPointage(listePointages) {
-  window._editPointage = (id, currentStatut, currentNote) => {
-    const content = `
-      <div style="display:flex;flex-direction:column;gap:12px;">
-        <div>
-          <label style="font-size:0.85rem;font-weight:500;display:block;margin-bottom:4px;">Statut</label>
-          <select id="edit-statut" style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;">
-            <option value="present" ${currentStatut==='present'?'selected':''}>✅ Présent</option>
-            <option value="absent" ${currentStatut==='absent'?'selected':''}>❌ Absent</option>
-            <option value="retard" ${currentStatut==='retard'?'selected':''}>⏰ Retard</option>
-          </select>
-        </div>
-        <div>
-          <label style="font-size:0.85rem;font-weight:500;display:block;margin-bottom:4px;">Justification / Note</label>
-          <textarea id="edit-note" rows="3" placeholder="Ex: Absence justifiée — certificat médical"
-            style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;resize:vertical;box-sizing:border-box;">${currentNote}</textarea>
-        </div>
-      </div>
-    `;
-    showModal({
-      title: 'Modifier le pointage',
-      content,
-      confirmText: 'Enregistrer',
-      cancelText: 'Annuler',
-      onConfirm: async (close) => {
-        const statut = document.getElementById('edit-statut').value;
-        const note = document.getElementById('edit-note').value;
-        try {
-          const token = localStorage.getItem('gds_token');
-          const res = await fetch(`/api/pointages/${id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-            body: JSON.stringify({ statut, note })
-          });
-          if (!res.ok) throw new Error();
-          showToast('✅ Pointage mis à jour', 'success');
-          await reloadPointagesList(listePointages);
-          close();
-        } catch {
-          showToast('Erreur lors de la mise à jour.', 'error');
-        }
-      }
-    });
-  };
-}
-
-// ✅ Modal QR agrandi + téléchargement
-function showQRModal(agent) {
-  const qrUrl = `/api/agents/${agent._id || agent.id}/qr`;
-  const content = `
-    <div style="text-align:center;">
-      <div style="font-weight:600;font-size:1rem;margin-bottom:4px;">${agent.prenom} ${agent.nom}</div>
-      <div style="color:#666;font-size:0.85rem;margin-bottom:16px;">${agent.matricule || ''}</div>
-      <img id="qr-img-large" src="${qrUrl}" alt="QR Code"
-        style="width:220px;height:220px;border:2px solid #eee;border-radius:10px;display:block;margin:0 auto 16px;">
-      <a id="btn-dl-qr" href="${qrUrl}" download="qr-${agent.matricule || agent._id}.png"
-        style="display:inline-block;padding:10px 20px;background:#2e7d32;color:white;border-radius:8px;text-decoration:none;font-size:0.9rem;">
-        ⬇️ Télécharger le QR
-      </a>
-    </div>
-  `;
-  showModal({ title: 'QR Code agent', content, confirmText: null, cancelText: 'Fermer' });
 }
 
 function startCamera(video, canvas, onCodeDetected) {
@@ -211,7 +216,6 @@ function startCamera(video, canvas, onCodeDetected) {
       video.srcObject = stream;
       video.setAttribute('playsinline', 'true');
       video.play();
-
       scanFrame = function () {
         if (isProcessing) return;
         if (video.readyState === video.HAVE_ENOUGH_DATA) {
@@ -220,7 +224,7 @@ function startCamera(video, canvas, onCodeDetected) {
           ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
           const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
           const jsqrFn = window.jsQR || (typeof jsQR === 'function' ? jsQR : null);
-          if (!jsqrFn) { showToast("jsQR non disponible — rechargez la page.", 'error'); return; }
+          if (!jsqrFn) { showToast("jsQR non disponible.", 'error'); return; }
           const code = jsqrFn(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'dontInvert' });
           if (code && code.data) {
             isProcessing = true;
@@ -231,7 +235,6 @@ function startCamera(video, canvas, onCodeDetected) {
         }
         animationId = requestAnimationFrame(scanFrame);
       };
-
       animationId = requestAnimationFrame(scanFrame);
     })
     .catch(() => showToast("Impossible d'accéder à la caméra.", 'error'));
@@ -239,11 +242,8 @@ function startCamera(video, canvas, onCodeDetected) {
 
 export function renderPointage(root) {
   const admin = isAdmin();
-
   root.innerHTML = `
     <div style="display:flex;flex-direction:column;gap:16px;">
-
-      <!-- Pointage Manuel -->
       <div class="card">
         <h2 style="font-size:1rem;font-weight:600;margin-bottom:12px;">Pointage Manuel</h2>
         <div style="text-align:center;margin-bottom:16px;">
@@ -262,13 +262,12 @@ export function renderPointage(root) {
         <div id="manuel-result" style="font-size:0.85rem;color:#666;margin-top:6px;"></div>
       </div>
 
-      <!-- Scan QR -->
       <div class="card">
         <details>
           <summary style="cursor:pointer;font-weight:600;padding:4px 0;">📷 Scan QR Code</summary>
           <div style="margin-top:12px;">
             <button id="btn-start-camera" class="btn-primary" style="width:100%;margin-bottom:12px;">Activer Caméra</button>
-            <div id="camera-area" style="width:100%;aspect-ratio:4/3;max-height:60vw;background:#000;border-radius:10px;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;">
+            <div style="width:100%;aspect-ratio:4/3;max-height:60vw;background:#000;border-radius:10px;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;">
               <video id="video" style="width:100%;height:100%;object-fit:cover;" playsinline></video>
               <canvas id="canvas" style="display:none;"></canvas>
               <div style="position:absolute;border:3px solid #4CAF50;width:60%;height:60%;border-radius:8px;pointer-events:none;"></div>
@@ -277,14 +276,10 @@ export function renderPointage(root) {
         </details>
       </div>
 
-      <!-- Pointages du jour -->
       <div class="card">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
           <h2 style="font-size:1rem;font-weight:600;">Pointages du jour</h2>
-          <div style="display:flex;gap:8px;align-items:center;">
-            <span id="badge-pending" class="badge-pending" style="display:none;">0 en attente</span>
-            <button id="btn-refresh" style="padding:5px 10px;background:#e8f5e9;color:#2e7d32;border:1px solid #c8e6c9;border-radius:6px;cursor:pointer;font-size:0.8rem;">🔄 Actualiser</button>
-          </div>
+          <button id="btn-refresh" style="padding:5px 10px;background:#e8f5e9;color:#2e7d32;border:1px solid #c8e6c9;border-radius:6px;cursor:pointer;font-size:0.8rem;">🔄 Actualiser</button>
         </div>
         <div id="liste-pointages" style="display:flex;flex-direction:column;gap:8px;">
           <div style="color:#999;text-align:center;padding:20px;">Chargement...</div>
@@ -293,7 +288,6 @@ export function renderPointage(root) {
     </div>
   `;
 
-  // Horloge
   function updateClock() {
     const now = new Date();
     const timeEl = root.querySelector('#current-time');
@@ -317,9 +311,6 @@ export function renderPointage(root) {
   const listePointages = root.querySelector('#liste-pointages');
   const btnRefresh = root.querySelector('#btn-refresh');
 
-  setupEditPointage(listePointages);
-
-  // Recherche agents
   btnSearchAgent.addEventListener('click', async () => {
     const query = inputSearch.value.trim();
     if (!query) { manuelResult.textContent = 'Veuillez entrer un nom ou matricule.'; return; }
@@ -363,7 +354,6 @@ export function renderPointage(root) {
   btnDepart.addEventListener('click', () => handlePointageManuel('depart'));
   btnRefresh.addEventListener('click', () => reloadPointagesList(listePointages));
 
-  // Camera QR
   btnCamera.addEventListener('click', () => {
     isProcessing = false;
     stopScanner();
@@ -373,25 +363,23 @@ export function renderPointage(root) {
         const agent = await rechercherAgentParMatricule(matricule);
         if (!agent) { showToast('Agent introuvable.', 'error'); resumeScanner(); return; }
 
-        const content = `
-          <div style="display:flex;gap:14px;align-items:center;padding:8px 0;">
-            <div onclick="window._showQR(${JSON.stringify(agent).replace(/"/g, '&quot;')})"
-              style="width:70px;height:70px;border-radius:10px;background:#e8f5e9;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;overflow:hidden;border:2px solid #c8e6c9;">
-              <img src="/api/agents/${agent._id || agent.id}/qr" style="width:100%;height:100%;object-fit:cover;" title="Cliquer pour agrandir">
-            </div>
-            <div>
-              <div style="font-weight:600;font-size:1rem;">${agent.prenom || ''} ${agent.nom || ''}</div>
-              <div style="color:#546e7a;font-size:0.85rem;">${agent.matricule || ''}</div>
-              <div style="color:#78909c;font-size:0.82rem;">${agent.type_contrat || ''} — ${agent.site_id?.nom || ''}</div>
-            </div>
+        // ✅ Mini QR cliquable via addEventListener dans le modal
+        const modalContent = document.createElement('div');
+        modalContent.style.cssText = 'display:flex;gap:14px;align-items:center;padding:8px 0;';
+        modalContent.innerHTML = `
+          <div id="mini-qr-btn" style="width:70px;height:70px;border-radius:10px;background:#e8f5e9;cursor:pointer;flex-shrink:0;overflow:hidden;border:2px solid #c8e6c9;">
+            <img src="/api/agents/${agent._id || agent.id}/qr" style="width:100%;height:100%;object-fit:cover;" title="Cliquer pour agrandir">
+          </div>
+          <div>
+            <div style="font-weight:600;font-size:1rem;">${agent.prenom || ''} ${agent.nom || ''}</div>
+            <div style="color:#546e7a;font-size:0.85rem;">${agent.matricule || ''}</div>
+            <div style="color:#78909c;font-size:0.82rem;">${agent.type_contrat || ''} — ${agent.site_id?.nom || ''}</div>
           </div>
         `;
 
-        window._showQR = (a) => showQRModal(a);
-
         showModal({
           title: 'Confirmer la présence',
-          content,
+          content: modalContent,
           confirmText: '✅ Confirmer présence',
           cancelText: 'Annuler',
           onConfirm: async (close) => {
@@ -402,6 +390,13 @@ export function renderPointage(root) {
           },
           onCancel: () => resumeScanner()
         });
+
+        // ✅ addEventListener après que le modal est dans le DOM
+        setTimeout(() => {
+          const miniQr = document.getElementById('mini-qr-btn');
+          if (miniQr) miniQr.addEventListener('click', () => showQRModal(agent));
+        }, 50);
+
       } catch {
         showToast("Agent introuvable pour ce QR code.", 'error');
         resumeScanner();
