@@ -3,7 +3,7 @@ import { getCachedAgents } from './store/indexedDB.js';
 const BASE_URL = '';
 
 function getToken() {
-  return localStorage.getItem('gds_token');
+  return localStorage.getItem('pamecas_pointage_token');
 }
 
 function handleUnauthorized() {

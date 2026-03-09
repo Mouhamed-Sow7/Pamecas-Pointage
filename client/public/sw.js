@@ -1,69 +1,107 @@
-const STATIC_CACHE = 'pamecas-static-v2';
-const API_CACHE = 'pamecas-api-v2';
-const STATIC_ASSETS = ['/', '/index.html', '/manifest.json', '/src/app.js'];
+// ✅ Version du cache — incrémentez ce numéro à chaque déploiement
+const CACHE_VERSION = 'v6';
+const CACHE_NAME = `pamecas-pointage-${CACHE_VERSION}`;
 
+const STATIC_ASSETS = [
+  '/',
+  '/index.html',
+  '/src/app.js',
+  '/src/css/global.css',
+  '/src/api.js',
+  '/src/pages/login.js',
+  '/src/pages/dashboard.js',
+  '/src/pages/pointage.js',
+  '/src/pages/agents.js',
+  '/src/pages/sites.js',
+  '/src/pages/rapports.js',
+  '/src/components/navbar.js',
+  '/src/components/modal.js',
+  '/src/components/toast.js',
+  '/src/store/indexedDB.js',
+  '/src/store/syncManager.js',
+  '/manifest.json'
+];
+
+// ─── Install : mise en cache des assets statiques ────────────────
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(STATIC_CACHE).then((cache) => cache.addAll(STATIC_ASSETS))
-  );
+  // ✅ Force l'activation immédiate sans attendre la fermeture des onglets
   self.skipWaiting();
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS))
+  );
 });
 
+// ─── Activate : supprimer les anciens caches ─────────────────────
 self.addEventListener('activate', (event) => {
+  // ✅ Prendre le contrôle immédiatement de tous les onglets ouverts
+  clients.claim();
   event.waitUntil(
     caches.keys().then((keys) =>
       Promise.all(
-        keys.map((key) => {
-          if (![STATIC_CACHE, API_CACHE].includes(key)) {
+        keys
+          .filter((key) => key !== CACHE_NAME)
+          .map((key) => {
+            console.log('[SW] Suppression ancien cache:', key);
             return caches.delete(key);
-          }
-          return null;
-        })
+          })
       )
     )
   );
-  self.clients.claim();
 });
 
+// ─── Fetch : stratégie network-first pour API, cache-first pour static ──
 self.addEventListener('fetch', (event) => {
-  const { request } = event;
-  const url = new URL(request.url);
+  const url = new URL(event.request.url);
 
-  // ✅ Ignorer toutes les requêtes externes (CDN, fonts, etc.)
-  if (url.origin !== self.location.origin) {
-    return; // laisser le navigateur gérer normalement
-  }
+  // Ignorer les requêtes externes (fonts, CDN, etc.)
+  if (url.origin !== self.location.origin) return;
 
-  // API calls — network first, fallback offline
+  // ✅ API : network-first (toujours frais), pas de cache
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(
-      fetch(request)
-        .then((response) => response)
-        .catch(() =>
-          new Response(JSON.stringify({ offline: true, data: [] }), {
-            headers: { 'Content-Type': 'application/json' },
-            status: 200
-          })
-        )
+      fetch(event.request).catch(() =>
+        new Response(JSON.stringify({ message: 'Hors ligne — réessayez plus tard.' }), {
+          status: 503,
+          headers: { 'Content-Type': 'application/json' }
+        })
+      )
     );
     return;
   }
 
-  // Fichiers statiques — cache first
-  event.respondWith(
-    caches.match(request).then((cached) => cached || fetch(request))
-  );
-});
-
-self.addEventListener('sync', (event) => {
-  if (event.tag === 'sync-pointages') {
-    event.waitUntil(
-      (async () => {
-        const clients = await self.clients.matchAll();
-        clients.forEach((client) => {
-          client.postMessage({ type: 'SYNC_COMPLETED' });
-        });
-      })()
-    );
+  // ✅ SW.js lui-même : toujours depuis le réseau pour détecter les mises à jour
+  if (url.pathname === '/sw.js') {
+    event.respondWith(fetch(event.request));
+    return;
   }
+
+  // ✅ Fichiers JS/CSS : network-first pour toujours avoir la dernière version
+  if (url.pathname.endsWith('.js') || url.pathname.endsWith('.css')) {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          if (response.ok) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+          }
+          return response;
+        })
+        .catch(() => caches.match(event.request))
+    );
+    return;
+  }
+
+  // ✅ Autres assets (images, fonts locales) : cache-first
+  event.respondWith(
+    caches.match(event.request).then((cached) => {
+      if (cached) return cached;
+      return fetch(event.request).then((response) => {
+        if (response.ok) {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+        }
+        return response;
+      });
+    })
+  );
 });

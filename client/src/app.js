@@ -8,7 +8,7 @@ import { startAutoSync, onSyncComplete } from './store/syncManager.js';
 import { showToast } from './components/toast.js';
 
 function getCurrentUser() {
-  const raw = localStorage.getItem('gds_user');
+  const raw = localStorage.getItem('pamecas_pointage_user');
   if (!raw) return null;
   try {
     return JSON.parse(raw);
@@ -18,7 +18,7 @@ function getCurrentUser() {
 }
 
 function isAuthenticated() {
-  return !!localStorage.getItem('gds_token');
+  return !!localStorage.getItem('pamecas_pointage_token');
 }
 
 function updateOfflineBanner() {

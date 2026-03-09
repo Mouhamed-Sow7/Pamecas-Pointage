@@ -7,8 +7,7 @@ export function renderLogin(root) {
     <div style="display:flex; align-items:center; justify-content:center; height:100vh; background:linear-gradient(135deg,#2E7D32,#4CAF50);">
       <div class="card" style="max-width:420px; width:90%; text-align:center;">
         <div style="margin-bottom:16px;">
-          <div style="font-size:28px; font-weight:700; color:#2E7D32;">GDS Pointage</div>
-          <div style="font-size:14px; color:#546e7a;">Grands Domaines du Sénégal</div>
+          <div style="font-size:28px; font-weight:700; color:#2E7D32;">Pamecas Pointage</div>
         </div>
         <form id="login-form" style="display:flex; flex-direction:column; gap:10px; margin-top:8px;">
           <div style="text-align:left;">
@@ -45,8 +44,8 @@ export function renderLogin(root) {
       const result = await post('/api/auth/login', { username, password });
       const { token, user } = result;
 
-      localStorage.setItem('gds_token', token);
-      localStorage.setItem('gds_user', JSON.stringify(user));
+      localStorage.setItem('pamecas_pointage_token', token);
+      localStorage.setItem('pamecas_pointage_user', JSON.stringify(user));
       await saveAuth(token, user);
 
       showToast('Connexion réussie.', 'success');

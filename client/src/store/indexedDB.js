@@ -1,4 +1,4 @@
-const DB_NAME = 'gds-offline';
+const DB_NAME = 'pamecas-pointage-offline';
 const DB_VERSION = 1;
 const STORE_POINTAGES = 'pointages_pending';
 const STORE_AGENTS = 'agents_cache';
