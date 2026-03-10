@@ -148,7 +148,7 @@ export function renderRapports(root) {
       <!-- Header card -->
       <div class="card">
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px;">
-          <div style="width:40px;height:40px;background:linear-gradient(135deg,#2e7d32,#66bb6a);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;">📊</div>
+          <div style="width:40px;height:40px;background:linear-gradient(135deg,#2e7d32,#66bb6a);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;"><i class="fa-solid fa-chart-line"></i></div>
           <div>
             <h2 style="font-size:1rem;font-weight:700;margin:0;">Rapports de présence</h2>
             <p style="font-size:0.78rem;color:#888;margin:2px 0 0;">Exportez les données de pointage par période</p>
@@ -165,7 +165,7 @@ export function renderRapports(root) {
 
           <!-- Date début -->
           <div>
-            <label style="font-size:0.82rem;font-weight:500;color:#444;display:block;margin-bottom:6px;">📅 Date début</label>
+            <label style="font-size:0.82rem;font-weight:500;color:#444;display:block;margin-bottom:6px;"><i class="fa-solid fa-calendar"></i> Date début</label>
             <div style="display:flex;align-items:center;gap:8px;">
               <div id="trigger-debut" style="flex:1;display:flex;align-items:center;justify-content:space-between;padding:11px 14px;border:1.5px solid #ddd;border-radius:10px;cursor:pointer;background:#fafafa;transition:border 0.2s;">
                 <span class="cal-trigger-text" style="font-size:0.88rem;color:#666;">Choisir une date</span>
@@ -177,7 +177,7 @@ export function renderRapports(root) {
 
           <!-- Date fin -->
           <div>
-            <label style="font-size:0.82rem;font-weight:500;color:#444;display:block;margin-bottom:6px;">📅 Date fin</label>
+            <label style="font-size:0.82rem;font-weight:500;color:#444;display:block;margin-bottom:6px;"><i class="fa-solid fa-calendar"></i> Date fin</label>
             <div style="display:flex;align-items:center;gap:8px;">
               <div id="trigger-fin" style="flex:1;display:flex;align-items:center;justify-content:space-between;padding:11px 14px;border:1.5px solid #ddd;border-radius:10px;cursor:pointer;background:#fafafa;transition:border 0.2s;">
                 <span class="cal-trigger-text" style="font-size:0.88rem;color:#666;">Choisir une date</span>
@@ -189,7 +189,7 @@ export function renderRapports(root) {
 
           <!-- Site optionnel -->
           <div>
-            <label style="font-size:0.82rem;font-weight:500;color:#444;display:block;margin-bottom:6px;">🏢 Agence (optionnel)</label>
+            <label style="font-size:0.82rem;font-weight:500;color:#444;display:block;margin-bottom:6px;"><i class="fa-solid fa-building"></i> Agence (optionnel)</label>
             <select id="site-code" style="width:100%;padding:11px 14px;border:1.5px solid #ddd;border-radius:10px;background:#fafafa;font-size:0.88rem;color:#444;appearance:none;cursor:pointer;">
               <option value="">Toutes les agences</option>
               <option value="PAM-DG">Direction Générale</option>
@@ -212,16 +212,16 @@ export function renderRapports(root) {
         <!-- Boutons export -->
         <div style="display:flex;flex-direction:column;gap:10px;">
           <button id="btn-export-excel" style="width:100%;padding:13px;background:linear-gradient(135deg,#2e7d32,#43a047);color:white;border:none;border-radius:10px;font-size:0.9rem;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:opacity 0.2s;">
-            <span>📥</span> Exporter en Excel
+            <i class="fa-solid fa-file-excel"></i> Exporter en Excel
           </button>
           <button id="btn-export-pdf" style="width:100%;padding:13px;background:white;color:#c62828;border:2px solid #ef9a9a;border-radius:10px;font-size:0.9rem;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:all 0.2s;" disabled title="Bientôt disponible">
-            <span>📄</span> Exporter en PDF <span style="font-size:0.72rem;background:#ef9a9a;color:white;padding:2px 6px;border-radius:4px;margin-left:4px;">Bientôt</span>
+            <i class="fa-solid fa-file-pdf"></i> Exporter en PDF <span style="font-size:0.72rem;background:#ef9a9a;color:white;padding:2px 6px;border-radius:4px;margin-left:4px;">Bientôt</span>
           </button>
         </div>
 
         <!-- Guide utilisation -->
         <div style="margin-top:16px;padding:12px;background:#f5f5f5;border-radius:8px;font-size:0.78rem;color:#666;line-height:1.6;">
-          <div style="font-weight:600;color:#444;margin-bottom:4px;">💡 Comment utiliser</div>
+          <div style="font-weight:600;color:#444;margin-bottom:4px;"><i class="fa-solid fa-question-circle"></i> Comment utiliser</div>
           1. Choisissez une date de début et une date de fin<br>
           2. Sélectionnez une agence ou laissez vide pour tout exporter<br>
           3. Cliquez "Exporter Excel" — le fichier se télécharge automatiquement
@@ -306,7 +306,7 @@ export function renderRapports(root) {
       const site = root.querySelector('#site-code').value;
       const siteLabel = site ? root.querySelector(`#site-code option[value="${site}"]`)?.textContent : 'Toutes les agences';
       periodeResume.style.display = 'block';
-      periodeResume.innerHTML = `✅ Du <strong>${dd}/${md}/${yd}</strong> au <strong>${df}/${mf}/${yf}</strong> — ${siteLabel}`;
+      periodeResume.innerHTML = `<i class="fa-solid fa-check-circle"></i> Du <strong>${dd}/${md}/${yd}</strong> au <strong>${df}/${mf}/${yf}</strong> — ${siteLabel}`;
     }
   }
 
@@ -326,7 +326,7 @@ export function renderRapports(root) {
     }
 
     const btn = root.querySelector('#btn-export-excel');
-    btn.textContent = '⏳ Génération en cours...';
+    btn.textContent = '<i class="fa-solid fa-spinner fa-spin"></i> Génération en cours...';
     btn.disabled = true;
 
     try {
@@ -358,7 +358,7 @@ export function renderRapports(root) {
     } catch (err) {
       showToast(`Erreur : ${err.message}`, 'error');
     } finally {
-      btn.innerHTML = '<span>📥</span> Exporter en Excel';
+      btn.innerHTML = '<span><i class="fa-solid fa-file-excel"></i></span> Exporter en Excel';
       btn.disabled = false;
     }
   });
