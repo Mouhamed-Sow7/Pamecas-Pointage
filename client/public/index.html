@@ -2,16 +2,17 @@
 <html lang="fr">
   <head>
     <meta charset="UTF-8" />
-    <title>PAMECAS Pointage</title>
+    <title>SmartPointage</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="description" content="Systeme de pointage digital pour agences et entreprises au Senegal." />
+    <meta name="application-name" content="SmartPointage" />
     <link rel="manifest" href="/manifest.json" />
     <meta name="theme-color" content="#2E7D32" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="stylesheet" href="src/css/global.css">
-   <link rel="stylesheet" href="vendor/fontawesome-free-7.2.0-web/css/all.min.css">
+    <link rel="stylesheet" href="vendor/fontawesome-free-7.2.0-web/css/all.min.css">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
-    <script src="/src/libs/jsQR.js"></script>
     <style>
       *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
       html, body { height: 100%; }
@@ -32,7 +33,7 @@
       .nav-header { padding: 16px 14px 12px; border-bottom: 1px solid rgba(255,255,255,0.15); display: flex; align-items: center; gap: 10px; }
       .sidebar-collapse-btn { background: none; border: none; color: rgba(255,255,255,0.8); font-size: 1.1rem; cursor: pointer; padding: 4px 6px; border-radius: 4px; flex-shrink: 0; display: none; }
       .sidebar-collapse-btn:hover { background: rgba(255,255,255,0.1); }
-      .logo { display: flex; align-items: center; gap: 10px;  margin-bottom: 0px;}
+      .logo { display: flex; align-items: center; gap: 10px; margin-bottom: 0px; }
       .logo-mark { width: 36px; height: 36px; background: white; color: var(--green); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; flex-shrink: 0; }
       .logo-text .title { font-size: 0.9rem; font-weight: 700; color: white; white-space: nowrap; }
       .logo-text .subtitle { font-size: 0.7rem; color: rgba(255,255,255,0.7); }
@@ -40,7 +41,7 @@
       .nav-link { display: flex; align-items: center; gap: 12px; padding: 12px 18px; color: rgba(255,255,255,0.82); background: none; border: none; width: 100%; text-align: left; font-size: 0.92rem; cursor: pointer; transition: background 0.15s; white-space: nowrap; }
       .nav-link:hover { background: rgba(255,255,255,0.1); color: white; }
       .nav-link-active { background: rgba(255,255,255,0.18) !important; color: white !important; font-weight: 500; }
-      .nav-footer { padding: 16px 14px; border-top: 1px solid rgba(255,255,255,0.15); margin-top: auto; display: flex; flex-direction: column; gap: 10px; margin-bottom: 10px;}
+      .nav-footer { padding: 16px 14px; border-top: 1px solid rgba(255,255,255,0.15); margin-top: auto; display: flex; flex-direction: column; gap: 10px; margin-bottom: 10px; }
       .status-row { display: flex; align-items: center; gap: 8px; }
       .status-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
       .status-dot.online { background: #4CAF50; }
@@ -143,7 +144,9 @@
     </style>
   </head>
   <body>
-    <div id="offline-banner" class="offline-banner">⚠️ Hors ligne — certaines fonctionnalités sont limitées.</div>
+    <div id="offline-banner" class="offline-banner">
+      <i class="fa-solid fa-wifi-slash"></i> Hors ligne — certaines fonctionnalites sont limitees.
+    </div>
     <div id="app"></div>
     <div id="toast-container"></div>
     <script>
@@ -153,7 +156,7 @@
         });
       }
     </script>
-<script src="https://cdn.jsdelivr.net/npm/jsqr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
     <script type="module" src="/src/app.js"></script>
   </body>
 </html>

@@ -1,23 +1,22 @@
 {
-  "name": "PAMECAS Pointage",
-  "short_name": "PAMECAS",
-  "description": "Système de pointage pour les Agences PAMECAS au Sénégal.",
+  "name": "SmartPointage",
+  "short_name": "SmartPointage",
+  "description": "Systeme de pointage digital pour agences et entreprises au Senegal.",
   "start_url": "/",
   "display": "standalone",
-  "orientation": "landscape",
+  "orientation": "portrait",
   "background_color": "#2E7D32",
   "theme_color": "#2E7D32",
   "icons": [
     {
-      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='192' height='192' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='32' fill='%232E7D32'/%3E%3Ccircle cx='96' cy='96' r='60' fill='%234CAF50'/%3E%3Ctext x='50%' y='54%' text-anchor='middle' font-family='Inter, Roboto, sans-serif' font-size='52' font-weight='700' fill='%23FFFFFF'%3EGDS%3C/text%3E%3C/svg%3E",
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='192' height='192' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='32' fill='%232E7D32'/%3E%3Ccircle cx='96' cy='96' r='60' fill='%234CAF50'/%3E%3Ctext x='50%25' y='56%25' text-anchor='middle' dominant-baseline='middle' font-family='Inter,sans-serif' font-size='44' font-weight='700' fill='%23FFFFFF'%3ESP%3C/text%3E%3C/svg%3E",
       "sizes": "192x192",
       "type": "image/svg+xml"
     },
     {
-      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='512' height='512' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='72' fill='%232E7D32'/%3E%3Ccircle cx='256' cy='256' r='168' fill='%234CAF50'/%3E%3Ctext x='50%' y='54%' text-anchor='middle' font-family='Inter, Roboto, sans-serif' font-size='120' font-weight='700' fill='%23FFFFFF'%3EGDS%3C/text%3E%3C/svg%3E",
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='512' height='512' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='72' fill='%232E7D32'/%3E%3Ccircle cx='256' cy='256' r='168' fill='%234CAF50'/%3E%3Ctext x='50%25' y='56%25' text-anchor='middle' dominant-baseline='middle' font-family='Inter,sans-serif' font-size='120' font-weight='700' fill='%23FFFFFF'%3ESP%3C/text%3E%3C/svg%3E",
       "sizes": "512x512",
       "type": "image/svg+xml"
     }
   ]
 }
-
