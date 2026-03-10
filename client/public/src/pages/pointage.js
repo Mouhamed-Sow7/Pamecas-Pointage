@@ -253,6 +253,9 @@ async function reloadPointagesList(container) {
 }
 
 // ─── Modal modification admin avec heures ────────────────────────
+// Remplacer la fonction openEditModal dans pointage.js
+// Section statut : grid 3 colonnes -> flex wrap pour mobile
+
 function openEditModal(id, currentStatut, currentNote, currentArrivee, currentDepart, listePointages) {
   const content = `
     <div style="display:flex;flex-direction:column;gap:14px;">
@@ -271,30 +274,40 @@ function openEditModal(id, currentStatut, currentNote, currentArrivee, currentDe
       </div>
 
       <div>
-        <label style="font-size:0.82rem;font-weight:600;display:block;margin-bottom:5px;color:#444;">Statut</label>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
-          <label style="display:flex;align-items:center;gap:6px;padding:8px 10px;border:1.5px solid #ddd;border-radius:8px;cursor:pointer;font-size:0.82rem;" id="lbl-present">
-            <input type="radio" name="edit-statut" value="present" ${currentStatut==='present'?'checked':''} style="accent-color:#2e7d32;">
-            <span style="color:#2e7d32;font-weight:500;">Present</span>
+        <label style="font-size:0.82rem;font-weight:600;display:block;margin-bottom:8px;color:#444;">Statut</label>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;">
+
+          <label style="flex:1;min-width:80px;display:flex;align-items:center;gap:8px;padding:10px 12px;border:1.5px solid #ddd;border-radius:10px;cursor:pointer;transition:all 0.15s;" id="lbl-present">
+            <input type="radio" name="edit-statut" value="present" ${currentStatut==='present'?'checked':''} style="accent-color:#2e7d32;width:16px;height:16px;flex-shrink:0;">
+            <span style="color:#2e7d32;font-weight:600;font-size:0.85rem;white-space:nowrap;">
+              <i class="fa-solid fa-circle-check"></i> Present
+            </span>
           </label>
-          <label style="display:flex;align-items:center;gap:6px;padding:8px 10px;border:1.5px solid #ddd;border-radius:8px;cursor:pointer;font-size:0.82rem;" id="lbl-absent">
-            <input type="radio" name="edit-statut" value="absent" ${currentStatut==='absent'?'checked':''} style="accent-color:#c62828;">
-            <span style="color:#c62828;font-weight:500;">Absent</span>
+
+          <label style="flex:1;min-width:80px;display:flex;align-items:center;gap:8px;padding:10px 12px;border:1.5px solid #ddd;border-radius:10px;cursor:pointer;transition:all 0.15s;" id="lbl-absent">
+            <input type="radio" name="edit-statut" value="absent" ${currentStatut==='absent'?'checked':''} style="accent-color:#c62828;width:16px;height:16px;flex-shrink:0;">
+            <span style="color:#c62828;font-weight:600;font-size:0.85rem;white-space:nowrap;">
+              <i class="fa-solid fa-circle-xmark"></i> Absent
+            </span>
           </label>
-          <label style="display:flex;align-items:center;gap:6px;padding:8px 10px;border:1.5px solid #ddd;border-radius:8px;cursor:pointer;font-size:0.82rem;" id="lbl-retard">
-            <input type="radio" name="edit-statut" value="retard" ${currentStatut==='retard'?'checked':''} style="accent-color:#e65100;">
-            <span style="color:#e65100;font-weight:500;">Retard</span>
+
+          <label style="flex:1;min-width:80px;display:flex;align-items:center;gap:8px;padding:10px 12px;border:1.5px solid #ddd;border-radius:10px;cursor:pointer;transition:all 0.15s;" id="lbl-retard">
+            <input type="radio" name="edit-statut" value="retard" ${currentStatut==='retard'?'checked':''} style="accent-color:#e65100;width:16px;height:16px;flex-shrink:0;">
+            <span style="color:#e65100;font-weight:600;font-size:0.85rem;white-space:nowrap;">
+              <i class="fa-solid fa-clock"></i> Retard
+            </span>
           </label>
+
         </div>
       </div>
 
       <div>
         <label style="font-size:0.82rem;font-weight:600;display:block;margin-bottom:5px;color:#444;">
-          Justification / Note
+          <i class="fa-solid fa-note-sticky" style="color:#ff9800;"></i> Justification / Note
         </label>
         <textarea id="edit-note" rows="3"
           placeholder="Ex: Absence justifiee — certificat medical, mission externe..."
-          style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;resize:vertical;box-sizing:border-box;font-size:0.85rem;font-family:inherit;">${currentNote}</textarea>
+          style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;resize:vertical;box-sizing:border-box;font-size:0.85rem;font-family:inherit;">${currentNote || ''}</textarea>
       </div>
     </div>
   `;
@@ -324,7 +337,7 @@ function openEditModal(id, currentStatut, currentNote, currentArrivee, currentDe
         await reloadPointagesList(listePointages);
         close();
       } catch (err) {
-        showToast(err.message || 'Erreur lors de la mise a jour.', 'error');
+        showToast(err.message || 'Erreur.', 'error');
       }
     }
   });
