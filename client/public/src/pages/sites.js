@@ -3,238 +3,261 @@ import { showModal } from '../components/modal.js';
 import { showToast } from '../components/toast.js';
 
 const REGIONS_SENEGAL = [
-  'Dakar',
-  'Diourbel',
-  'Fatick',
-  'Kaffrine',
-  'Kaolack',
-  'Kédougou',
-  'Kolda',
-  'Louga',
-  'Matam',
-  'Saint-Louis',
-  'Sédhiou',
-  'Tambacounda',
-  'Thiès',
-  'Ziguinchor'
+  'Dakar','Diourbel','Fatick','Kaffrine','Kaolack',
+  'Kedougou','Kolda','Louga','Matam','Saint-Louis',
+  'Sedhiou','Tambacounda','Thies','Ziguinchor'
 ];
 
+// ─── Rendu du tableau ────────────────────────────────────────────
 function renderTable(root, sites) {
   const tbody = root.querySelector('#sites-tbody');
+  if (!tbody) return;
   tbody.innerHTML = '';
+
+  if (!sites.length) {
+    tbody.innerHTML = `
+      <tr><td colspan="6" style="text-align:center;padding:24px;color:#aaa;">
+        <i class="fa-solid fa-building-circle-xmark"></i> Aucun site trouve
+      </td></tr>
+    `;
+    return;
+  }
+
   sites.forEach((site) => {
     const tr = document.createElement('tr');
+    tr.dataset.id = site._id;
+    tr.style.transition = 'background 0.2s';
+
     tr.innerHTML = `
-      <td style="padding:6px 8px; border-bottom:1px solid #eee;">${site.code}</td>
-      <td style="padding:6px 8px; border-bottom:1px solid #eee;">${site.nom}</td>
-      <td style="padding:6px 8px; border-bottom:1px solid #eee;">${site.region}</td>
-      <td style="padding:6px 8px; border-bottom:1px solid #eee;">${site.responsable || ''}</td>
-      <td style="padding:6px 8px; border-bottom:1px solid #eee;">
-        <span class="${site.actif ? 'badge-present' : 'badge-absent'}">
+      <td style="padding:10px 12px;border-bottom:1px solid #f0f0f0;font-weight:600;color:#1565c0;">${site.code}</td>
+      <td style="padding:10px 12px;border-bottom:1px solid #f0f0f0;">${site.nom}</td>
+      <td style="padding:10px 12px;border-bottom:1px solid #f0f0f0;color:#666;">${site.region || ''}</td>
+      <td style="padding:10px 12px;border-bottom:1px solid #f0f0f0;color:#666;">${site.responsable || '—'}</td>
+      <td style="padding:10px 12px;border-bottom:1px solid #f0f0f0;">
+        <span class="statut-badge ${site.actif ? 'badge-present' : 'badge-absent'}" style="font-size:0.75rem;padding:3px 10px;border-radius:12px;">
           ${site.actif ? 'Actif' : 'Inactif'}
         </span>
       </td>
-      <td style="padding:6px 8px; border-bottom:1px solid #eee;">
-        <button class="btn-action" data-id="${site._id}" data-action="edit"><i class="fa-solid fa-pencil"></i></button>
-        <button class="btn-action" data-id="${site._id}" data-action="toggle"><i class="fa-solid fa-toggle-on"></i> ${site.actif ? 'Désactiver' : 'Activer'}</button>
+      <td style="padding:10px 12px;border-bottom:1px solid #f0f0f0;">
+        <div style="display:flex;gap:6px;align-items:center;">
+          <button class="btn-action btn-edit-site" data-id="${site._id}"
+            style="width:32px;height:32px;border-radius:8px;border:1.5px solid #1565c0;background:white;color:#1565c0;cursor:pointer;font-size:0.75rem;"
+            title="Modifier">
+            <i class="fa-solid fa-pencil"></i>
+          </button>
+          <button class="btn-action btn-toggle-site" data-id="${site._id}" data-actif="${site.actif}"
+            style="display:flex;align-items:center;gap:5px;padding:5px 10px;border-radius:8px;border:1.5px solid ${site.actif ? '#c62828' : '#2e7d32'};background:white;color:${site.actif ? '#c62828' : '#2e7d32'};cursor:pointer;font-size:0.78rem;font-weight:500;"
+            title="${site.actif ? 'Desactiver' : 'Activer'}">
+            <i class="fa-solid ${site.actif ? 'fa-toggle-on' : 'fa-toggle-off'}" style="font-size:1rem;"></i>
+            ${site.actif ? 'Desactiver' : 'Activer'}
+          </button>
+        </div>
       </td>
     `;
     tbody.appendChild(tr);
   });
 }
 
+// ─── Charger les sites ───────────────────────────────────────────
+let sitesCache = [];
+
 async function fetchSites(root) {
   try {
     const res = await get('/api/sites');
-    const sites = res.data || res || [];
-    renderTable(root, sites);
-  } catch (err) {
-    showToast(
-      'Erreur lors du chargement des sites. Vérifiez votre connexion ou vos droits.',
-      'error'
-    );
+    sitesCache = res.data || res || [];
+    renderTable(root, sitesCache);
+  } catch {
+    showToast('Erreur lors du chargement des sites.', 'error');
   }
 }
 
-function openSiteModal(mode, site) {
+// ─── Modal ajout/modification ────────────────────────────────────
+function openSiteModal(mode, site, root) {
   const isEdit = mode === 'edit';
 
-  const regionOptions = REGIONS_SENEGAL.map(
-    (r) =>
-      `<option value="${r}" ${
-        site && site.region === r ? 'selected' : ''
-      }>${r}</option>`
+  const regionOptions = REGIONS_SENEGAL.map(r =>
+    `<option value="${r}" ${site?.region === r ? 'selected' : ''}>${r}</option>`
   ).join('');
 
   const content = `
-    <form id="site-form" style="display:flex; flex-direction:column; gap:8px;">
-      <div>
-        <label style="font-size:13px;">Code</label>
-        <input name="code" value="${site?.code || ''}" ${
-    isEdit ? 'disabled' : ''
-  } style="width:100%; padding:6px 8px; border-radius:6px; border:1px solid #cfd8dc;" />
-      </div>
-      <div>
-        <label style="font-size:13px;">Nom</label>
-        <input name="nom" value="${site?.nom || ''}" style="width:100%; padding:6px 8px; border-radius:6px; border:1px solid #cfd8dc;" />
-      </div>
-      <div>
-        <label style="font-size:13px;">Région</label>
-        <select name="region" style="width:100%; padding:6px 8px; border-radius:6px; border:1px solid #cfd8dc;">
-          ${regionOptions}
-        </select>
-      </div>
-      <div>
-        <label style="font-size:13px;">Responsable</label>
-        <input name="responsable" value="${site?.responsable || ''}" style="width:100%; padding:6px 8px; border-radius:6px; border:1px solid #cfd8dc;" />
-      </div>
-      <div>
-        <label style="font-size:13px;">Téléphone</label>
-        <input name="telephone" value="${site?.telephone || ''}" style="width:100%; padding:6px 8px; border-radius:6px; border:1px solid #cfd8dc;" />
-      </div>
-      <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-top:4px;">
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
         <div>
-          <label style="font-size:13px;">Heure début</label>
-          <input name="heure_debut" type="time" value="${site?.config?.heure_debut || ''}" style="width:100%; padding:6px 8px; border-radius:6px; border:1px solid #cfd8dc;" />
+          <label style="font-size:0.82rem;font-weight:600;display:block;margin-bottom:4px;">Code</label>
+          <input id="f-code" value="${site?.code || ''}" ${isEdit ? 'disabled style="background:#f5f5f5;"' : ''}
+            placeholder="PAM-XXX"
+            style="width:100%;padding:9px;border:1.5px solid #ddd;border-radius:8px;box-sizing:border-box;" />
         </div>
         <div>
-          <label style="font-size:13px;">Heure retard</label>
-          <input name="heure_retard" type="time" value="${site?.config?.heure_retard || ''}" style="width:100%; padding:6px 8px; border-radius:6px; border:1px solid #cfd8dc;" />
-        </div>
-        <div style="display:flex; align-items:flex-end; gap:4px;">
-          <input id="weekend_actif" name="weekend_actif" type="checkbox" ${
-            site?.config?.weekend_actif ? 'checked' : ''
-          } />
-          <label for="weekend_actif" style="font-size:13px;">Weekend actif</label>
+          <label style="font-size:0.82rem;font-weight:600;display:block;margin-bottom:4px;">Region</label>
+          <select id="f-region" style="width:100%;padding:9px;border:1.5px solid #ddd;border-radius:8px;box-sizing:border-box;">
+            ${regionOptions}
+          </select>
         </div>
       </div>
-    </form>
+      <div>
+        <label style="font-size:0.82rem;font-weight:600;display:block;margin-bottom:4px;">Nom</label>
+        <input id="f-nom" value="${site?.nom || ''}" placeholder="Nom de l'agence"
+          style="width:100%;padding:9px;border:1.5px solid #ddd;border-radius:8px;box-sizing:border-box;" />
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div>
+          <label style="font-size:0.82rem;font-weight:600;display:block;margin-bottom:4px;">Responsable</label>
+          <input id="f-responsable" value="${site?.responsable || ''}" placeholder="Nom du responsable"
+            style="width:100%;padding:9px;border:1.5px solid #ddd;border-radius:8px;box-sizing:border-box;" />
+        </div>
+        <div>
+          <label style="font-size:0.82rem;font-weight:600;display:block;margin-bottom:4px;">Telephone</label>
+          <input id="f-telephone" value="${site?.telephone || ''}" placeholder="77 XXX XX XX"
+            style="width:100%;padding:9px;border:1.5px solid #ddd;border-radius:8px;box-sizing:border-box;" />
+        </div>
+      </div>
+      <div style="background:#f8f9fa;border-radius:10px;padding:12px;">
+        <div style="font-size:0.82rem;font-weight:600;margin-bottom:8px;color:#444;">
+          <i class="fa-solid fa-clock" style="color:#2e7d32;"></i> Horaires
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px;">
+          <div>
+            <label style="font-size:0.78rem;display:block;margin-bottom:4px;color:#666;">Heure debut</label>
+            <input id="f-heure-debut" type="time" value="${site?.config?.heure_debut || '08:00'}"
+              style="width:100%;padding:8px;border:1.5px solid #ddd;border-radius:8px;box-sizing:border-box;" />
+          </div>
+          <div>
+            <label style="font-size:0.78rem;display:block;margin-bottom:4px;color:#666;">Heure retard</label>
+            <input id="f-heure-retard" type="time" value="${site?.config?.heure_retard || '08:15'}"
+              style="width:100%;padding:8px;border:1.5px solid #ddd;border-radius:8px;box-sizing:border-box;" />
+          </div>
+        </div>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:0.82rem;">
+          <input id="f-weekend" type="checkbox" ${site?.config?.weekend_actif ? 'checked' : ''} style="accent-color:#2e7d32;width:16px;height:16px;">
+          Weekend actif
+        </label>
+      </div>
+    </div>
   `;
 
-  const title = isEdit ? 'Modifier un site' : 'Ajouter un site';
-
   showModal({
-    title,
+    title: isEdit ? 'Modifier l\'agence' : 'Ajouter une agence',
     content,
     confirmText: 'Enregistrer',
     cancelText: 'Annuler',
     onConfirm: async (close) => {
-      const form = document.getElementById('site-form');
-      if (!form) {
-        close();
-        return;
-      }
-      const formData = new FormData(form);
       const payload = {
-        code: formData.get('code'),
-        nom: formData.get('nom'),
-        region: formData.get('region'),
-        responsable: formData.get('responsable'),
-        telephone: formData.get('telephone'),
+        code: document.getElementById('f-code')?.value?.trim(),
+        nom: document.getElementById('f-nom')?.value?.trim(),
+        region: document.getElementById('f-region')?.value,
+        responsable: document.getElementById('f-responsable')?.value?.trim(),
+        telephone: document.getElementById('f-telephone')?.value?.trim(),
         config: {
-          heure_debut: formData.get('heure_debut'),
-          heure_retard: formData.get('heure_retard'),
-          weekend_actif: formData.get('weekend_actif') === 'on'
+          heure_debut: document.getElementById('f-heure-debut')?.value,
+          heure_retard: document.getElementById('f-heure-retard')?.value,
+          weekend_actif: document.getElementById('f-weekend')?.checked
         }
       };
 
+      if (!payload.nom) { showToast('Le nom est obligatoire.', 'warning'); return; }
+      if (!isEdit && !payload.code) { showToast('Le code est obligatoire.', 'warning'); return; }
+
       try {
-        if (isEdit && site && site._id) {
+        if (isEdit && site?._id) {
           await put(`/api/sites/${site._id}`, payload);
-          showToast('Site mis à jour avec succès.', 'success');
+          showToast('Agence mise a jour.', 'success');
         } else {
           await post('/api/sites', payload);
-          showToast('Site créé avec succès.', 'success');
+          showToast('Agence creee.', 'success');
         }
         close();
+        fetchSites(root);
       } catch (err) {
-        showToast(
-          "Erreur lors de l'enregistrement du site. Vérifiez vos droits et les données.",
-          'error'
-        );
+        showToast(err.message || 'Erreur lors de l\'enregistrement.', 'error');
       }
     }
   });
 }
 
+// ─── Export principal ────────────────────────────────────────────
 export async function renderSites(root, user) {
   const canEdit = user && user.role === 'superadmin';
 
   root.innerHTML = `
-    <div class="card" style="height:100%; display:flex; flex-direction:column;">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-        <h2 style="font-size:18px;">Sites</h2>
-        ${
-          canEdit
-            ? '<button id="btn-add-site" class="btn-primary">Ajouter un site</button>'
-            : ''
-        }
+    <div class="card" style="display:flex;flex-direction:column;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <h2 style="font-size:1.1rem;font-weight:700;">
+          <i class="fa-solid fa-building" style="color:#2e7d32;margin-right:6px;"></i>Agences PAMECAS
+        </h2>
+        ${canEdit ? `
+        <button id="btn-add-site" class="btn-primary" style="display:flex;align-items:center;gap:6px;">
+          <i class="fa-solid fa-plus"></i> Ajouter
+        </button>` : ''}
       </div>
-      <div style="flex:1; overflow-y:auto;">
-        <table style="width:100%; border-collapse:collapse; font-size:13px;">
+
+      <!-- Tableau scrollable interne -->
+      <div style="overflow-x:auto;border-radius:10px;border:1px solid #eee;">
+        <table style="width:100%;border-collapse:collapse;font-size:0.85rem;min-width:600px;">
           <thead>
-            <tr style="background:#f1f8e9;">
-              <th style="text-align:left; padding:6px 8px;">Code</th>
-              <th style="text-align:left; padding:6px 8px;">Nom</th>
-              <th style="text-align:left; padding:6px 8px;">Région</th>
-              <th style="text-align:left; padding:6px 8px;">Responsable</th>
-              <th style="text-align:left; padding:6px 8px;">Statut</th>
-              <th style="text-align:left; padding:6px 8px;">Actions</th>
+            <tr style="background:linear-gradient(135deg,#2e7d32,#43a047);color:white;">
+              <th style="padding:12px;text-align:left;font-weight:600;">Code</th>
+              <th style="padding:12px;text-align:left;font-weight:600;">Nom</th>
+              <th style="padding:12px;text-align:left;font-weight:600;">Region</th>
+              <th style="padding:12px;text-align:left;font-weight:600;">Responsable</th>
+              <th style="padding:12px;text-align:left;font-weight:600;">Statut</th>
+              ${canEdit ? '<th style="padding:12px;text-align:left;font-weight:600;">Actions</th>' : ''}
             </tr>
           </thead>
-          <tbody id="sites-tbody"></tbody>
+          <tbody id="sites-tbody">
+            <tr><td colspan="6" style="text-align:center;padding:24px;color:#aaa;">
+              <i class="fa-solid fa-spinner fa-spin"></i> Chargement...
+            </td></tr>
+          </tbody>
         </table>
       </div>
     </div>
   `;
 
   if (canEdit) {
-    const addBtn = root.querySelector('#btn-add-site');
-    addBtn.addEventListener('click', () => openSiteModal('create', null));
+    root.querySelector('#btn-add-site').addEventListener('click', () => openSiteModal('create', null, root));
   }
 
+  // Event delegation sur tbody
   const tbody = root.querySelector('#sites-tbody');
   tbody.addEventListener('click', async (e) => {
-    const btn = e.target.closest('.btn-action');
-    if (!btn) return;
-    const id = btn.getAttribute('data-id');
-    const action = btn.getAttribute('data-action');
-    if (!id || !action) return;
+    const btnEdit = e.target.closest('.btn-edit-site');
+    const btnToggle = e.target.closest('.btn-toggle-site');
 
-    if (action === 'toggle') {
-      try {
-        const site = await get(`/api/sites`); // reload list to find current
-        const sites = site.data || site || [];
-        const current = sites.find((s) => s._id === id);
-        if (!current) return;
-        await put(`/api/sites/${id}`, { actif: !current.actif });
-        showToast('Statut du site mis à jour.', 'success');
-        fetchSites(root);
-      } catch (err) {
-        showToast(
-          "Erreur lors du changement de statut du site. Vérifiez vos droits.",
-          'error'
-        );
-      }
+    if (btnEdit) {
+      const id = btnEdit.dataset.id;
+      const site = sitesCache.find(s => s._id === id);
+      if (site) openSiteModal('edit', site, root);
       return;
     }
 
-    if (action === 'edit') {
-      try {
-        const res = await get('/api/sites');
-        const sites = res.data || res || [];
-        const current = sites.find((s) => s._id === id);
-        if (!current) return;
-        openSiteModal('edit', current);
-      } catch (err) {
-        showToast(
-          "Erreur lors du chargement des informations du site.",
-          'error'
-        );
-      }
+    if (btnToggle) {
+      const id = btnToggle.dataset.id;
+      const estActif = btnToggle.dataset.actif === 'true';
+      const site = sitesCache.find(s => s._id === id);
+      if (!site) return;
+
+      const action = estActif ? 'desactiver' : 'activer';
+
+      showModal({
+        title: `Confirmer`,
+        content: `<p style="margin:0;">Voulez-vous <strong>${action}</strong> l'agence <strong>${site.nom}</strong> ?</p>`,
+        confirmText: estActif ? 'Desactiver' : 'Activer',
+        cancelText: 'Annuler',
+        onConfirm: async (close) => {
+          try {
+            await put(`/api/sites/${id}`, { actif: !estActif });
+            showToast(`Agence ${estActif ? 'desactivee' : 'activee'}.`, 'success');
+            close();
+            fetchSites(root); // recharge la liste sans disparition
+          } catch {
+            showToast('Erreur lors du changement de statut.', 'error');
+          }
+        }
+      });
+      return;
     }
   });
 
   fetchSites(root);
 }
-
