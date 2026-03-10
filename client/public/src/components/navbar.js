@@ -63,7 +63,7 @@ export async function renderNavbar(container, currentRoute, user) {
 
   container.innerHTML = `
     <div class="nav-header">
-      <button class="sidebar-collapse-btn" id="sidebar-collapse-btn" type="button" title="RÃ©duire">
+      <button class="sidebar-collapse-btn" id="sidebar-collapse-btn" type="button" title="Réduire">
         <i class="fa-solid fa-bars"></i>
       </button>
       <div class="logo">
@@ -84,7 +84,7 @@ export async function renderNavbar(container, currentRoute, user) {
         <span class="status-text">Sync</span>
         <span class="badge ${pending > 0 ? 'badge-pending' : 'badge-synced'}">${pending} en attente</span>
       </div>
-      <button id="btn-logout" class="btn-logout">ðŸšª DÃ©connexion</button>
+      <button id="btn-logout" class="btn-logout"><i class="fa-solid fa-right-from-bracket"></i> Déconnexion</button>
     </div>
   `;
 

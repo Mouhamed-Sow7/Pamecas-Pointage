@@ -35,10 +35,8 @@ function renderTable(root, sites) {
         </span>
       </td>
       <td style="padding:6px 8px; border-bottom:1px solid #eee;">
-        <button class="btn-action" data-id="${site._id}" data-action="edit">✏️</button>
-        <button class="btn-action" data-id="${site._id}" data-action="toggle">
-          ${site.actif ? 'Désactiver' : 'Activer'}
-        </button>
+        <button class="btn-action" data-id="${site._id}" data-action="edit"><i class="fa-solid fa-pencil"></i></button>
+        <button class="btn-action" data-id="${site._id}" data-action="toggle"><i class="fa-solid fa-toggle-on"></i> ${site.actif ? 'Désactiver' : 'Activer'}</button>
       </td>
     `;
     tbody.appendChild(tr);
