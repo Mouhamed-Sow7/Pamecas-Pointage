@@ -51,7 +51,7 @@ function mountLayout(route, user) {
   app.className = 'layout-with-sidebar';
   app.innerHTML = `
     <div class="topbar" id="topbar">
-      <button id="topbar-menu-btn" class="topbar-menu-btn" type="button">â˜°</button>
+      <button id="topbar-menu-btn" class="topbar-menu-btn" type="button"></button>
       <div class="topbar-title" id="topbar-title"></div>
       <div class="topbar-right">
         <span class="status-dot ${navigator.onLine ? 'online' : 'offline'}"></span>
