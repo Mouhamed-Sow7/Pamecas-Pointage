@@ -326,7 +326,7 @@ export function renderRapports(root) {
     }
 
     const btn = root.querySelector('#btn-export-excel');
-    btn.textContent = '<i class="fa-solid fa-spinner fa-spin"></i> Génération en cours...';
+    btn.textContent = 'Génération en cours...';
     btn.disabled = true;
 
     try {
