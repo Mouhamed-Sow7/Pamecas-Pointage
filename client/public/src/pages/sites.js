@@ -113,19 +113,23 @@ function openSiteModal(mode, site, root) {
         </div>
       </div>
       <div style="background:#f8f9fa;border-radius:10px;padding:12px;">
-        <div style="font-size:0.82rem;font-weight:600;margin-bottom:8px;color:#444;">
-          <i class="fa-solid fa-clock" style="color:#2e7d32;"></i> Horaires
+        <div style="font-size:0.82rem;font-weight:600;margin-bottom:10px;color:#444;">
+          <i class="fa-solid fa-clock" style="color:#2e7d32;"></i> Horaires de travail
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
           <div>
-            <label style="font-size:0.78rem;display:block;margin-bottom:4px;color:#666;">Heure debut</label>
+            <label style="font-size:0.78rem;font-weight:500;display:block;margin-bottom:6px;color:#666;">
+              <i class="fa-regular fa-clock" style="color:#2e7d32;"></i> Heure debut
+            </label>
             <input id="f-heure-debut" type="time" value="${site?.config?.heure_debut || '08:00'}"
-              style="width:100%;padding:8px;border:1.5px solid #ddd;border-radius:8px;box-sizing:border-box;" />
+              style="width:100%;padding:10px 12px;border:1.5px solid #ddd;border-radius:8px;box-sizing:border-box;font-size:1rem;background:white;color:#1f2933;font-family:inherit;" />
           </div>
           <div>
-            <label style="font-size:0.78rem;display:block;margin-bottom:4px;color:#666;">Heure retard</label>
+            <label style="font-size:0.78rem;font-weight:500;display:block;margin-bottom:6px;color:#666;">
+              <i class="fa-solid fa-triangle-exclamation" style="color:#e65100;"></i> Seuil retard
+            </label>
             <input id="f-heure-retard" type="time" value="${site?.config?.heure_retard || '08:15'}"
-              style="width:100%;padding:8px;border:1.5px solid #ddd;border-radius:8px;box-sizing:border-box;" />
+              style="width:100%;padding:10px 12px;border:1.5px solid #ddd;border-radius:8px;box-sizing:border-box;font-size:1rem;background:white;color:#1f2933;font-family:inherit;" />
           </div>
         </div>
         <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:0.82rem;">
