@@ -8,7 +8,7 @@ function renderAgentsList(root, agents) {
   if (!listContainer) return;
 
   if (!agents || agents.length === 0) {
-    listContainer.innerHTML = '<div style="color:#999; text-align:center; padding:20px 10px;">Aucun agent trouvÃ©.</div>';
+    listContainer.innerHTML = '<div style="color:#999; text-align:center; padding:20px 10px;">Aucun agent trouvé.</div>';
     return;
   }
 
@@ -57,10 +57,10 @@ function renderAgentsList(root, agents) {
         } catch (err) {}
         openAgentModal(action, agent, sites);
       } else if (action === 'delete') {
-        if (confirm('ÃŠtes-vous sÃ»r de vouloir supprimer cet agent ?')) {
+        if (confirm('êtes-vous sûr de vouloir supprimer cet agent ?')) {
           try {
             await del(`/api/agents/${agentId}`);
-            showToast('Agent supprimÃ© avec succÃ¨s.', 'success');
+            showToast('Agent supprimé avec succés.', 'success');
             const root = document.getElementById('app').querySelector('main') || document.getElementById('app');
             renderAgents(root, JSON.parse(localStorage.getItem('pamecas_user')));
           } catch (err) {
@@ -121,14 +121,14 @@ function openAgentModal(mode, agent, sites) {
   } style="width:100%; padding:6px 8px; border-radius:6px; border:1px solid #cfd8dc;" />
         </div>
         <div>
-          <label style="font-size:13px;">PrÃ©nom</label>
+          <label style="font-size:13px;">Prénom</label>
           <input name="prenom" value="${agent?.prenom || ''}" ${
     isView ? 'disabled' : ''
   } style="width:100%; padding:6px 8px; border-radius:6px; border:1px solid #cfd8dc;" />
         </div>
       </div>
       <div>
-        <label style="font-size:13px;">TÃ©lÃ©phone</label>
+        <label style="font-size:13px;">Téléphone</label>
         <input name="telephone" value="${agent?.telephone || ''}" ${
     isView ? 'disabled' : ''
   } style="width:100%; padding:6px 8px; border-radius:6px; border:1px solid #cfd8dc;" />
@@ -192,7 +192,7 @@ function openAgentModal(mode, agent, sites) {
 
   const title =
     mode === 'create' ? 'Ajouter un agent' :
-    mode === 'edit' ? 'Modifier un agent' : 'DÃ©tail agent';
+    mode === 'edit' ? 'Modifier un agent' : 'Détail agent';
 
   showModal({
     title,
@@ -230,16 +230,16 @@ function openAgentModal(mode, agent, sites) {
         try {
           if (mode === 'create') {
             await post('/api/agents', data);
-            showToast('Agent crÃ©Ã© avec succÃ¨s.', 'success');
+            showToast('Agent crée avec succés.', 'success');
           } else if (mode === 'edit') {
             await put(`/api/agents/${agent._id}`, data);
-            showToast('Agent mis Ã  jour avec succÃ¨s.', 'success');
+            showToast('Agent mis á  jour avec succés.', 'success');
           }
           close();
           const root = document.getElementById('app').querySelector('main') || document.getElementById('app');
           renderAgents(root, JSON.parse(localStorage.getItem('pamecas_user')));
         } catch (err) {
-          showToast("Erreur lors de l'enregistrement de l'agent. VÃ©rifiez les donnÃ©es.", 'error');
+          showToast("Erreur lors de l'enregistrement de l'agent. Vérifiez les données.", 'error');
         }
       }
     }
@@ -265,7 +265,7 @@ export async function renderAgents(root, user) {
       <div class="card">
         <h2 style="font-size:1rem; font-weight:600; margin-bottom:12px;">Agents</h2>
         <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:12px;">
-          <input id="filter-search" placeholder="Recherche par nom, prÃ©nom ou matricule" style="width:100%;" />
+          <input id="filter-search" placeholder="Recherche par nom, prénom ou matricule" style="width:100%;" />
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
             <select id="filter-type" style="width:100%;">
               <option value="">Type</option>
