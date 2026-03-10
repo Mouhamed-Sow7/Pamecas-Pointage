@@ -256,8 +256,8 @@ export function renderPointage(root) {
         </div>
         <select id="select-agent" style="width:100%;padding:10px;margin-bottom:8px;border:1.5px solid #ddd;border-radius:8px;display:none;"></select>
         <div id="action-buttons" style="display:none;flex-direction:row;gap:8px;">
-          <button id="btn-arrivee" style="flex:1;padding:11px;background:#4CAF50;color:white;border:none;border-radius:8px;font-size:0.9rem;cursor:pointer;font-weight:500;">âœ… ArrivÃ©e</button>
-          <button id="btn-depart" style="flex:1;padding:11px;background:#1976D2;color:white;border:none;border-radius:8px;font-size:0.9rem;cursor:pointer;font-weight:500;">ðŸšª DÃ©part</button>
+          <button id="btn-arrivee" style="flex:1;padding:11px;background:#4CAF50;color:white;border:none;border-radius:8px;font-size:0.9rem;cursor:pointer;font-weight:500;"><i class="fa-solid fa-check-circle"></i> Arrivée</button>
+          <button id="btn-depart" style="flex:1;padding:11px;background:#1976D2;color:white;border:none;border-radius:8px;font-size:0.9rem;cursor:pointer;font-weight:500;"><i class="fa-solid fa-right-from-bracket"></i> Départ</button>
         </div>
         <div id="manuel-result" style="font-size:0.85rem;color:#666;margin-top:6px;"></div>
       </div>
@@ -265,9 +265,9 @@ export function renderPointage(root) {
       <!-- Scan QR -->
       <div class="card">
         <details>
-          <summary style="cursor:pointer;font-weight:600;padding:4px 0;">ðŸ“· Scan QR Code</summary>
+          <summary style="cursor:pointer;font-weight:600;padding:4px 0;"> Scan QR Code</summary>
           <div style="margin-top:12px;">
-            <button id="btn-start-camera" class="btn-primary" style="width:100%;margin-bottom:12px;">Activer CamÃ©ra</button>
+            <button id="btn-start-camera" class="btn-primary" style="width:100%;margin-bottom:12px;">Activer Caméra</button>
             <div id="camera-area" style="width:100%;aspect-ratio:4/3;max-height:60vw;background:#000;border-radius:10px;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;">
               <video id="video" style="width:100%;height:100%;object-fit:cover;" playsinline></video>
               <canvas id="canvas" style="display:none;"></canvas>
@@ -283,7 +283,7 @@ export function renderPointage(root) {
           <h2 style="font-size:1rem;font-weight:600;">Pointages du jour</h2>
           <div style="display:flex;gap:8px;align-items:center;">
             <span id="badge-pending" class="badge-pending" style="display:none;">0 en attente</span>
-            <button id="btn-refresh" style="padding:5px 10px;background:#e8f5e9;color:#2e7d32;border:1px solid #c8e6c9;border-radius:6px;cursor:pointer;font-size:0.8rem;">ðŸ”„ Actualiser</button>
+            <button id="btn-refresh" style="padding:5px 10px;background:#e8f5e9;color:#2e7d32;border:1px solid #c8e6c9;border-radius:6px;cursor:pointer;font-size:0.8rem;"><i class="fa-solid fa-rotate-right"></i> Actualiser</button>
           </div>
         </div>
         <div id="liste-pointages" style="display:flex;flex-direction:column;gap:8px;">
