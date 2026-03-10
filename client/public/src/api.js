@@ -1,9 +1,9 @@
-import { getCachedAgents } from './store/indexedDB.js';
+﻿import { getCachedAgents } from './store/indexedDB.js';
 
 const BASE_URL = '';
 
 function getToken() {
-  return localStorage.getItem('gds_token');
+  return localStorage.getItem('pamecas_token');
 }
 
 function handleUnauthorized() {
@@ -38,7 +38,7 @@ async function request(method, url, data) {
 
     if (response.status === 401) {
       handleUnauthorized();
-      throw new Error('Non autorisé');
+      throw new Error('Non autorisÃ©');
     }
 
     const contentType = response.headers.get('Content-Type') || '';
@@ -81,4 +81,5 @@ export function put(url, data) {
 export function del(url) {
   return request('DELETE', url);
 }
+
 

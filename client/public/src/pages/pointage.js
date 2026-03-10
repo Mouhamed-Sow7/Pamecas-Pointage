@@ -1,4 +1,4 @@
-import { post, get } from '../api.js';
+﻿import { post, get } from '../api.js';
 import { savePointage } from '../store/indexedDB.js';
 import { showModal } from '../components/modal.js';
 import { showToast } from '../components/toast.js';
@@ -23,7 +23,7 @@ function playBeep() {
 }
 
 function getCurrentUser() {
-  try { return JSON.parse(localStorage.getItem('gds_user')); } catch { return null; }
+  try { return JSON.parse(localStorage.getItem('pamecas_user')); } catch { return null; }
 }
 
 function isAdmin() {
@@ -47,11 +47,11 @@ async function enregistrerPointage(agent, methode, type = 'arrivee') {
   try {
     if (navigator.onLine) {
       await post('/api/pointages', payload);
-      const action = type === 'depart' ? 'Départ' : 'Arrivée';
-      showToast(`✅ ${agent.prenom || ''} ${agent.nom || ''} — ${action} enregistrée`, 'success');
+      const action = type === 'depart' ? 'DÃ©part' : 'ArrivÃ©e';
+      showToast(`âœ… ${agent.prenom || ''} ${agent.nom || ''} â€” ${action} enregistrÃ©e`, 'success');
     } else {
       await savePointage({ ...payload, sync_status: 'local' });
-      showToast(`📶 ${agent.prenom || ''} ${agent.nom || ''} — Sauvegardé hors ligne`, 'success');
+      showToast(`ðŸ“¶ ${agent.prenom || ''} ${agent.nom || ''} â€” SauvegardÃ© hors ligne`, 'success');
     }
     playBeep();
     return true;
@@ -64,7 +64,7 @@ async function enregistrerPointage(agent, methode, type = 'arrivee') {
 async function rechercherAgentParMatricule(matricule) {
   const response = await fetch(
     `/api/agents/search?matricule=${encodeURIComponent(matricule)}`,
-    { headers: { Authorization: `Bearer ${localStorage.getItem('gds_token') || ''}` } }
+    { headers: { Authorization: `Bearer ${localStorage.getItem('pamecas_token') || ''}` } }
   );
   if (!response.ok) throw new Error('Agent introuvable');
   return await response.json();
@@ -79,7 +79,7 @@ function resumeScanner() {
   if (scanFrame) animationId = requestAnimationFrame(scanFrame);
 }
 
-// ✅ Charger pointages : tous les sites si superadmin, sinon filtrer par site
+// âœ… Charger pointages : tous les sites si superadmin, sinon filtrer par site
 async function reloadPointagesList(container) {
   try {
     const user = getCurrentUser();
@@ -87,7 +87,7 @@ async function reloadPointagesList(container) {
 
     let url = `/api/pointages?date=${dateStr}`;
     if (user?.site_id) url += `&site_id=${user.site_id}`;
-    // si superadmin sans site_id → on charge tout (pas de filtre site)
+    // si superadmin sans site_id â†’ on charge tout (pas de filtre site)
 
     const response = await get(url);
     const pointages = response?.data || [];
@@ -103,7 +103,7 @@ async function reloadPointagesList(container) {
     let html = `
       <div style="display:flex;font-weight:600;padding:8px 10px;background:#f5f5f5;border-radius:8px;margin-bottom:6px;font-size:0.78rem;gap:4px;">
         <div style="flex:2;">Agent</div>
-        <div style="flex:1;">Arrivée</div>
+        <div style="flex:1;">ArrivÃ©e</div>
         <div style="flex:1;">Statut</div>
         ${admin ? '<div style="flex:1;">Action</div>' : ''}
       </div>
@@ -111,7 +111,7 @@ async function reloadPointagesList(container) {
 
     pointages.forEach(p => {
       const agent = p.agent_id || {};
-      const methode = p.methode === 'qr_code' ? '📱' : '✋';
+      const methode = p.methode === 'qr_code' ? 'ðŸ“±' : 'âœ‹';
       const statutColors = { present: '#2e7d32', absent: '#c62828', retard: '#e65100' };
       const couleur = statutColors[p.statut] || '#555';
 
@@ -120,8 +120,8 @@ async function reloadPointagesList(container) {
           <div style="flex:2;font-weight:500;">${agent.prenom || ''} ${agent.nom || ''} ${methode}<br>
             <span style="font-size:0.75rem;color:#888;">${p.site_id?.nom || ''}</span>
           </div>
-          <div style="flex:1;">${p.heure_arrivee || '—'}</div>
-          <div style="flex:1;font-weight:600;color:${couleur};">${p.statut || '—'}</div>
+          <div style="flex:1;">${p.heure_arrivee || 'â€”'}</div>
+          <div style="flex:1;font-weight:600;color:${couleur};">${p.statut || 'â€”'}</div>
           ${admin ? `
           <div style="flex:1;">
             <button onclick="window._editPointage('${p._id}', '${p.statut}', '${p.note || ''}')"
@@ -139,7 +139,7 @@ async function reloadPointagesList(container) {
   }
 }
 
-// ✅ Modal modification statut (admin only)
+// âœ… Modal modification statut (admin only)
 function setupEditPointage(listePointages) {
   window._editPointage = (id, currentStatut, currentNote) => {
     const content = `
@@ -147,14 +147,14 @@ function setupEditPointage(listePointages) {
         <div>
           <label style="font-size:0.85rem;font-weight:500;display:block;margin-bottom:4px;">Statut</label>
           <select id="edit-statut" style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;">
-            <option value="present" ${currentStatut==='present'?'selected':''}>✅ Présent</option>
-            <option value="absent" ${currentStatut==='absent'?'selected':''}>❌ Absent</option>
-            <option value="retard" ${currentStatut==='retard'?'selected':''}>⏰ Retard</option>
+            <option value="present" ${currentStatut==='present'?'selected':''}>âœ… PrÃ©sent</option>
+            <option value="absent" ${currentStatut==='absent'?'selected':''}>âŒ Absent</option>
+            <option value="retard" ${currentStatut==='retard'?'selected':''}>â° Retard</option>
           </select>
         </div>
         <div>
           <label style="font-size:0.85rem;font-weight:500;display:block;margin-bottom:4px;">Justification / Note</label>
-          <textarea id="edit-note" rows="3" placeholder="Ex: Absence justifiée — certificat médical"
+          <textarea id="edit-note" rows="3" placeholder="Ex: Absence justifiÃ©e â€” certificat mÃ©dical"
             style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;resize:vertical;box-sizing:border-box;">${currentNote}</textarea>
         </div>
       </div>
@@ -168,25 +168,25 @@ function setupEditPointage(listePointages) {
         const statut = document.getElementById('edit-statut').value;
         const note = document.getElementById('edit-note').value;
         try {
-          const token = localStorage.getItem('gds_token');
+          const token = localStorage.getItem('pamecas_token');
           const res = await fetch(`/api/pointages/${id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
             body: JSON.stringify({ statut, note })
           });
           if (!res.ok) throw new Error();
-          showToast('✅ Pointage mis à jour', 'success');
+          showToast('âœ… Pointage mis Ã  jour', 'success');
           await reloadPointagesList(listePointages);
           close();
         } catch {
-          showToast('Erreur lors de la mise à jour.', 'error');
+          showToast('Erreur lors de la mise Ã  jour.', 'error');
         }
       }
     });
   };
 }
 
-// ✅ Modal QR agrandi + téléchargement
+// âœ… Modal QR agrandi + tÃ©lÃ©chargement
 function showQRModal(agent) {
   const qrUrl = `/api/agents/${agent._id || agent.id}/qr`;
   const content = `
@@ -197,7 +197,7 @@ function showQRModal(agent) {
         style="width:220px;height:220px;border:2px solid #eee;border-radius:10px;display:block;margin:0 auto 16px;">
       <a id="btn-dl-qr" href="${qrUrl}" download="qr-${agent.matricule || agent._id}.png"
         style="display:inline-block;padding:10px 20px;background:#2e7d32;color:white;border-radius:8px;text-decoration:none;font-size:0.9rem;">
-        ⬇️ Télécharger le QR
+        â¬‡ï¸ TÃ©lÃ©charger le QR
       </a>
     </div>
   `;
@@ -220,7 +220,7 @@ function startCamera(video, canvas, onCodeDetected) {
           ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
           const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
           const jsqrFn = window.jsQR || (typeof jsQR === 'function' ? jsQR : null);
-          if (!jsqrFn) { showToast("jsQR non disponible — rechargez la page.", 'error'); return; }
+          if (!jsqrFn) { showToast("jsQR non disponible â€” rechargez la page.", 'error'); return; }
           const code = jsqrFn(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'dontInvert' });
           if (code && code.data) {
             isProcessing = true;
@@ -234,7 +234,7 @@ function startCamera(video, canvas, onCodeDetected) {
 
       animationId = requestAnimationFrame(scanFrame);
     })
-    .catch(() => showToast("Impossible d'accéder à la caméra.", 'error'));
+    .catch(() => showToast("Impossible d'accÃ©der Ã  la camÃ©ra.", 'error'));
 }
 
 export function renderPointage(root) {
@@ -256,8 +256,8 @@ export function renderPointage(root) {
         </div>
         <select id="select-agent" style="width:100%;padding:10px;margin-bottom:8px;border:1.5px solid #ddd;border-radius:8px;display:none;"></select>
         <div id="action-buttons" style="display:none;flex-direction:row;gap:8px;">
-          <button id="btn-arrivee" style="flex:1;padding:11px;background:#4CAF50;color:white;border:none;border-radius:8px;font-size:0.9rem;cursor:pointer;font-weight:500;">✅ Arrivée</button>
-          <button id="btn-depart" style="flex:1;padding:11px;background:#1976D2;color:white;border:none;border-radius:8px;font-size:0.9rem;cursor:pointer;font-weight:500;">🚪 Départ</button>
+          <button id="btn-arrivee" style="flex:1;padding:11px;background:#4CAF50;color:white;border:none;border-radius:8px;font-size:0.9rem;cursor:pointer;font-weight:500;">âœ… ArrivÃ©e</button>
+          <button id="btn-depart" style="flex:1;padding:11px;background:#1976D2;color:white;border:none;border-radius:8px;font-size:0.9rem;cursor:pointer;font-weight:500;">ðŸšª DÃ©part</button>
         </div>
         <div id="manuel-result" style="font-size:0.85rem;color:#666;margin-top:6px;"></div>
       </div>
@@ -265,9 +265,9 @@ export function renderPointage(root) {
       <!-- Scan QR -->
       <div class="card">
         <details>
-          <summary style="cursor:pointer;font-weight:600;padding:4px 0;">📷 Scan QR Code</summary>
+          <summary style="cursor:pointer;font-weight:600;padding:4px 0;">ðŸ“· Scan QR Code</summary>
           <div style="margin-top:12px;">
-            <button id="btn-start-camera" class="btn-primary" style="width:100%;margin-bottom:12px;">Activer Caméra</button>
+            <button id="btn-start-camera" class="btn-primary" style="width:100%;margin-bottom:12px;">Activer CamÃ©ra</button>
             <div id="camera-area" style="width:100%;aspect-ratio:4/3;max-height:60vw;background:#000;border-radius:10px;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;">
               <video id="video" style="width:100%;height:100%;object-fit:cover;" playsinline></video>
               <canvas id="canvas" style="display:none;"></canvas>
@@ -283,7 +283,7 @@ export function renderPointage(root) {
           <h2 style="font-size:1rem;font-weight:600;">Pointages du jour</h2>
           <div style="display:flex;gap:8px;align-items:center;">
             <span id="badge-pending" class="badge-pending" style="display:none;">0 en attente</span>
-            <button id="btn-refresh" style="padding:5px 10px;background:#e8f5e9;color:#2e7d32;border:1px solid #c8e6c9;border-radius:6px;cursor:pointer;font-size:0.8rem;">🔄 Actualiser</button>
+            <button id="btn-refresh" style="padding:5px 10px;background:#e8f5e9;color:#2e7d32;border:1px solid #c8e6c9;border-radius:6px;cursor:pointer;font-size:0.8rem;">ðŸ”„ Actualiser</button>
           </div>
         </div>
         <div id="liste-pointages" style="display:flex;flex-direction:column;gap:8px;">
@@ -327,12 +327,12 @@ export function renderPointage(root) {
       const response = await get(`/api/agents?search=${encodeURIComponent(query)}&limit=10`);
       const agents = response?.data || [];
       if (agents.length === 0) {
-        manuelResult.textContent = 'Aucun agent trouvé.';
+        manuelResult.textContent = 'Aucun agent trouvÃ©.';
         selectAgent.style.display = 'none';
         actionButtons.style.display = 'none';
         return;
       }
-      selectAgent.innerHTML = '<option value="">Sélectionner un agent</option>';
+      selectAgent.innerHTML = '<option value="">SÃ©lectionner un agent</option>';
       agents.forEach(agent => {
         const opt = document.createElement('option');
         opt.value = agent._id;
@@ -342,7 +342,7 @@ export function renderPointage(root) {
       });
       selectAgent.style.display = 'block';
       actionButtons.style.display = 'none';
-      manuelResult.textContent = `${agents.length} agent(s) trouvé(s).`;
+      manuelResult.textContent = `${agents.length} agent(s) trouvÃ©(s).`;
     } catch { manuelResult.textContent = "Erreur lors de la recherche."; }
   });
 
@@ -368,7 +368,7 @@ export function renderPointage(root) {
     isProcessing = false;
     stopScanner();
     startCamera(video, canvas, async (matricule) => {
-      showToast(`QR détecté : ${matricule}`, 'info');
+      showToast(`QR dÃ©tectÃ© : ${matricule}`, 'info');
       try {
         const agent = await rechercherAgentParMatricule(matricule);
         if (!agent) { showToast('Agent introuvable.', 'error'); resumeScanner(); return; }
@@ -382,7 +382,7 @@ export function renderPointage(root) {
             <div>
               <div style="font-weight:600;font-size:1rem;">${agent.prenom || ''} ${agent.nom || ''}</div>
               <div style="color:#546e7a;font-size:0.85rem;">${agent.matricule || ''}</div>
-              <div style="color:#78909c;font-size:0.82rem;">${agent.type_contrat || ''} — ${agent.site_id?.nom || ''}</div>
+              <div style="color:#78909c;font-size:0.82rem;">${agent.type_contrat || ''} â€” ${agent.site_id?.nom || ''}</div>
             </div>
           </div>
         `;
@@ -390,9 +390,9 @@ export function renderPointage(root) {
         window._showQR = (a) => showQRModal(a);
 
         showModal({
-          title: 'Confirmer la présence',
+          title: 'Confirmer la prÃ©sence',
           content,
-          confirmText: '✅ Confirmer présence',
+          confirmText: 'âœ… Confirmer prÃ©sence',
           cancelText: 'Annuler',
           onConfirm: async (close) => {
             const success = await enregistrerPointage(agent, 'qr_code', 'arrivee');

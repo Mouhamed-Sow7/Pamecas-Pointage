@@ -1,4 +1,4 @@
-import { get, post, put, del } from '../api.js';
+﻿import { get, post, put, del } from '../api.js';
 import { cacheAgents } from '../store/indexedDB.js';
 import { showModal } from '../components/modal.js';
 import { showToast } from '../components/toast.js';
@@ -8,7 +8,7 @@ function renderAgentsList(root, agents) {
   if (!listContainer) return;
 
   if (!agents || agents.length === 0) {
-    listContainer.innerHTML = '<div style="color:#999; text-align:center; padding:20px 10px;">Aucun agent trouvé.</div>';
+    listContainer.innerHTML = '<div style="color:#999; text-align:center; padding:20px 10px;">Aucun agent trouvÃ©.</div>';
     return;
   }
 
@@ -23,11 +23,11 @@ function renderAgentsList(root, agents) {
     html += `
       <div class="card" style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px;">
         <div style="flex:1; min-width:0;">
-          <div style="font-weight:600; margin-bottom:4px;">${agent.matricule || agent.numero_employe || '—'}</div>
+          <div style="font-weight:600; margin-bottom:4px;">${agent.matricule || agent.numero_employe || 'â€”'}</div>
           <div style="font-size:0.9rem; color:#333; margin-bottom:4px;">${agent.prenom || ''} ${agent.nom || ''}</div>
           <div style="font-size:0.8rem; color:#666; margin-bottom:4px;">
-            <div>Type: ${agent.type_contrat || '—'}</div>
-            <div>Site: ${agent.site_id?.nom || '—'}</div>
+            <div>Type: ${agent.type_contrat || 'â€”'}</div>
+            <div>Site: ${agent.site_id?.nom || 'â€”'}</div>
           </div>
           <span class="${statusColor}" style="display:inline-block;">${agent.statut}</span>
         </div>
@@ -57,12 +57,12 @@ function renderAgentsList(root, agents) {
         } catch (err) {}
         openAgentModal(action, agent, sites);
       } else if (action === 'delete') {
-        if (confirm('Êtes-vous sûr de vouloir supprimer cet agent ?')) {
+        if (confirm('ÃŠtes-vous sÃ»r de vouloir supprimer cet agent ?')) {
           try {
             await del(`/api/agents/${agentId}`);
-            showToast('Agent supprimé avec succès.', 'success');
+            showToast('Agent supprimÃ© avec succÃ¨s.', 'success');
             const root = document.getElementById('app').querySelector('main') || document.getElementById('app');
-            renderAgents(root, JSON.parse(localStorage.getItem('gds_user')));
+            renderAgents(root, JSON.parse(localStorage.getItem('pamecas_user')));
           } catch (err) {
             showToast("Erreur lors de la suppression de l'agent.", 'error');
           }
@@ -121,14 +121,14 @@ function openAgentModal(mode, agent, sites) {
   } style="width:100%; padding:6px 8px; border-radius:6px; border:1px solid #cfd8dc;" />
         </div>
         <div>
-          <label style="font-size:13px;">Prénom</label>
+          <label style="font-size:13px;">PrÃ©nom</label>
           <input name="prenom" value="${agent?.prenom || ''}" ${
     isView ? 'disabled' : ''
   } style="width:100%; padding:6px 8px; border-radius:6px; border:1px solid #cfd8dc;" />
         </div>
       </div>
       <div>
-        <label style="font-size:13px;">Téléphone</label>
+        <label style="font-size:13px;">TÃ©lÃ©phone</label>
         <input name="telephone" value="${agent?.telephone || ''}" ${
     isView ? 'disabled' : ''
   } style="width:100%; padding:6px 8px; border-radius:6px; border:1px solid #cfd8dc;" />
@@ -192,7 +192,7 @@ function openAgentModal(mode, agent, sites) {
 
   const title =
     mode === 'create' ? 'Ajouter un agent' :
-    mode === 'edit' ? 'Modifier un agent' : 'Détail agent';
+    mode === 'edit' ? 'Modifier un agent' : 'DÃ©tail agent';
 
   showModal({
     title,
@@ -230,16 +230,16 @@ function openAgentModal(mode, agent, sites) {
         try {
           if (mode === 'create') {
             await post('/api/agents', data);
-            showToast('Agent créé avec succès.', 'success');
+            showToast('Agent crÃ©Ã© avec succÃ¨s.', 'success');
           } else if (mode === 'edit') {
             await put(`/api/agents/${agent._id}`, data);
-            showToast('Agent mis à jour avec succès.', 'success');
+            showToast('Agent mis Ã  jour avec succÃ¨s.', 'success');
           }
           close();
           const root = document.getElementById('app').querySelector('main') || document.getElementById('app');
-          renderAgents(root, JSON.parse(localStorage.getItem('gds_user')));
+          renderAgents(root, JSON.parse(localStorage.getItem('pamecas_user')));
         } catch (err) {
-          showToast("Erreur lors de l'enregistrement de l'agent. Vérifiez les données.", 'error');
+          showToast("Erreur lors de l'enregistrement de l'agent. VÃ©rifiez les donnÃ©es.", 'error');
         }
       }
     }
@@ -265,7 +265,7 @@ export async function renderAgents(root, user) {
       <div class="card">
         <h2 style="font-size:1rem; font-weight:600; margin-bottom:12px;">Agents</h2>
         <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:12px;">
-          <input id="filter-search" placeholder="Recherche par nom, prénom ou matricule" style="width:100%;" />
+          <input id="filter-search" placeholder="Recherche par nom, prÃ©nom ou matricule" style="width:100%;" />
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
             <select id="filter-type" style="width:100%;">
               <option value="">Type</option>

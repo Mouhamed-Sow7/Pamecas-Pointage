@@ -1,4 +1,4 @@
-import { post } from '../api.js';
+﻿import { post } from '../api.js';
 import { saveAuth } from '../store/indexedDB.js';
 import { showToast } from '../components/toast.js';
 
@@ -61,11 +61,11 @@ export function renderLogin(root) {
       const result = await post('/api/auth/login', { username, password });
       const { token, user } = result;
 
-      localStorage.setItem('gds_token', token);
-      localStorage.setItem('gds_user', JSON.stringify(user));
+      localStorage.setItem('pamecas_token', token);
+      localStorage.setItem('pamecas_user', JSON.stringify(user));
       await saveAuth(token, user);
 
-      showToast('Connexion réussie.', 'success');
+      showToast('Connexion rÃ©ussie.', 'success');
       window.location.hash = '#/dashboard';
 
     } catch (err) {

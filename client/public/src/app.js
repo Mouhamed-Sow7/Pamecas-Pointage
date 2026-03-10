@@ -1,4 +1,4 @@
-import { renderLogin } from './pages/login.js';
+﻿import { renderLogin } from './pages/login.js';
 import { renderDashboard } from './pages/dashboard.js';
 import { renderPointage } from './pages/pointage.js';
 import { renderAgents } from './pages/agents.js';
@@ -14,7 +14,7 @@ import { startAutoSync, onSyncComplete } from './store/syncManager.js';
 import { showToast } from './components/toast.js';
 
 function getCurrentUser() {
-  const raw = localStorage.getItem('gds_user');
+  const raw = localStorage.getItem('pamecas_user');
   if (!raw) return null;
   try {
     return JSON.parse(raw);
@@ -24,7 +24,7 @@ function getCurrentUser() {
 }
 
 function isAuthenticated() {
-  return !!localStorage.getItem('gds_token');
+  return !!localStorage.getItem('pamecas_token');
 }
 
 function updateOfflineBanner() {
@@ -51,7 +51,7 @@ function mountLayout(route, user) {
   app.className = 'layout-with-sidebar';
   app.innerHTML = `
     <div class="topbar" id="topbar">
-      <button id="topbar-menu-btn" class="topbar-menu-btn" type="button">☰</button>
+      <button id="topbar-menu-btn" class="topbar-menu-btn" type="button">â˜°</button>
       <div class="topbar-title" id="topbar-title"></div>
       <div class="topbar-right">
         <span class="status-dot ${navigator.onLine ? 'online' : 'offline'}"></span>
@@ -87,7 +87,7 @@ function mountLayout(route, user) {
     if (topbarTitle) topbarTitle.textContent = 'Rapports';
     renderRapports(main, user);
   } else {
-    main.innerHTML = '<div class="card">Page non trouvée.</div>';
+    main.innerHTML = '<div class="card">Page non trouvÃ©e.</div>';
   }
 
   if (topbarMenuBtn) {
@@ -135,9 +135,10 @@ document.addEventListener('DOMContentLoaded', () => {
   startAutoSync();
   onSyncComplete((count) => {
     if (count > 0) {
-      showToast(`${count} pointage(s) synchronisé(s).`, 'success');
+      showToast(`${count} pointage(s) synchronisÃ©(s).`, 'success');
     }
   });
   router();
 });
+
 

@@ -1,4 +1,4 @@
-import { getBadgeCount } from '../store/syncManager.js';
+﻿import { getBadgeCount } from '../store/syncManager.js';
 
 export function toggleSidebar() {
   const sidebar = document.getElementById('sidebar');
@@ -63,7 +63,7 @@ export async function renderNavbar(container, currentRoute, user) {
 
   container.innerHTML = `
     <div class="nav-header">
-      <button class="sidebar-collapse-btn" id="sidebar-collapse-btn" type="button" title="Réduire">
+      <button class="sidebar-collapse-btn" id="sidebar-collapse-btn" type="button" title="RÃ©duire">
         <i class="fa-solid fa-bars"></i>
       </button>
       <div class="logo">
@@ -84,7 +84,7 @@ export async function renderNavbar(container, currentRoute, user) {
         <span class="status-text">Sync</span>
         <span class="badge ${pending > 0 ? 'badge-pending' : 'badge-synced'}">${pending} en attente</span>
       </div>
-      <button id="btn-logout" class="btn-logout">🚪 Déconnexion</button>
+      <button id="btn-logout" class="btn-logout">ðŸšª DÃ©connexion</button>
     </div>
   `;
 
@@ -98,8 +98,8 @@ export async function renderNavbar(container, currentRoute, user) {
   const logoutBtn = container.querySelector('#btn-logout');
   if (logoutBtn) {
     logoutBtn.addEventListener('click', () => {
-      localStorage.removeItem('gds_token');
-      localStorage.removeItem('gds_user');
+      localStorage.removeItem('pamecas_token');
+      localStorage.removeItem('pamecas_user');
       window.location.hash = '#/login';
     });
   }
