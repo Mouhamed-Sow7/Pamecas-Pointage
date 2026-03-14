@@ -9,6 +9,8 @@ const dotenv = require('dotenv');
 const { Server } = require('socket.io');
 
 const { connectDB } = require('./config/db');
+const { initEmailCron } = require('./services/emailReports');
+
 
 dotenv.config();
 
@@ -34,6 +36,7 @@ io.on('connection', (socket) => {
 });
 
 connectDB();
+initEmailCron();
 
 app.use(cors({ origin: CLIENT_URL, credentials: true }));
 app.use(helmet({

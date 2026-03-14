@@ -64,8 +64,7 @@ export async function renderNavbar(container, currentRoute, user) {
 
   container.innerHTML = `
     <div class="nav-header">
-      <button class="sidebar-collapse-btn" id="sidebar-collapse-btn" type="button" title="Reduire">
-        <i class="fa-solid fa-bars"></i>
+      <button class="sidebar-collapse-btn" id="sidebar-collapse-btn" type="button" title="Reduire">  <i class="fa-solid fa-bars"></i>
       </button>
       <div class="logo">
         <div class="logo-mark" style="font-size:0.75rem;letter-spacing:-0.5px;">SP</div>
