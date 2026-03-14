@@ -5,7 +5,6 @@ const { authenticate, authorizeRoles } = require('../middleware/auth');
 const Pointage = require('../models/Pointage');
 const Site = require('../models/Site');
 const Agent = require('../models/Agent');
-const { authenticate } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -220,7 +219,7 @@ router.get('/export', async (req, res) => {
   }
 });
   
-router.get('/test-email', authenticate, authorizeRoles(['admin']), async (req, res) => {
+router.get('/test-email', authorizeRoles('superadmin'), async (req, res) => {
   const { envoyerRapportMensuel } = require('../services/emailReports');
   const mois = parseInt(req.query.mois) || new Date().getMonth() + 1;
   const annee = parseInt(req.query.annee) || new Date().getFullYear();
@@ -230,5 +229,8 @@ router.get('/test-email', authenticate, authorizeRoles(['admin']), async (req, r
 
 
 module.exports = router;
+
+
+
 
 
