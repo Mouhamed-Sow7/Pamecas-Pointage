@@ -12,10 +12,13 @@ const User = require('../models/User');
 // ─── Transporter Gmail SMTP ──────────────────────────────────────
 function createTransporter() {
   return nodemailer.createTransport({
-    service: 'gmail',
+    host: 'smtp.gmail.com',  // forcer host explicite au lieu de service:'gmail'
+    port: 465,
+    secure: true,
+    family: 4,               // forcer IPv4
     auth: {
       user: process.env.GMAIL_USER,
-      pass: process.env.GMAIL_APP_PASSWORD // App Password Gmail (pas le mdp principal)
+      pass: process.env.GMAIL_APP_PASSWORD
     }
   });
 }
