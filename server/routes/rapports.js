@@ -220,5 +220,14 @@ router.get('/export', async (req, res) => {
   }
 });
 
+router.get('/test-email', async (req, res) => {
+  const { envoyerRapportMensuel } = require('../services/emailReports');
+  const mois = parseInt(req.query.mois) || new Date().getMonth() + 1;
+  const annee = parseInt(req.query.annee) || new Date().getFullYear();
+  await envoyerRapportMensuel(annee, mois);
+  res.json({ message: `Rapport ${mois}/${annee} envoye` });
+});
+
+
 module.exports = router;
 
