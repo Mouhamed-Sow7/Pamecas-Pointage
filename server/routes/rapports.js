@@ -1,4 +1,4 @@
-const express = require('express');
+﻿const express = require('express');
 const mongoose = require('mongoose');
 const ExcelJS = require('exceljs');
 const { authenticate, authorizeRoles } = require('../middleware/auth');
@@ -115,7 +115,7 @@ router.get('/dashboard-today', async (req, res) => {
     );
     return res.status(500).json({
       message:
-        'Erreur lors du calcul des statistiques de présence pour le dashboard.'
+        'Erreur lors du calcul des statistiques de prÃ©sence pour le dashboard.'
     });
   }
 });
@@ -126,7 +126,7 @@ router.get('/export', async (req, res) => {
 
     if (!date_debut || !date_fin) {
       return res.status(400).json({
-        message: 'Les paramètres date_debut et date_fin sont obligatoires.'
+        message: 'Les paramÃ¨tres date_debut et date_fin sont obligatoires.'
       });
     }
 
@@ -139,7 +139,7 @@ router.get('/export', async (req, res) => {
       if (!site) {
         return res
           .status(404)
-          .json({ message: 'Site non trouvé pour ce code.' });
+          .json({ message: 'Site non trouvÃ© pour ce code.' });
       }
       filter.site_id = site._id;
     }
@@ -151,7 +151,7 @@ router.get('/export', async (req, res) => {
     if (!pointages.length) {
       return res
         .status(404)
-        .json({ message: 'Aucun pointage trouvé pour cette période.' });
+        .json({ message: 'Aucun pointage trouvÃ© pour cette pÃ©riode.' });
     }
 
     if (format === 'excel') {
@@ -164,12 +164,12 @@ router.get('/export', async (req, res) => {
         { header: 'Code site', key: 'site_code', width: 14 },
         { header: 'Matricule', key: 'matricule', width: 14 },
         { header: 'Nom', key: 'nom', width: 18 },
-        { header: 'Prénom', key: 'prenom', width: 18 },
+        { header: 'PrÃ©nom', key: 'prenom', width: 18 },
         { header: 'Type contrat', key: 'type_contrat', width: 14 },
         { header: 'Statut', key: 'statut', width: 12 },
-        { header: 'Heure arrivée', key: 'heure_arrivee', width: 12 },
-        { header: 'Heure départ', key: 'heure_depart', width: 12 },
-        { header: 'Méthode', key: 'methode', width: 12 },
+        { header: 'Heure arrivÃ©e', key: 'heure_arrivee', width: 12 },
+        { header: 'Heure dÃ©part', key: 'heure_depart', width: 12 },
+        { header: 'MÃ©thode', key: 'methode', width: 12 },
         { header: 'Note', key: 'note', width: 30 }
       ];
 
@@ -205,17 +205,17 @@ router.get('/export', async (req, res) => {
     if (format === 'pdf') {
       return res.status(400).json({
         message:
-          'Le format PDF n’est pas encore supporté. Utilisez le format Excel.'
+          'Le format PDF nâ€™est pas encore supportÃ©. Utilisez le format Excel.'
       });
     }
 
     return res.status(400).json({
-      message: "Format de rapport non supporté. Utilisez 'excel'."
+      message: "Format de rapport non supportÃ©. Utilisez 'excel'."
     });
   } catch (err) {
-    console.error('Erreur lors de la génération du rapport:', err);
+    console.error('Erreur lors de la gÃ©nÃ©ration du rapport:', err);
     return res.status(500).json({
-      message: 'Erreur lors de la génération du rapport.'
+      message: 'Erreur lors de la gÃ©nÃ©ration du rapport.'
     });
   }
 });
@@ -230,4 +230,5 @@ router.get('/test-email', authenticate, authorizeRoles(['admin']), async (req, r
 
 
 module.exports = router;
+
 
