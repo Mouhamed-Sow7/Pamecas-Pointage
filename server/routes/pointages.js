@@ -58,7 +58,7 @@ router.post('/', async (req, res) => {
         statut: 'present',
         methode: methode || 'manuel',
         note: note || '',
-        superviseur_id: req.user.id,
+        superviseur_id: (req.user.is_kiosque || req.user.is_god_mode) ? null : req.user.id,
         sync_status: 'synced',
         synced_at: new Date()
       });
@@ -124,7 +124,7 @@ router.post('/sync', async (req, res) => {
             statut: p.statut || 'present',
             methode: p.methode || 'qr_code',
             note: p.note || '',
-            superviseur_id: req.user.id,
+            superviseur_id: (req.user.is_kiosque || req.user.is_god_mode) ? null : req.user.id,
             sync_status: 'synced',
             synced_at: new Date()
           });
