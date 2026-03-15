@@ -1,9 +1,9 @@
-// server/middleware/auth.js
+﻿// server/middleware/auth.js
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const Site = require('../models/Site');
 
-// ─── Authentification JWT ────────────────────────────────────────
+// Authentification JWT - Authentification JWT 
 async function authenticate(req, res, next) {
   try {
     const header = req.headers.authorization || '';
@@ -13,21 +13,21 @@ async function authenticate(req, res, next) {
       return res.status(401).json({ message: 'Token manquant.' });
     }
 
-    // Superadmin Token — accès maître du vendeur SaaS
-   // God Mode JWT — bypass DB lookup
+    // Superadmin Token - acces maître du vendeur SaaS
+   // God Mode JWT - bypass DB lookup
 if (payload.is_god_mode) {
   req.user = {
     id: 'god_mode',
     username: 'smartpointage_admin',
     role: 'superadmin',
     site_id: null,
-    site_nom: '⚡ God Mode',
+    site_nom: 'God Mode',
     sites_ids: [],
     is_god_mode: true
   };
   return next();
 }
-    // Vérifier si c'est un token kiosque (UUID format)
+    // Verifier si c'est un token kiosque (UUID format)
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
     if (uuidRegex.test(token)) {
       const site = await Site.findOne({ kiosque_token: token, actif: true });
@@ -46,8 +46,12 @@ if (payload.is_god_mode) {
 
     const secret = process.env.JWT_SECRET || 'change-me';
     const payload = jwt.verify(token, secret);
+    if (payload.is_god_mode) {
+      req.user = { id: 'god_mode', username: 'smartpointage_admin', role: 'superadmin', site_id: null, site_nom: 'God Mode', sites_ids: [], is_god_mode: true };
+      return next();
+    }
 
-    // Recharger l'user depuis la DB pour avoir site_id à jour
+    // Recharger l'user depuis la DB pour avoir site_id a jour
     const user = await User.findById(payload.id).select('-password').populate('site_id', 'nom code _id');
     if (!user || !user.actif) {
       return res.status(401).json({ message: 'Compte inactif ou introuvable.' });
@@ -64,36 +68,36 @@ if (payload.is_god_mode) {
 
     return next();
   } catch (err) {
-    return res.status(401).json({ message: 'Token invalide ou expiré.' });
+    return res.status(401).json({ message: 'Token invalide ou expire.' });
   }
 }
 
-// ─── Autorisation par rôles ──────────────────────────────────────
+// Autorisation par roles 
 function authorizeRoles(...roles) {
   return (req, res, next) => {
     if (!req.user || !roles.includes(req.user.role)) {
-      return res.status(403).json({ message: 'Accès refusé.' });
+      return res.status(403).json({ message: 'Acces refuse.' });
     }
     return next();
   };
 }
 
-// ─── Multi-tenant : filtre automatique par site ──────────────────
-// Injecte req.siteFilter dans chaque requête selon le rôle
+// Multi-tenant : filtre automatique par site 
+// Injecte req.siteFilter dans chaque requete selon le role
 function tenantFilter(req, res, next) {
   if (!req.user) return next();
 
   if (req.user.role === 'superadmin') {
-    // Superadmin voit tout — pas de filtre
+    // Superadmin voit tout - pas de filtre
     req.siteFilter = {};
   } else if (req.user.role === 'directeur_regional') {
     // Voit toutes ses agences
     req.siteFilter = { site_id: { $in: req.user.sites_ids || [] } };
   } else if (req.user.site_id) {
-    // Admin/pointeur/superviseur — filtré sur leur agence
+    // Admin/pointeur/superviseur - filtre sur leur agence
     req.siteFilter = { site_id: req.user.site_id };
   } else {
-    // Pas de site assigné — rien visible
+    // Pas de site assigne - rien visible
     req.siteFilter = { site_id: null };
   }
 
@@ -101,3 +105,4 @@ function tenantFilter(req, res, next) {
 }
 
 module.exports = { authenticate, authorizeRoles, tenantFilter };
+
