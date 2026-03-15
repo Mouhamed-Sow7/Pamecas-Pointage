@@ -330,7 +330,7 @@ export function renderRapports(root) {
     btn.disabled = true;
 
     try {
-      const token = localStorage.getItem('gds_token');
+      const token = localStorage.getItem('pamecas_token');
       const site = root.querySelector('#site-code').value;
       const params = new URLSearchParams({ date_debut: debut, date_fin: fin, format: 'excel' });
       if (site) params.append('site_code', site);
