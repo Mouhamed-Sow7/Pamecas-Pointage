@@ -37,18 +37,31 @@ export async function renderNavbar(container, currentRoute, user) {
   const isOnline = navigator.onLine;
 
   const links = [
-    { path: '#/dashboard', label: 'Dashboard',  icon: '<i class="fa-regular fa-house"></i>' },
-    { path: '#/pointage',  label: 'Pointage',   icon: '<i class="fa-regular fa-circle-dot"></i>' },
+    { path: '#/dashboard', label: 'Dashboard', icon: '<i class="fa-regular fa-house"></i>' },
   ];
 
-  if (user && ['superviseur', 'admin', 'superadmin'].includes(user.role)) {
-    links.push({ path: '#/agents',   label: 'Agents',   icon: '<i class="fa-solid fa-users"></i>' });
+  // Pointage : uniquement admin/pointeur/superviseur (pas DR, pas superadmin UI)
+  if (user && ['admin', 'superviseur', 'pointeur'].includes(user.role)) {
+    links.push({ path: '#/pointage', label: 'Pointage', icon: '<i class="fa-regular fa-circle-dot"></i>' });
   }
-  if (user && ['admin', 'superadmin'].includes(user.role)) {
+
+  // Agents : admin/superviseur seulement
+  if (user && ['admin', 'superviseur'].includes(user.role)) {
+    links.push({ path: '#/agents', label: 'Agents', icon: '<i class="fa-solid fa-users"></i>' });
+  }
+
+  // Rapports : DR + admin + superadmin
+  if (user && ['superadmin', 'directeur_regional', 'admin'].includes(user.role)) {
     links.push({ path: '#/rapports', label: 'Rapports', icon: '<i class="fa-regular fa-file-alt"></i>' });
-    links.push({ path: '#/sites',    label: 'Agences',  icon: '<i class="fa-regular fa-building"></i>' });
   }
-  if (user && ['superadmin', 'directeur_regional'].includes(user.role)) {
+
+  // Agences : superadmin seulement
+  if (user && user.role === 'superadmin') {
+    links.push({ path: '#/sites', label: 'Agences', icon: '<i class="fa-regular fa-building"></i>' });
+  }
+
+  // Utilisateurs : superadmin seulement
+  if (user && user.role === 'superadmin') {
     links.push({ path: '#/users', label: 'Utilisateurs', icon: '<i class="fa-solid fa-users-gear"></i>' });
   }
 
@@ -92,6 +105,10 @@ export async function renderNavbar(container, currentRoute, user) {
         <i class="fa-solid fa-user" style="font-size:0.7rem;"></i>
         <span class="nav-text" style="font-size:0.78rem;">${user?.username || ''} · ${user?.role || ''}</span>
       </div>
+      ${user?.is_superadmin ? `
+      <div style="font-size:0.68rem;background:rgba(255,215,0,0.15);color:gold;padding:2px 8px;border-radius:10px;border:1px solid rgba(255,215,0,0.3);margin-top:4px;text-align:center;">
+        ⚡ Super Admin
+      </div>` : ''}
       <button id="btn-logout" class="btn-logout">
         <i class="fa-solid fa-right-from-bracket"></i>
         <span class="nav-text">Deconnexion</span>

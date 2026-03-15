@@ -87,7 +87,7 @@ function mountLayout(route, user) {
     renderSites(main, user);
   } else if (route === '/rapports') {
     if (topbarTitle) topbarTitle.textContent = 'Rapports';
-    renderRapports(main, user);
+    renderRapports(main, user).catch(() => {});
   } else if (route === '/users') {
     if (topbarTitle) topbarTitle.textContent = 'Utilisateurs';
     renderUsers(main, user);

@@ -39,6 +39,16 @@ async function fetchSites() {
 }
 
 export async function renderUsers(container, currentUser) {
+  if (!currentUser || currentUser.role !== 'superadmin') {
+    container.innerHTML = `
+      <div style="text-align:center;padding:40px;color:#aaa;">
+        <i class="fa-solid fa-lock" style="font-size:2rem;margin-bottom:12px;display:block;"></i>
+        <div>Accès réservé au Super Administrateur</div>
+      </div>
+    `;
+    return;
+  }
+
   container.innerHTML = `
     <div style="padding:24px;max-width:900px;margin:0 auto;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">

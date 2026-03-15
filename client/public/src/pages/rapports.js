@@ -141,7 +141,23 @@ function createCalendar(inputEl) {
 }
 
 // ─── Page Rapports ───────────────────────────────────────────────
-export function renderRapports(root) {
+export async function renderRapports(root, user) {
+  // Charger les sites accessibles selon le rôle
+  let sitesOptions = '<option value="">Toutes les agences</option>';
+  try {
+    const token = localStorage.getItem('pamecas_token');
+    const res = await fetch('/api/sites', { headers: { Authorization: `Bearer ${token}` } });
+    const data = await res.json();
+    const sites = data.data || [];
+    sitesOptions = (user?.role !== 'superadmin' ? '' : '<option value="">Toutes les agences</option>') +
+      sites.map(s => `<option value="${s.code}">${s.nom} (${s.code})</option>`).join('');
+    if (user?.role === 'superadmin') {
+      sitesOptions = '<option value="">Toutes les agences</option>' +
+        sites.map(s => `<option value="${s.code}">${s.nom} (${s.code})</option>`).join('');
+    }
+  } catch (e) {
+    // garder option par défaut
+  }
   root.innerHTML = `
     <div style="display:flex;flex-direction:column;gap:16px;">
 
@@ -191,17 +207,7 @@ export function renderRapports(root) {
           <div>
             <label style="font-size:0.82rem;font-weight:500;color:#444;display:block;margin-bottom:6px;"><i class="fa-solid fa-building"></i> Agence (optionnel)</label>
             <select id="site-code" style="width:100%;padding:11px 14px;border:1.5px solid #ddd;border-radius:10px;background:#fafafa;font-size:0.88rem;color:#444;appearance:none;cursor:pointer;">
-              <option value="">Toutes les agences</option>
-              <option value="PAM-DG">Direction Générale</option>
-              <option value="PAM-BENE">Béne Tally</option>
-              <option value="PAM-BOURG">Bourguiba</option>
-              <option value="PAM-CAST">Castors</option>
-              <option value="PAM-AVION">Cité Avion</option>
-              <option value="PAM-GYOFF">Grand Yoff</option>
-              <option value="PAM-HLM">HLM</option>
-              <option value="PAM-OUAK">Ouakam</option>
-              <option value="PAM-VDN">VDN</option>
-              <option value="PAM-YOFF">Yoff</option>
+              ${sitesOptions}
             </select>
           </div>
         </div>

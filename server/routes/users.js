@@ -7,7 +7,7 @@ const router = express.Router();
 router.use(authenticate);
 
 // GET / — Liste tous les users (superadmin) ou users de ses agences (directeur)
-router.get('/', authorizeRoles('superadmin', 'directeur_regional'), async (req, res) => {
+router.get('/', authorizeRoles('superadmin'), async (req, res) => {
   try {
     let filter = {};
     if (req.user.role === 'directeur_regional') {
@@ -21,7 +21,7 @@ router.get('/', authorizeRoles('superadmin', 'directeur_regional'), async (req, 
 });
 
 // POST / — Créer un user
-router.post('/', authorizeRoles('superadmin', 'directeur_regional'), async (req, res) => {
+router.post('/', authorizeRoles('superadmin'), async (req, res) => {
   try {
     const { username, password, role, nom_complet, site_id, sites_ids } = req.body;
 
@@ -60,7 +60,7 @@ router.post('/', authorizeRoles('superadmin', 'directeur_regional'), async (req,
 });
 
 // PUT /:id — Modifier un user
-router.put('/:id', authorizeRoles('superadmin', 'directeur_regional'), async (req, res) => {
+router.put('/:id', authorizeRoles('superadmin'), async (req, res) => {
   try {
     const { nom_complet, role, site_id, sites_ids, actif, password } = req.body;
     const updates = {};

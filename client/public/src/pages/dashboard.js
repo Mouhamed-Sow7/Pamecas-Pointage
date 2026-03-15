@@ -8,12 +8,21 @@ function formatDateFr(date) {
 }
 
 export function renderDashboard(root, user) {
+  const roleLabel = {
+    superadmin: 'Toutes les agences',
+    directeur_regional: 'Vos agences',
+    admin: user?.site_nom || 'Votre agence',
+    pointeur: user?.site_nom || 'Votre agence',
+    superviseur: user?.site_nom || 'Votre agence'
+  }[user?.role] || '';
+
   root.innerHTML = `
     <div>
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
         <div>
           <h1 style="font-size:1.3rem;font-weight:700;margin-bottom:4px;">Bonjour ${user?.username || ''}</h1>
           <div style="font-size:0.85rem;color:#607d8b;">${formatDateFr(new Date())}</div>
+          ${roleLabel ? `<div style="font-size:0.78rem;color:#aaa;margin-top:2px;"><i class="fa-solid fa-building" style="margin-right:4px;"></i>${roleLabel}</div>` : ''}
         </div>
         <div id="dashboard-sync-status" class="badge badge-synced" style="font-size:0.75rem;">
           <i class="fa-solid fa-circle-check"></i> A jour

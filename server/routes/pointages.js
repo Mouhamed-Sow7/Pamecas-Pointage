@@ -33,6 +33,18 @@ router.post('/', async (req, res) => {
 
     let pointage = await Pointage.findOne({ agent_id, site_id, date: dateStr });
 
+    // Cooldown anti-fraude : 1 minute entre deux scans du même agent
+    const maintenant = new Date();
+    const uneMinuteAvant = new Date(maintenant.getTime() - 60 * 1000);
+    if (pointage && pointage.last_scan_at && pointage.last_scan_at > uneMinuteAvant) {
+      const resteSecondes = Math.ceil((pointage.last_scan_at - uneMinuteAvant) / 1000);
+      return res.status(429).json({
+        message: `Scan trop rapide. Attendez ${resteSecondes} seconde(s).`,
+        cooldown: true,
+        reste_secondes: resteSecondes
+      });
+    }
+
     if (!pointage) {
       // ─── Première action du jour = arrivée ───────────────────
       if (type === 'depart') {
@@ -71,6 +83,7 @@ router.post('/', async (req, res) => {
       pointage.synced_at = new Date();
     }
 
+    pointage.last_scan_at = new Date();
     await pointage.save();
 
     // Notifier via Socket.io

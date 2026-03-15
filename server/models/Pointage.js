@@ -57,6 +57,10 @@ const PointageSchema = new Schema(
     },
     synced_at: {
       type: Date
+    },
+    last_scan_at: {
+      type: Date,
+      default: null
     }
   },
   { timestamps: true }

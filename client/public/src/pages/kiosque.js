@@ -6,19 +6,55 @@ let isProcessing = false;
 let scanFrame = null;
 let videoStream = null;
 
-function playBeep(success = true) {
+// Cooldown local — double protection anti-fraude
+const cooldownMap = new Map(); // agentId -> timestamp dernier scan
+
+function verifierCooldownLocal(agentId) {
+  const dernierScan = cooldownMap.get(agentId);
+  if (!dernierScan) return null;
+  const deltaMs = Date.now() - dernierScan;
+  if (deltaMs < 60000) {
+    return Math.ceil((60000 - deltaMs) / 1000);
+  }
+  return null;
+}
+
+function enregistrerCooldownLocal(agentId) {
+  cooldownMap.set(agentId, Date.now());
+}
+
+function playBeep(type = 'arrivee') {
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.frequency.value = success ? 880 : 220;
-    osc.type = success ? 'sine' : 'sawtooth';
-    gain.gain.setValueAtTime(0.3, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
-    osc.start();
-    osc.stop(ctx.currentTime + 0.4);
+
+    function note(freq, debut, duree, gain = 0.3, forme = 'sine') {
+      const osc = ctx.createOscillator();
+      const g = ctx.createGain();
+      osc.connect(g);
+      g.connect(ctx.destination);
+      osc.type = forme;
+      osc.frequency.value = freq;
+      g.gain.setValueAtTime(0, ctx.currentTime + debut);
+      g.gain.linearRampToValueAtTime(gain, ctx.currentTime + debut + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + debut + duree);
+      osc.start(ctx.currentTime + debut);
+      osc.stop(ctx.currentTime + debut + duree + 0.05);
+    }
+
+    if (type === 'arrivee') {
+      note(660, 0,    0.12, 0.25);
+      note(880, 0.13, 0.18, 0.3);
+    } else if (type === 'depart') {
+      note(660, 0,    0.12, 0.25);
+      note(520, 0.18, 0.18, 0.25);
+    } else if (type === 'cooldown') {
+      note(440, 0,    0.08, 0.2);
+      note(440, 0.10, 0.08, 0.2);
+      note(440, 0.20, 0.08, 0.2);
+    } else if (type === 'erreur') {
+      note(180, 0,   0.6, 0.35, 'sawtooth');
+      note(150, 0.3, 0.4, 0.2,  'sawtooth');
+    }
   } catch (e) {}
 }
 
@@ -80,14 +116,16 @@ function setEtat(root, etat, data = {}) {
     `;
 
   } else if (etat === 'erreur') {
+    const icon = data.icon || 'fa-triangle-exclamation';
+    const color = data.color || '#c62828';
     overlay.style.display = 'flex';
     overlay.innerHTML = `
       <div style="text-align:center;animation:fadeInUp 0.3s ease;">
-        <div style="width:70px;height:70px;border-radius:50%;background:#c62828;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
-          <i class="fa-solid fa-triangle-exclamation" style="font-size:1.8rem;color:white;"></i>
+        <div style="width:70px;height:70px;border-radius:50%;background:${color};display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+          <i class="fa-solid ${icon}" style="font-size:1.8rem;color:white;"></i>
         </div>
         <div style="color:white;font-size:1.1rem;font-weight:600;margin-bottom:8px;">${data.message || 'Erreur'}</div>
-        <div style="color:rgba(255,255,255,0.6);font-size:0.8rem;" id="kiosque-countdown">Nouvelle tentative dans 3s...</div>
+        <div style="color:rgba(255,255,255,0.6);font-size:0.8rem;" id="kiosque-countdown">Nouvelle tentative dans 2s...</div>
       </div>
     `;
 
@@ -385,6 +423,20 @@ export async function renderKiosque(root) {
       if (!res.ok) throw new Error('Agent introuvable');
       const agent = await res.json();
 
+      // Cooldown local — vérifier avant appel API
+      const agentId = (agent._id || agent.id).toString();
+      const resteSecondes = verifierCooldownLocal(agentId);
+      if (resteSecondes) {
+        playBeep('cooldown');
+        setEtat(root, 'erreur', {
+          message: `Scan trop rapide. Attendez ${resteSecondes}s.`,
+          icon: 'fa-clock',
+          color: '#e65100'
+        });
+        startCountdown(root, 2, () => resumeScanner(root, video, canvas, token, siteId, onQRDetected));
+        return;
+      }
+
       // Verifier si arrivee ou depart
       const dateStr = new Date().toISOString().split('T')[0];
       const resP = await fetch(`/api/pointages?date=${dateStr}&site_id=${siteId}`, {
@@ -393,22 +445,25 @@ export async function renderKiosque(root) {
       const dataP = await resP.json();
       const pointages = dataP?.data || [];
       const pointageAujourdhui = pointages.find(p =>
-        (p.agent_id?._id || p.agent_id)?.toString() === (agent._id || agent.id)?.toString()
+        (p.agent_id?._id || p.agent_id)?.toString() === agentId
       );
 
       const type = (!pointageAujourdhui || !pointageAujourdhui.heure_arrivee) ? 'arrivee' : 'depart';
 
       if (type === 'depart' && pointageAujourdhui?.heure_depart) {
-        playBeep(false);
+        playBeep('erreur');
         setEtat(root, 'erreur', { message: 'Depart deja enregistre aujourd\'hui' });
-        startCountdown(root, 3, () => resumeScanner(root, video, canvas, token, siteId, onQRDetected));
+        startCountdown(root, 2, () => resumeScanner(root, video, canvas, token, siteId, onQRDetected));
         return;
       }
 
       // Enregistrer pointage
-      await enregistrerPointageKiosque(token, agent._id || agent.id, siteId, type);
-      playBeep(true);
+      await enregistrerPointageKiosque(token, agentId, siteId, type);
 
+      // Enregistrer cooldown local après succès
+      enregistrerCooldownLocal(agentId);
+
+      playBeep(type); // 'arrivee' ou 'depart'
       setEtat(root, 'succes', { agent, type });
 
       // Derniere activite
@@ -419,9 +474,14 @@ export async function renderKiosque(root) {
       startCountdown(root, 3, () => resumeScanner(root, video, canvas, token, siteId, onQRDetected));
 
     } catch (err) {
-      playBeep(false);
-      setEtat(root, 'erreur', { message: err.message || 'Erreur inconnue' });
-      startCountdown(root, 3, () => resumeScanner(root, video, canvas, token, siteId, onQRDetected));
+      if (err.message && err.message.includes('Scan trop rapide')) {
+        playBeep('cooldown');
+        setEtat(root, 'erreur', { message: err.message, icon: 'fa-clock', color: '#e65100' });
+      } else {
+        playBeep('erreur');
+        setEtat(root, 'erreur', { message: err.message || 'Erreur inconnue' });
+      }
+      startCountdown(root, 2, () => resumeScanner(root, video, canvas, token, siteId, onQRDetected));
     }
   }
 

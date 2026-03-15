@@ -1,7 +1,7 @@
 ﻿const express = require('express');
 const mongoose = require('mongoose');
 const ExcelJS = require('exceljs');
-const { authenticate, authorizeRoles } = require('../middleware/auth');
+const { authenticate, authorizeRoles, tenantFilter } = require('../middleware/auth');
 const Pointage = require('../models/Pointage');
 const Site = require('../models/Site');
 const Agent = require('../models/Agent');
@@ -9,6 +9,7 @@ const Agent = require('../models/Agent');
 const router = express.Router();
 
 router.use(authenticate);
+router.use(tenantFilter);
 
 function todayString() {
   const now = new Date();
@@ -20,9 +21,18 @@ router.get('/dashboard-today', async (req, res) => {
     const { site_id } = req.query;
     const dateStr = todayString();
 
-    const match = { date: dateStr };
+    const match = { ...req.siteFilter, date: dateStr };
+
+    // Filtre site spécifique si fourni — vérifier que c'est dans le périmètre
     if (site_id && mongoose.Types.ObjectId.isValid(site_id)) {
-      match.site_id = new mongoose.Types.ObjectId(site_id);
+      if (req.user.role === 'superadmin') {
+        match.site_id = new mongoose.Types.ObjectId(site_id);
+      } else if (req.siteFilter.site_id) {
+        // Pour admin/pointeur : vérifier cohérence
+        if (req.siteFilter.site_id.toString() !== site_id) {
+          return res.status(403).json({ message: 'Accès refusé à ce site.' });
+        }
+      }
     }
 
     const kpiAgg = await Pointage.aggregate([
@@ -130,6 +140,7 @@ router.get('/export', async (req, res) => {
     }
 
     const filter = {
+      ...req.siteFilter,
       date: { $gte: date_debut, $lte: date_fin }
     };
 
