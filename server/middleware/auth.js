@@ -3,7 +3,6 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const Site = require('../models/Site');
 
-// Authentification JWT - Authentification JWT 
 async function authenticate(req, res, next) {
   try {
     const header = req.headers.authorization || '';
@@ -13,21 +12,21 @@ async function authenticate(req, res, next) {
       return res.status(401).json({ message: 'Token manquant.' });
     }
 
-    // Superadmin Token - acces maître du vendeur SaaS
-   // God Mode JWT - bypass DB lookup
-if (payload.is_god_mode) {
-  req.user = {
-    id: 'god_mode',
-    username: 'smartpointage_admin',
-    role: 'superadmin',
-    site_id: null,
-    site_nom: 'God Mode',
-    sites_ids: [],
-    is_god_mode: true
-  };
-  return next();
-}
-    // Verifier si c'est un token kiosque (UUID format)
+    // 1. SUPERADMIN_TOKEN statique (variable env)
+    if (process.env.SUPERADMIN_TOKEN && token === process.env.SUPERADMIN_TOKEN) {
+      req.user = {
+        id: 'superadmin_master',
+        username: 'smartpointage_admin',
+        role: 'superadmin',
+        site_id: null,
+        site_nom: 'Super Admin',
+        sites_ids: [],
+        is_superadmin: true
+      };
+      return next();
+    }
+
+    // 2. Token kiosque UUID
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
     if (uuidRegex.test(token)) {
       const site = await Site.findOne({ kiosque_token: token, actif: true });
@@ -44,15 +43,29 @@ if (payload.is_god_mode) {
       return next();
     }
 
+    // 3. JWT normal
     const secret = process.env.JWT_SECRET || 'change-me';
     const payload = jwt.verify(token, secret);
+
+    // 3a. God Mode JWT (genere par /api/auth/godmode)
     if (payload.is_god_mode) {
-      req.user = { id: 'god_mode', username: 'smartpointage_admin', role: 'superadmin', site_id: null, site_nom: 'God Mode', sites_ids: [], is_god_mode: true };
+      req.user = {
+        id: 'god_mode',
+        username: 'smartpointage_admin',
+        role: 'superadmin',
+        site_id: null,
+        site_nom: 'God Mode',
+        sites_ids: [],
+        is_god_mode: true
+      };
       return next();
     }
 
-    // Recharger l'user depuis la DB pour avoir site_id a jour
-    const user = await User.findById(payload.id).select('-password').populate('site_id', 'nom code _id');
+    // 3b. User normal — recharger depuis DB
+    const user = await User.findById(payload.id)
+      .select('-password')
+      .populate('site_id', 'nom code _id');
+
     if (!user || !user.actif) {
       return res.status(401).json({ message: 'Compte inactif ou introuvable.' });
     }
@@ -72,7 +85,6 @@ if (payload.is_god_mode) {
   }
 }
 
-// Autorisation par roles 
 function authorizeRoles(...roles) {
   return (req, res, next) => {
     if (!req.user || !roles.includes(req.user.role)) {
@@ -82,22 +94,16 @@ function authorizeRoles(...roles) {
   };
 }
 
-// Multi-tenant : filtre automatique par site 
-// Injecte req.siteFilter dans chaque requete selon le role
 function tenantFilter(req, res, next) {
   if (!req.user) return next();
 
   if (req.user.role === 'superadmin') {
-    // Superadmin voit tout - pas de filtre
     req.siteFilter = {};
   } else if (req.user.role === 'directeur_regional') {
-    // Voit toutes ses agences
     req.siteFilter = { site_id: { $in: req.user.sites_ids || [] } };
   } else if (req.user.site_id) {
-    // Admin/pointeur/superviseur - filtre sur leur agence
     req.siteFilter = { site_id: req.user.site_id };
   } else {
-    // Pas de site assigne - rien visible
     req.siteFilter = { site_id: null };
   }
 
@@ -105,4 +111,3 @@ function tenantFilter(req, res, next) {
 }
 
 module.exports = { authenticate, authorizeRoles, tenantFilter };
-
