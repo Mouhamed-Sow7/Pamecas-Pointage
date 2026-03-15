@@ -1,6 +1,5 @@
 const mongoose = require('mongoose');
 const { v4: uuidv4 } = require('uuid');
-
 const { Schema } = mongoose;
 
 const PointageSchema = new Schema(
@@ -28,7 +27,10 @@ const PointageSchema = new Schema(
       type: String // ex: "07:45"
     },
     heure_depart: {
-      type: String
+      type: String // ex: "17:30"
+    },
+    duree_minutes: {
+      type: Number // calculé automatiquement arrivée -> départ
     },
     statut: {
       type: String,
@@ -45,7 +47,8 @@ const PointageSchema = new Schema(
       ref: 'User'
     },
     note: {
-      type: String
+      type: String,
+      default: ''
     },
     sync_status: {
       type: String,
@@ -59,10 +62,8 @@ const PointageSchema = new Schema(
   { timestamps: true }
 );
 
-PointageSchema.index(
-  { agent_id: 1, site_id: 1, date: 1 },
-  { unique: true }
-);
+PointageSchema.index({ agent_id: 1, site_id: 1, date: 1 }, { unique: true });
+PointageSchema.index({ site_id: 1, date: 1 }); // pour les requêtes par agence/date
+PointageSchema.index({ date: 1 });              // pour les rapports
 
 module.exports = mongoose.model('Pointage', PointageSchema);
-

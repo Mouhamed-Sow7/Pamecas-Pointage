@@ -1,12 +1,14 @@
-{
+﻿{
   "name": "gds-pointage",
   "version": "1.0.0",
-  "description": "Système de pointage QR code offline-first pour Grands Domaines du Sénégal (GDS).",
+  "description": "SystÃ¨me de pointage QR code offline-first pour Grands Domaines du SÃ©nÃ©gal (GDS).",
   "main": "server/app.js",
   "scripts": {
     "start": "node server/app.js",
     "dev": "nodemon server/app.js",
     "seed": "node server/seed.js",
+    "migrate": "node server/scripts/migrate_matricules.js",
+    "migrate": "node server/scripts/migrate_matricules.js",
     "test": "jest"
   },
   "keywords": [
@@ -47,3 +49,5 @@
     "supertest": "^7.1.1"
   }
 }
+
+

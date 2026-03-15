@@ -1,9 +1,10 @@
-﻿import { renderLogin } from './pages/login.js';
+import { renderLogin } from './pages/login.js';
 import { renderDashboard } from './pages/dashboard.js';
 import { renderPointage } from './pages/pointage.js';
 import { renderAgents } from './pages/agents.js';
 import { renderRapports } from './pages/rapports.js';
 import { renderSites } from './pages/sites.js';
+import { renderKiosque } from './pages/kiosque.js';
 import {
   renderNavbar,
   initResponsiveSidebar,
@@ -16,11 +17,7 @@ import { showToast } from './components/toast.js';
 function getCurrentUser() {
   const raw = localStorage.getItem('pamecas_user');
   if (!raw) return null;
-  try {
-    return JSON.parse(raw);
-  } catch (e) {
-    return null;
-  }
+  try { return JSON.parse(raw); } catch (e) { return null; }
 }
 
 function isAuthenticated() {
@@ -30,16 +27,20 @@ function isAuthenticated() {
 function updateOfflineBanner() {
   const banner = document.getElementById('offline-banner');
   if (!banner) return;
-  if (!navigator.onLine) {
-    banner.classList.add('visible');
-  } else {
-    banner.classList.remove('visible');
-  }
+  navigator.onLine ? banner.classList.remove('visible') : banner.classList.add('visible');
 }
 
 function mountLayout(route, user) {
   const app = document.getElementById('app');
   if (!app) return;
+
+  // ─── Mode kiosque — pas de login, pas de sidebar ───────────────
+  if (route.startsWith('/kiosque')) {
+    app.className = '';
+    app.innerHTML = '';
+    renderKiosque(app);
+    return;
+  }
 
   if (route === '/login') {
     app.className = '';
@@ -87,21 +88,21 @@ function mountLayout(route, user) {
     if (topbarTitle) topbarTitle.textContent = 'Rapports';
     renderRapports(main, user);
   } else {
-    main.innerHTML = '<div class="card">Page non trouvÃ©e.</div>';
+    main.innerHTML = `
+      <div style="min-height:60vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:#aaa;">
+        <i class="fa-solid fa-map-location-dot" style="font-size:3rem;margin-bottom:16px;color:#ddd;"></i>
+        <div style="font-size:1.1rem;font-weight:600;color:#555;margin-bottom:8px;">Page introuvable</div>
+        <div style="font-size:0.85rem;margin-bottom:20px;">La page demandee n'existe pas.</div>
+        <button onclick="window.location.hash='#/dashboard'"
+          style="padding:9px 20px;background:#2e7d32;color:white;border:none;border-radius:8px;cursor:pointer;font-size:0.9rem;">
+          <i class="fa-solid fa-house"></i> Retour au dashboard
+        </button>
+      </div>
+    `;
   }
 
-  if (topbarMenuBtn) {
-    topbarMenuBtn.addEventListener('click', () => {
-      openSidebar();
-    });
-  }
-
-  if (overlay) {
-    overlay.addEventListener('click', () => {
-      closeSidebar();
-    });
-  }
-
+  if (topbarMenuBtn) topbarMenuBtn.addEventListener('click', openSidebar);
+  if (overlay) overlay.addEventListener('click', closeSidebar);
   initResponsiveSidebar();
 }
 
@@ -109,7 +110,13 @@ function router() {
   updateOfflineBanner();
 
   const hash = window.location.hash || '#/dashboard';
-  const route = hash.replace('#', '') || '/dashboard';
+  const route = hash.replace('#', '').split('?')[0] || '/dashboard';
+
+  // Kiosque — pas besoin d'authentification
+  if (route.startsWith('/kiosque')) {
+    mountLayout(route, null);
+    return;
+  }
 
   if (!isAuthenticated() && route !== '/login') {
     window.location.hash = '#/login';
@@ -117,7 +124,6 @@ function router() {
   }
 
   const user = getCurrentUser();
-
   if (!user && route !== '/login') {
     window.location.hash = '#/login';
     return;
@@ -134,12 +140,7 @@ document.addEventListener('DOMContentLoaded', () => {
   updateOfflineBanner();
   startAutoSync();
   onSyncComplete((count) => {
-    if (count > 0) {
-      showToast(`${count} pointage(s) synchronisÃ©(s).`, 'success');
-    }
+    if (count > 0) showToast(`${count} pointage(s) synchronise(s).`, 'success');
   });
   router();
 });
-
-
-

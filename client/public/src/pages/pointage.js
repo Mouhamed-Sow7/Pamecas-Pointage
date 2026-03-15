@@ -1,4 +1,4 @@
-﻿import { post, get } from '../api.js';
+import { post, get } from '../api.js';
 import { savePointage } from '../store/indexedDB.js';
 import { showModal } from '../components/modal.js';
 import { showToast } from '../components/toast.js';
@@ -253,9 +253,6 @@ async function reloadPointagesList(container) {
 }
 
 // ─── Modal modification admin avec heures ────────────────────────
-// Remplacer la fonction openEditModal dans pointage.js
-// Section statut : grid 3 colonnes -> flex wrap pour mobile
-
 function openEditModal(id, currentStatut, currentNote, currentArrivee, currentDepart, listePointages) {
   const content = `
     <div style="display:flex;flex-direction:column;gap:14px;">

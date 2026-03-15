@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');
-
 const { Schema } = mongoose;
 
 const AgentSchema = new Schema(
@@ -20,7 +19,8 @@ const AgentSchema = new Schema(
       trim: true
     },
     telephone: {
-      type: String
+      type: String,
+      trim: true
     },
     site_id: {
       type: Schema.Types.ObjectId,
@@ -35,7 +35,8 @@ const AgentSchema = new Schema(
       index: true
     },
     poste: {
-      type: String
+      type: String,
+      trim: true
     },
     statut: {
       type: String,
@@ -51,6 +52,15 @@ const AgentSchema = new Schema(
     },
     qr_data: {
       type: String
+    },
+    // OTP SMS fallback kiosque
+    otp_code: {
+      type: String,
+      default: null
+    },
+    otp_expires_at: {
+      type: Date,
+      default: null
     }
   },
   { timestamps: true }
@@ -60,22 +70,24 @@ AgentSchema.index({ site_id: 1, statut: 1 });
 
 async function generateMatricule(doc) {
   const Agent = mongoose.model('Agent');
-  const lastAgent = await Agent.findOne({ matricule: /^GDS-\d{4}$/ })
+
+  // Chercher le dernier matricule SMP- (nouveaux)
+  // ou GDS- (anciens) pour assurer la continuité
+  const lastAgent = await Agent.findOne({
+    matricule: { $regex: /^(SMP|GDS)-\d{4}$/ }
+  })
     .sort({ createdAt: -1 })
     .select('matricule')
     .lean();
 
   let nextNumber = 1;
-  if (lastAgent && lastAgent.matricule) {
+  if (lastAgent?.matricule) {
     const parts = lastAgent.matricule.split('-');
     const num = parseInt(parts[1], 10);
-    if (!Number.isNaN(num)) {
-      nextNumber = num + 1;
-    }
+    if (!Number.isNaN(num)) nextNumber = num + 1;
   }
 
-  const padded = String(nextNumber).padStart(4, '0');
-  return `GDS-${padded}`;
+  return `SMP-${String(nextNumber).padStart(4, '0')}`;
 }
 
 AgentSchema.pre('save', async function preSave(next) {
@@ -92,5 +104,26 @@ AgentSchema.pre('save', async function preSave(next) {
   }
 });
 
-module.exports = mongoose.model('Agent', AgentSchema);
+// Methode pour generer OTP
+AgentSchema.methods.genererOTP = function () {
+  const code = String(Math.floor(100000 + Math.random() * 900000)); // 6 chiffres
+  this.otp_code = code;
+  this.otp_expires_at = new Date(Date.now() + 5 * 60 * 1000); // expire dans 5 min
+  return code;
+};
 
+// Methode pour verifier OTP
+AgentSchema.methods.verifierOTP = function (code) {
+  if (!this.otp_code || !this.otp_expires_at) return false;
+  if (new Date() > this.otp_expires_at) return false;
+  return this.otp_code === code;
+};
+
+// Methode pour invalider OTP apres usage
+AgentSchema.methods.invaliderOTP = async function () {
+  this.otp_code = null;
+  this.otp_expires_at = null;
+  await this.save();
+};
+
+module.exports = mongoose.model('Agent', AgentSchema);
