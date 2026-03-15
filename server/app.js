@@ -67,12 +67,14 @@ const authRouter = require('./routes/auth');
 const pointagesRouter = require('./routes/pointages');
 const sitesRouter = require('./routes/sites');
 const rapportsRouter = require('./routes/rapports');
+const usersRouter = require('./routes/users');
 
 app.use('/api/auth', authRouter);
 app.use('/api/agents', agentsRouter);
 app.use('/api/pointages', pointagesRouter);
 app.use('/api/sites', sitesRouter);
 app.use('/api/rapports', rapportsRouter);
+app.use('/api/users', usersRouter);
 
 // ✅ SPA catch-all — uniquement pour les routes non-API et non-fichiers statiques
 app.get('*', (req, res, next) => {

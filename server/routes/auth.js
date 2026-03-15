@@ -2,6 +2,7 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 
 const User = require('../models/User');
+const Site = require('../models/Site');
 const { authenticate } = require('../middleware/auth');
 
 const router = express.Router();
@@ -75,6 +76,17 @@ router.post('/logout', (req, res) => {
 
 router.get('/me', authenticate, (req, res) => {
   return res.json(req.user);
+});
+
+// Valider token kiosque (pas besoin de JWT)
+router.get('/kiosque/:token', async (req, res) => {
+  try {
+    const site = await Site.findOne({ kiosque_token: req.params.token, actif: true }).select('_id nom code');
+    if (!site) return res.status(401).json({ message: 'Token kiosque invalide.' });
+    return res.json({ site });
+  } catch (err) {
+    return res.status(500).json({ message: 'Erreur validation token.' });
+  }
 });
 
 module.exports = router;

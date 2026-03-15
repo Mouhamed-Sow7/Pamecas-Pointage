@@ -209,24 +209,6 @@ async function seed() {
       console.log('Superadmin cree');
     }
 
-    // 2b. Directeur régional Dakar
-    let directeur = await User.findOne({ username: 'directeur.dakar' });
-    if (!directeur) {
-      const sitesDakar = ['PAM-DG', 'PAM-BENE', 'PAM-CAST']
-        .map(code => sitesMap[code]?._id)
-        .filter(Boolean);
-      directeur = new User({
-        username: 'directeur.dakar',
-        password: 'pamecas2024!',
-        role: 'directeur_regional',
-        nom_complet: 'Directeur Régional Dakar',
-        sites_ids: sitesDakar,
-        actif: true
-      });
-      await directeur.save();
-      console.log('Directeur régional Dakar créé (PAM-DG, PAM-BENE, PAM-CAST)');
-    }
-
     // 3. Users par agence
     for (const ud of usersAgences) {
       const site = sitesMap[ud.agenceCode];
@@ -292,7 +274,6 @@ async function seed() {
     console.log('');
     console.log('=== COMPTES DE CONNEXION ===');
     console.log('Superadmin  : admin / pamecas2024!');
-    console.log('Dir. Dakar  : directeur.dakar / pamecas2024!');
     console.log('Admin DG    : admin.dg / pamecas2024!');
     console.log('Admin Bene  : admin.bene / pamecas2024!');
     console.log('Pointeur DG : point.dg / point2024!');

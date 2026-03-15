@@ -5,7 +5,6 @@ import { renderAgents } from './pages/agents.js';
 import { renderRapports } from './pages/rapports.js';
 import { renderSites } from './pages/sites.js';
 import { renderKiosque } from './pages/kiosque.js';
-import { renderUsers } from './pages/users.js';
 import {
   renderNavbar,
   initResponsiveSidebar,
@@ -88,9 +87,6 @@ function mountLayout(route, user) {
   } else if (route === '/rapports') {
     if (topbarTitle) topbarTitle.textContent = 'Rapports';
     renderRapports(main, user);
-  } else if (route === '/users') {
-    if (topbarTitle) topbarTitle.textContent = 'Utilisateurs';
-    renderUsers(main, user);
   } else {
     main.innerHTML = `
       <div style="min-height:60vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:#aaa;">

@@ -1,4 +1,4 @@
-﻿import { getBadgeCount } from '../store/syncManager.js';
+import { getBadgeCount } from '../store/syncManager.js';
 
 export function toggleSidebar() {
   const sidebar = document.getElementById('sidebar');
@@ -48,9 +48,6 @@ export async function renderNavbar(container, currentRoute, user) {
     links.push({ path: '#/rapports', label: 'Rapports', icon: '<i class="fa-regular fa-file-alt"></i>' });
     links.push({ path: '#/sites',    label: 'Agences',  icon: '<i class="fa-regular fa-building"></i>' });
   }
-  if (user && ['superadmin', 'directeur_regional'].includes(user.role)) {
-    links.push({ path: '#/users', label: 'Utilisateurs', icon: '<i class="fa-solid fa-users-gear"></i>' });
-  }
 
   const htmlLinks = links.map((link) => {
     const isActive = currentRoute === link.path.replace('#', '');
@@ -67,7 +64,8 @@ export async function renderNavbar(container, currentRoute, user) {
 
   container.innerHTML = `
     <div class="nav-header">
-      <button class="sidebar-collapse-btn" id="sidebar-collapse-btn" type="button" title="Reduire">  <i class="fa-solid fa-bars"></i>
+      <button class="sidebar-collapse-btn" id="sidebar-collapse-btn" type="button" title="Reduire">
+        <i class="fa-solid fa-bars"></i>
       </button>
       <div class="logo">
         <div class="logo-mark" style="font-size:0.75rem;letter-spacing:-0.5px;">SP</div>

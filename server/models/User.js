@@ -18,7 +18,7 @@ const UserSchema = new Schema(
     },
     role: {
       type: String,
-      enum: ['superadmin', 'admin', 'superviseur', 'pointeur'],
+      enum: ['superadmin', 'directeur_regional', 'admin', 'superviseur', 'pointeur'],
       required: true
     },
     nom_complet: {
@@ -29,6 +29,11 @@ const UserSchema = new Schema(
       ref: 'Site',
       default: null
     },
+    sites_ids: [{
+      type: Schema.Types.ObjectId,
+      ref: 'Site',
+      default: []
+    }],
     actif: {
       type: Boolean,
       default: true

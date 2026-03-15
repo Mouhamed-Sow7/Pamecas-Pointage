@@ -211,46 +211,13 @@ function resumeScanner(root, video, canvas, token, siteId, onDetected) {
 // ─── Render kiosque ──────────────────────────────────────────────
 export async function renderKiosque(root) {
   // Recuperer token et siteId depuis URL hash
-  // Mode A (ancien): #/kiosque?token=JWT&site=SITE_ID&nom=Agence
-  // Mode B (nouveau): #/kiosque?ktoken=UUID_KIOSQUE
+  // Format: #/kiosque?token=xxx&site=yyy&nom=Agence
   const hash = window.location.hash;
   const queryStr = hash.includes('?') ? hash.split('?')[1] : '';
   const params = new URLSearchParams(queryStr);
-
-  let token = params.get('token');
-  let siteId = params.get('site');
-  let siteNom = params.get('nom') ? decodeURIComponent(params.get('nom')) : 'Agence';
-
-  const ktoken = params.get('ktoken');
-
-  // Mode B — token kiosque permanent
-  if (ktoken) {
-    root.innerHTML = `
-      <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0f2417;color:white;">
-        <div class="kiosque-spinner"></div>
-      </div>
-      <style>.kiosque-spinner{width:48px;height:48px;border:4px solid rgba(255,255,255,0.2);border-top-color:#4CAF50;border-radius:50%;animation:spin 0.8s linear infinite;}@keyframes spin{to{transform:rotate(360deg);}}</style>
-    `;
-    try {
-      const res = await fetch(`/api/auth/kiosque/${ktoken}`);
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'Token invalide');
-      token = ktoken;
-      siteId = data.site._id;
-      siteNom = data.site.nom;
-    } catch (err) {
-      root.innerHTML = `
-        <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0f2417;color:white;text-align:center;padding:20px;">
-          <div>
-            <div style="font-size:3rem;margin-bottom:16px;">⚠️</div>
-            <div style="font-size:1.2rem;font-weight:600;margin-bottom:8px;">Token kiosque invalide</div>
-            <div style="color:rgba(255,255,255,0.6);font-size:0.85rem;">${err.message}</div>
-          </div>
-        </div>
-      `;
-      return;
-    }
-  }
+  const token = params.get('token');
+  const siteId = params.get('site');
+  const siteNom = params.get('nom') ? decodeURIComponent(params.get('nom')) : 'Agence';
 
   if (!token || !siteId) {
     root.innerHTML = `

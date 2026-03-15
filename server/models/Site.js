@@ -47,7 +47,16 @@ const SiteSchema = new mongoose.Schema(
     telephone: { type: String },
     coordonnees: CoordonneesSchema,
     actif: { type: Boolean, default: true },
-    config: ConfigSiteSchema
+    config: ConfigSiteSchema,
+    kiosque_token: {
+      type: String,
+      default: null,
+      index: true
+    },
+    kiosque_token_created_at: {
+      type: Date,
+      default: null
+    }
   },
   { timestamps: true }
 );
