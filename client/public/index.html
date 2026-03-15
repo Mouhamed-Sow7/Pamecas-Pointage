@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="fr">
   <head>
     <meta charset="UTF-8" />
@@ -145,7 +145,7 @@
   </head>
   <body>
     <div id="offline-banner" class="offline-banner">
-      <i class="fa-solid fa-wifi-slash"></i> Hors ligne — certaines fonctionnalites sont limitees.
+      <i class="fa-solid fa-wifi-slash"></i> Hors ligne â€” certaines fonctionnalites sont limitees.
     </div>
     <div id="app"></div>
     <div id="toast-container"></div>
@@ -158,5 +158,50 @@
     </script>
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
     <script type="module" src="/src/app.js"></script>
+    <!-- God Mode â€” easter egg console SmartPointage -->
+<script>
+(function() {
+  window.superadmin = async function() {
+    const pwd = prompt('SmartPointage â€” Acces restreint\nMot de passe :');
+    if (!pwd) return;
+
+    try {
+      const res = await fetch('/api/auth/godmode', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: pwd })
+      });
+
+      if (!res.ok) {
+        console.error('%c Acces refuse.', 'color:#c62828;font-weight:bold;font-size:14px;');
+        return;
+      }
+
+      const data = await res.json();
+      localStorage.setItem('pamecas_token', data.token);
+      localStorage.setItem('pamecas_user', JSON.stringify(data.user));
+
+      console.clear();
+      console.log(
+        '%c âš¡ SmartPointage God Mode actif ',
+        'background:#1b5e20;color:gold;font-size:14px;font-weight:bold;padding:6px 12px;border-radius:4px;'
+      );
+
+      window.location.hash = '#/dashboard';
+      window.location.reload();
+
+    } catch (err) {
+      console.error('Erreur connexion God Mode:', err.message);
+    }
+  };
+
+  // Message discret au chargement (visible seulement si devtools ouvert)
+  console.log(
+    '%c SmartPointage v2.0 ',
+    'background:#2e7d32;color:white;font-size:11px;padding:2px 8px;border-radius:3px;'
+  );
+})();
+</script>
   </body>
 </html>
+
