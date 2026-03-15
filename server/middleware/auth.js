@@ -14,19 +14,19 @@ async function authenticate(req, res, next) {
     }
 
     // Superadmin Token — accès maître du vendeur SaaS
-    if (process.env.SUPERADMIN_TOKEN && token === process.env.SUPERADMIN_TOKEN) {
-      req.user = {
-        id: 'superadmin_master',
-        username: 'smartpointage_admin',
-        role: 'superadmin',
-        site_id: null,
-        site_nom: 'Super Admin',
-        sites_ids: [],
-        is_superadmin: true
-      };
-      return next();
-    }
-
+   // God Mode JWT — bypass DB lookup
+if (payload.is_god_mode) {
+  req.user = {
+    id: 'god_mode',
+    username: 'smartpointage_admin',
+    role: 'superadmin',
+    site_id: null,
+    site_nom: '⚡ God Mode',
+    sites_ids: [],
+    is_god_mode: true
+  };
+  return next();
+}
     // Vérifier si c'est un token kiosque (UUID format)
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
     if (uuidRegex.test(token)) {
