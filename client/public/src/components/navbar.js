@@ -46,7 +46,7 @@ export async function renderNavbar(container, currentRoute, user) {
   }
 
   // Agents : admin/superviseur seulement
-  if (user && ['admin', 'superviseur'].includes(user.role)) {
+  if (user && ['superadmin', 'admin', 'superviseur'].includes(user.role)) {
     links.push({ path: '#/agents', label: 'Agents', icon: '<i class="fa-solid fa-users"></i>' });
   }
 
