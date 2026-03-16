@@ -1,6 +1,6 @@
 // ✅ Version du cache — incrémentez ce numéro à chaque déploiement
-const CACHE_VERSION = 'v6';
-const CACHE_NAME = `pamecas-pointage-${CACHE_VERSION}`;
+const CACHE_VERSION = 'smartpointage-v3';
+const CACHE_NAME = CACHE_VERSION;
 
 const STATIC_ASSETS = [
   '/',

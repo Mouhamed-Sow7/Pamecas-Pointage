@@ -257,13 +257,78 @@ function openAgentModal(mode, agent, sites) {
   }
 }
 
+function openImportModal(sites, root) {
+  const siteOptions = sites.map(s => `<option value="${s._id}">${s.nom}</option>`).join('');
+  showModal({
+    title: 'Importer agents depuis CSV',
+    content: `
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <div style="background:#e3f2fd;border-radius:8px;padding:12px;font-size:0.82rem;color:#1565c0;">
+          <i class="fa-solid fa-circle-info"></i>
+          Format CSV attendu (séparateur virgule ou point-virgule) :<br>
+          <code style="background:white;padding:2px 6px;border-radius:4px;font-size:0.78rem;">nom;prenom;type_contrat;telephone;poste</code>
+        </div>
+        <div>
+          <label style="font-size:0.82rem;font-weight:600;display:block;margin-bottom:6px;">Agence</label>
+          <select id="import-site-id" style="width:100%;padding:9px;border:1.5px solid #ddd;border-radius:8px;">
+            ${siteOptions}
+          </select>
+        </div>
+        <div>
+          <label style="font-size:0.82rem;font-weight:600;display:block;margin-bottom:6px;">Fichier CSV</label>
+          <input id="import-file" type="file" accept=".csv,.txt" style="width:100%;padding:9px;border:1.5px solid #ddd;border-radius:8px;" />
+        </div>
+      </div>
+    `,
+    confirmText: 'Importer',
+    cancelText: 'Annuler',
+    onConfirm: async (close) => {
+      const file = document.getElementById('import-file').files[0];
+      const siteId = document.getElementById('import-site-id').value;
+      if (!file) { showToast('Sélectionnez un fichier CSV.', 'warning'); return; }
+
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('site_id', siteId);
+
+      try {
+        const token = localStorage.getItem('pamecas_token');
+        const res = await fetch('/api/agents/import-csv', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` },
+          body: formData
+        });
+        const data = await res.json();
+        if (res.ok) {
+          showToast(data.message, 'success');
+          close();
+          fetchAgents(root, 1);
+        } else {
+          showToast(data.message, 'error');
+        }
+      } catch { showToast('Erreur import.', 'error'); }
+    }
+  });
+}
+
 export async function renderAgents(root, user) {
   const canEdit = user && (user.role === 'admin' || user.role === 'superadmin');
 
   root.innerHTML = `
     <div style="display:flex; flex-direction:column; gap:12px;">
       <div class="card">
-        <h2 style="font-size:1rem; font-weight:600; margin-bottom:12px;">Agents</h2>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+          <h2 style="font-size:1rem;font-weight:600;">Agents</h2>
+          ${canEdit ? `
+          <div style="display:flex;gap:8px;">
+            <button id="btn-import-csv" class="btn-primary" style="background:linear-gradient(135deg,#1565c0,#1976d2);font-size:0.78rem;padding:6px 10px;">
+              <i class="fa-solid fa-file-csv"></i> Importer CSV
+            </button>
+            <button id="btn-qr-sheet" class="btn-primary" style="background:linear-gradient(135deg,#6a1b9a,#8e24aa);font-size:0.78rem;padding:6px 10px;">
+              <i class="fa-solid fa-id-card"></i> QR Cards
+            </button>
+          </div>` : ''}
+        </div>
         <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:12px;">
           <input id="filter-search" placeholder="Recherche par nom, prénom ou matricule" style="width:100%;" />
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
@@ -308,6 +373,27 @@ export async function renderAgents(root, user) {
         sites = res.data || res || [];
       } catch (err) {}
       openAgentModal('create', null, sites);
+    });
+
+    const btnImportCsv = root.querySelector('#btn-import-csv');
+    btnImportCsv.addEventListener('click', async () => {
+      let sites = [];
+      try {
+        const res = await get('/api/sites');
+        sites = res.data || res || [];
+      } catch (err) {}
+      openImportModal(sites, root);
+    });
+
+    const btnQrSheet = root.querySelector('#btn-qr-sheet');
+    btnQrSheet.addEventListener('click', () => {
+      const token = localStorage.getItem('pamecas_token');
+      const siteId = user?.site_id;
+      if (!siteId) {
+        showToast('Sélectionnez une agence d\'abord.', 'warning');
+        return;
+      }
+      window.open(`/api/agents/qr-sheet/${siteId}?token=${token}`, '_blank');
     });
   }
 

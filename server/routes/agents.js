@@ -1,12 +1,93 @@
 const express = require('express');
 const Joi = require('joi');
 const QRCode = require('qrcode');
+const multer = require('multer');
+const { parse: csvParse } = require('csv-parse/sync');
 
 const Agent = require('../models/Agent');
 const Pointage = require('../models/Pointage');
 const { authenticate, authorizeRoles } = require('../middleware/auth');
 
 const router = express.Router();
+
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
+
+// ─── QR Sheet — doit précéder router.use(authenticate) pour accepter token en query ──
+router.get('/qr-sheet/:site_id', (req, res, next) => {
+  if (req.query.token && !req.headers.authorization) {
+    req.headers.authorization = `Bearer ${req.query.token}`;
+  }
+  next();
+}, authenticate, authorizeRoles('superadmin', 'admin'), async (req, res) => {
+  try {
+    const agents = await Agent.find({
+      site_id: req.params.site_id,
+      statut: 'actif'
+    }).populate('site_id', 'nom code').sort({ nom: 1 });
+
+    if (!agents.length) return res.status(404).json({ message: 'Aucun agent actif dans cette agence.' });
+
+    const site = agents[0].site_id;
+
+    const cartes = await Promise.all(agents.map(async (agent) => {
+      const qrDataUrl = await QRCode.toDataURL(agent.matricule, {
+        width: 200,
+        margin: 1,
+        color: { dark: '#1b5e20', light: '#ffffff' }
+      });
+      return { agent, qrDataUrl };
+    }));
+
+    const html = `<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>QR Codes — ${site.nom}</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: #f5f5f5; padding: 20px; }
+    h1 { text-align:center; color: #1b5e20; margin-bottom: 6px; font-size: 1.4rem; }
+    .subtitle { text-align:center; color: #666; font-size: 0.85rem; margin-bottom: 24px; }
+    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; max-width: 900px; margin: 0 auto; }
+    .card { background: white; border-radius: 12px; padding: 16px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border: 1px solid #e8f5e9; break-inside: avoid; }
+    .card-header { background: linear-gradient(135deg, #1b5e20, #2e7d32); color: white; border-radius: 8px; padding: 6px 10px; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.05em; margin-bottom: 12px; }
+    .qr-img { width: 140px; height: 140px; margin: 0 auto 10px; display: block; }
+    .agent-nom { font-weight: 700; font-size: 0.9rem; color: #1f2933; margin-bottom: 2px; }
+    .agent-matricule { font-size: 0.75rem; color: #2e7d32; font-weight: 600; margin-bottom: 2px; }
+    .agent-poste { font-size: 0.72rem; color: #888; }
+    .agent-contrat { display: inline-block; margin-top: 6px; padding: 2px 8px; border-radius: 10px; background: #e8f5e9; color: #2e7d32; font-size: 0.68rem; font-weight: 600; }
+    @media print { body { background: white; padding: 10px; } .no-print { display: none; } .grid { gap: 10px; } }
+  </style>
+</head>
+<body>
+  <div class="no-print" style="text-align:center;margin-bottom:20px;">
+    <button onclick="window.print()" style="padding:10px 24px;background:#2e7d32;color:white;border:none;border-radius:8px;font-size:1rem;cursor:pointer;font-weight:600;">
+      🖨️ Imprimer / Sauvegarder PDF
+    </button>
+    <span style="margin-left:16px;color:#888;font-size:0.85rem;">Utilisez Ctrl+P puis "Enregistrer en PDF"</span>
+  </div>
+  <h1>SmartPointage — Cartes QR Code</h1>
+  <div class="subtitle">${site.nom} · ${agents.length} agents · Généré le ${new Date().toLocaleDateString('fr-FR')}</div>
+  <div class="grid">
+    ${cartes.map(({ agent, qrDataUrl }) => `
+    <div class="card">
+      <div class="card-header">SMARTPOINTAGE · ${site.code}</div>
+      <img class="qr-img" src="${qrDataUrl}" alt="QR ${agent.matricule}">
+      <div class="agent-nom">${agent.nom} ${agent.prenom}</div>
+      <div class="agent-matricule">${agent.matricule}</div>
+      <div class="agent-poste">${agent.poste || ''}</div>
+      <span class="agent-contrat">${agent.type_contrat.toUpperCase()}</span>
+    </div>`).join('')}
+  </div>
+</body>
+</html>`;
+
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    return res.send(html);
+  } catch (err) {
+    return res.status(500).json({ message: 'Erreur génération QR sheet.' });
+  }
+});
 
 router.use(authenticate);
 
@@ -121,26 +202,20 @@ router.get('/', async (req, res) => {
 router.get('/search', async (req, res) => {
   try {
     const { matricule } = req.query;
-    if (!matricule) {
-      return res
-        .status(400)
-        .json({ message: 'Le matricule est requis pour la recherche.' });
+    if (!matricule) return res.status(400).json({ message: 'Matricule requis.' });
+
+    const filter = { matricule: matricule.toUpperCase(), statut: 'actif' };
+
+    // Si token kiosque — filtrer uniquement les agents de cette agence
+    if (req.user.is_kiosque && req.user.site_id) {
+      filter.site_id = req.user.site_id;
     }
 
-    const agent = await Agent.findOne({ matricule })
-      .populate('site_id')
-      .exec();
-
-    if (!agent) {
-      return res.status(404).json({ message: 'Agent non trouvé.' });
-    }
-
+    const agent = await Agent.findOne(filter).populate('site_id', 'nom code');
+    if (!agent) return res.status(404).json({ message: 'Agent introuvable pour cette agence.' });
     return res.json(agent);
   } catch (err) {
-    console.error("Erreur lors de la recherche de l'agent par matricule:", err);
-    return res.status(500).json({
-      message: "Erreur lors de la recherche de l'agent par matricule."
-    });
+    return res.status(500).json({ message: 'Erreur recherche agent.' });
   }
 });
 
@@ -327,6 +402,62 @@ router.delete(
     }
   }
 );
+
+// ─── POST /import-csv — Import agents depuis CSV ─────────────────
+router.post('/import-csv', authorizeRoles('superadmin', 'admin'), upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ message: 'Fichier CSV requis.' });
+
+    const content = req.file.buffer.toString('utf-8');
+    const records = csvParse(content, {
+      columns: true,
+      skip_empty_lines: true,
+      trim: true,
+      delimiter: [',', ';']
+    });
+
+    const site_id = req.body.site_id || req.user.site_id;
+    if (!site_id) return res.status(400).json({ message: 'site_id obligatoire.' });
+
+    const results = { created: 0, skipped: 0, errors: [] };
+
+    for (const row of records) {
+      try {
+        const nom = row.nom || row.NOM || row.Nom;
+        const prenom = row.prenom || row.PRENOM || row.Prenom;
+        const type_contrat = (row.type_contrat || row.contrat || 'CDI').toLowerCase();
+        const telephone = row.telephone || row.TELEPHONE || row.tel || '';
+        const poste = row.poste || row.POSTE || '';
+
+        if (!nom || !prenom) { results.errors.push(`Ligne ignorée: nom/prenom manquant`); continue; }
+
+        const existing = await Agent.findOne({ nom, prenom, site_id });
+        if (existing) { results.skipped++; continue; }
+
+        const agent = new Agent({
+          nom: nom.trim(),
+          prenom: prenom.trim(),
+          type_contrat: ['cdi','cdd','stage','prestataire'].includes(type_contrat) ? type_contrat : 'CDI',
+          telephone: telephone.trim(),
+          poste: poste.trim(),
+          site_id,
+          statut: 'actif'
+        });
+        await agent.save();
+        results.created++;
+      } catch (e) {
+        results.errors.push(`Erreur: ${e.message}`);
+      }
+    }
+
+    return res.json({
+      message: `Import terminé: ${results.created} créés, ${results.skipped} ignorés`,
+      ...results
+    });
+  } catch (err) {
+    return res.status(500).json({ message: 'Erreur import CSV: ' + err.message });
+  }
+});
 
 // ─── POST /otp/send — Envoyer OTP SMS ───────────────────────────
 router.post('/otp/send', async (req, res) => {

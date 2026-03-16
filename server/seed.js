@@ -1,5 +1,6 @@
 const dotenv = require('dotenv');
 dotenv.config();
+const { v4: uuidv4 } = require('uuid');
 const { connectDB, mongoose } = require('./config/db');
 const Site = require('./models/Site');
 const User = require('./models/User');
@@ -184,6 +185,8 @@ async function seed() {
     // 1. Agences
     const sitesMap = {};
     for (const agence of agences) {
+      agence.kiosque_token = agence.kiosque_token || uuidv4();
+      agence.kiosque_token_created_at = agence.kiosque_token_created_at || new Date();
       const site = await Site.findOneAndUpdate(
         { code: agence.code },
         { ...agence, actif: true },

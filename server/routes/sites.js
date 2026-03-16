@@ -11,7 +11,14 @@ router.use(authenticate);
 router.get('/', async (req, res) => {
   try {
     const sites = await Site.find({ actif: true }).sort({ nom: 1 });
-    return res.json({ data: sites });
+    const baseUrl = process.env.APP_URL || 'https://pamecas-pointage.onrender.com';
+    const sitesAvecUrl = sites.map(s => ({
+      ...s.toObject(),
+      kiosque_url: s.kiosque_token
+        ? `${baseUrl}/#/kiosque?ktoken=${s.kiosque_token}`
+        : null
+    }));
+    return res.json({ data: sitesAvecUrl });
   } catch (err) {
     console.error('Erreur lors de la récupération des sites:', err);
     return res
@@ -26,6 +33,8 @@ router.post(
   async (req, res) => {
     try {
       const site = new Site(req.body);
+      site.kiosque_token = uuidv4();
+      site.kiosque_token_created_at = new Date();
       await site.save();
       return res.status(201).json(site);
     } catch (err) {

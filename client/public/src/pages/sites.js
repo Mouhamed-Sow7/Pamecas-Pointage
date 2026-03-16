@@ -16,7 +16,7 @@ function renderTable(root, sites) {
 
   if (!sites.length) {
     tbody.innerHTML = `
-      <tr><td colspan="6" style="text-align:center;padding:24px;color:#aaa;">
+      <tr><td colspan="7" style="text-align:center;padding:24px;color:#aaa;">
         <i class="fa-solid fa-building-circle-xmark"></i> Aucun site trouve
       </td></tr>
     `;
@@ -52,6 +52,22 @@ function renderTable(root, sites) {
             ${site.actif ? 'Desactiver' : 'Activer'}
           </button>
         </div>
+      </td>
+      <td style="padding:10px 12px;border-bottom:1px solid #f0f0f0;">
+        ${site.kiosque_url ? `
+          <button class="btn-copy-kiosque"
+            data-url="${site.kiosque_url}"
+            data-nom="${site.nom}"
+            style="display:flex;align-items:center;gap:6px;padding:5px 10px;border-radius:8px;border:1.5px solid #2e7d32;background:white;color:#2e7d32;cursor:pointer;font-size:0.75rem;font-weight:500;"
+            title="${site.kiosque_url}">
+            <i class="fa-solid fa-tablet-screen-button"></i> Copier URL
+          </button>
+        ` : `
+          <button class="btn-gen-kiosque" data-id="${site._id}"
+            style="padding:5px 10px;border-radius:8px;border:1.5px solid #aaa;background:white;color:#aaa;cursor:pointer;font-size:0.75rem;">
+            Générer
+          </button>
+        `}
       </td>
     `;
     tbody.appendChild(tr);
@@ -205,11 +221,11 @@ export async function renderSites(root, user) {
               <th style="padding:12px;text-align:left;font-weight:600;">Region</th>
               <th style="padding:12px;text-align:left;font-weight:600;">Responsable</th>
               <th style="padding:12px;text-align:left;font-weight:600;">Statut</th>
-              ${canEdit ? '<th style="padding:12px;text-align:left;font-weight:600;">Actions</th>' : ''}
+              ${canEdit ? '<th style="padding:12px;text-align:left;font-weight:600;">Actions</th><th style="padding:12px;text-align:left;font-weight:600;">Kiosque</th>' : ''}
             </tr>
           </thead>
           <tbody id="sites-tbody">
-            <tr><td colspan="6" style="text-align:center;padding:24px;color:#aaa;">
+            <tr><td colspan="7" style="text-align:center;padding:24px;color:#aaa;">
               <i class="fa-solid fa-spinner fa-spin"></i> Chargement...
             </td></tr>
           </tbody>
@@ -225,8 +241,30 @@ export async function renderSites(root, user) {
   // Event delegation sur tbody
   const tbody = root.querySelector('#sites-tbody');
   tbody.addEventListener('click', async (e) => {
+    const btnCopy = e.target.closest('.btn-copy-kiosque');
+    const btnGen = e.target.closest('.btn-gen-kiosque');
     const btnEdit = e.target.closest('.btn-edit-site');
     const btnToggle = e.target.closest('.btn-toggle-site');
+
+    if (btnCopy) {
+      await navigator.clipboard.writeText(btnCopy.dataset.url);
+      showToast(`URL kiosque ${btnCopy.dataset.nom} copiée !`, 'success');
+      return;
+    }
+
+    if (btnGen) {
+      try {
+        const token = localStorage.getItem('pamecas_token');
+        const res = await fetch(`/api/sites/${btnGen.dataset.id}/kiosque-token`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (!res.ok) throw new Error();
+        showToast('URL kiosque générée !', 'success');
+        fetchSites(root);
+      } catch { showToast('Erreur génération.', 'error'); }
+      return;
+    }
 
     if (btnEdit) {
       const id = btnEdit.dataset.id;
