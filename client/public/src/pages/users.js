@@ -50,15 +50,19 @@ export async function renderUsers(container, currentUser) {
   }
 
   container.innerHTML = `
-    <div style="padding:24px;max-width:900px;margin:0 auto;">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
-        <h2 style="margin:0;font-size:1.3rem;font-weight:700;color:#1a1a1a;">Gestion des utilisateurs</h2>
-        <button id="btn-add-user" style="padding:9px 18px;background:#2e7d32;color:white;border:none;border-radius:8px;cursor:pointer;font-size:0.9rem;display:flex;align-items:center;gap:6px;">
+    <div style="display:flex;flex-direction:column;height:calc(100vh - 120px);min-height:400px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
+        <h2 style="font-size:1.1rem;font-weight:700;">
+          <i class="fa-solid fa-users-gear" style="color:#2e7d32;margin-right:6px;"></i>Gestion des utilisateurs
+        </h2>
+        <button id="btn-add-user" class="btn-primary">
           <i class="fa-solid fa-plus"></i> Ajouter
         </button>
       </div>
-      <div id="users-list" style="max-height:500px;overflow-y:auto;border:1px solid #e0e0e0;border-radius:12px;background:white;">
-        <div style="padding:40px;text-align:center;color:#aaa;">Chargement...</div>
+      <div id="users-list" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding-right:2px;scrollbar-width:thin;scrollbar-color:#c8e6c9 #f5f5f5;">
+        <div style="text-align:center;padding:20px;color:#999;">
+          <i class="fa-solid fa-spinner fa-spin"></i> Chargement...
+        </div>
       </div>
     </div>
   `;
@@ -75,6 +79,38 @@ export async function renderUsers(container, currentUser) {
     }
   }
 
+  function renderUserCard(u, canEdit) {
+    const rc = roleConfig[u.role] || { label: u.role, color: '#555', bg: '#f5f5f5' };
+    return `
+      <div style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:white;border:1px solid #eee;border-radius:10px;border-left:3px solid ${rc.color};">
+        <div style="width:38px;height:38px;border-radius:50%;background:${rc.bg};display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <i class="fa-solid fa-user" style="color:${rc.color};font-size:0.9rem;"></i>
+        </div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:600;font-size:0.88rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${u.nom_complet || u.username}</div>
+          <div style="font-size:0.75rem;color:#888;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">@${u.username} · ${u.site_id?.nom || (u.sites_ids?.length > 0 ? u.sites_ids.length + ' agences' : '—')}</div>
+          <div style="display:flex;align-items:center;gap:6px;margin-top:4px;flex-wrap:wrap;">
+            <span style="font-size:0.7rem;padding:2px 8px;border-radius:10px;background:${rc.bg};color:${rc.color};font-weight:600;">${rc.label}</span>
+            <span style="font-size:0.7rem;padding:2px 8px;border-radius:10px;background:${u.actif ? '#e8f5e9' : '#f5f5f5'};color:${u.actif ? '#2e7d32' : '#999'};font-weight:500;">${u.actif ? 'Actif' : 'Inactif'}</span>
+          </div>
+        </div>
+        ${canEdit ? `
+        <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0;">
+          <button class="btn-edit-user" data-id="${u._id}"
+            style="width:32px;height:32px;border-radius:8px;border:1.5px solid #1565c0;background:white;color:#1565c0;cursor:pointer;font-size:0.75rem;display:flex;align-items:center;justify-content:center;"
+            title="Modifier">
+            <i class="fa-solid fa-pen"></i>
+          </button>
+          <button class="btn-toggle-user" data-id="${u._id}" data-actif="${u.actif}"
+            style="width:32px;height:32px;border-radius:8px;border:1.5px solid ${u.actif ? '#c62828' : '#2e7d32'};background:white;color:${u.actif ? '#c62828' : '#2e7d32'};cursor:pointer;font-size:0.75rem;display:flex;align-items:center;justify-content:center;"
+            title="${u.actif ? 'Désactiver' : 'Activer'}">
+            <i class="fa-solid ${u.actif ? 'fa-ban' : 'fa-circle-check'}"></i>
+          </button>
+        </div>` : ''}
+      </div>
+    `;
+  }
+
   function renderList() {
     const list = container.querySelector('#users-list');
     if (!users.length) {
@@ -82,31 +118,8 @@ export async function renderUsers(container, currentUser) {
       return;
     }
 
-    list.innerHTML = users.map(u => {
-      const siteNom = u.site_id?.nom || u.site_id?.code || '—';
-      return `
-        <div style="display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid #f0f0f0;" data-id="${u._id}">
-          <div style="width:38px;height:38px;border-radius:50%;background:#e8f5e9;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-            <i class="fa-solid fa-user" style="color:#2e7d32;font-size:0.85rem;"></i>
-          </div>
-          <div style="flex:1;min-width:0;">
-            <div style="font-weight:600;font-size:0.92rem;color:#1a1a1a;">${u.nom_complet || u.username}</div>
-            <div style="color:#888;font-size:0.78rem;">@${u.username} · ${siteNom}</div>
-          </div>
-          <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
-            ${roleBadge(u.role)}
-            <span style="font-size:0.75rem;padding:2px 8px;border-radius:10px;background:${u.actif ? '#e8f5e9' : '#ffebee'};color:${u.actif ? '#2e7d32' : '#c62828'};">${u.actif ? 'Actif' : 'Inactif'}</span>
-            <button class="btn-edit-user" data-id="${u._id}" style="padding:5px 12px;border:1px solid #ddd;border-radius:6px;background:white;cursor:pointer;font-size:0.8rem;color:#1565c0;">
-              <i class="fa-solid fa-pen"></i>
-            </button>
-            ${currentUser?.role === 'superadmin' ? `
-            <button class="btn-deactivate-user" data-id="${u._id}" data-actif="${u.actif}" style="padding:5px 10px;border:1px solid #ddd;border-radius:6px;background:white;cursor:pointer;font-size:0.8rem;color:#c62828;" title="${u.actif ? 'Désactiver' : 'Désactivé'}">
-              <i class="fa-solid fa-ban"></i>
-            </button>` : ''}
-          </div>
-        </div>
-      `;
-    }).join('');
+    const canEdit = currentUser?.role === 'superadmin';
+    list.innerHTML = users.map(u => renderUserCard(u, canEdit)).join('');
 
     list.querySelectorAll('.btn-edit-user').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -115,7 +128,7 @@ export async function renderUsers(container, currentUser) {
       });
     });
 
-    list.querySelectorAll('.btn-deactivate-user').forEach(btn => {
+    list.querySelectorAll('.btn-toggle-user').forEach(btn => {
       btn.addEventListener('click', async () => {
         if (!confirm('Désactiver cet utilisateur ?')) return;
         try {

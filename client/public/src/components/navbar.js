@@ -80,19 +80,22 @@ export async function renderNavbar(container, currentRoute, user) {
 
   container.innerHTML = `
     <div class="nav-header">
-      <button class="sidebar-collapse-btn" id="sidebar-collapse-btn" type="button" title="Reduire">  <i class="fa-solid fa-bars"></i>
+      <button class="sidebar-collapse-btn" id="sidebar-collapse-btn" type="button" title="Reduire">
+        <i class="fa-solid fa-bars"></i>
       </button>
       <div class="logo">
-        <div class="logo-mark" style="font-size:0.75rem;letter-spacing:-0.5px;">SP</div>
+        <div class="logo-mark">SP</div>
         <div class="logo-text">
           <div class="title">SmartPointage</div>
           <div class="subtitle">${instanceNom}</div>
         </div>
       </div>
     </div>
-    <nav class="nav-menu">${htmlLinks}</nav>
+    <div class="sidebar-scroll">
+      <nav class="nav-menu">${htmlLinks}</nav>
+    </div>
     <div class="nav-footer">
-      <div class="status-row" style="margin-bottom:2px;">
+      <div class="status-row">
         <span class="status-dot ${isOnline ? 'online' : 'offline'}"></span>
         <span class="status-text">${isOnline ? 'En ligne' : 'Hors ligne'}</span>
       </div>
@@ -101,14 +104,10 @@ export async function renderNavbar(container, currentRoute, user) {
         <span class="status-text">Sync</span>
         <span class="badge badge-pending">${pending} en attente</span>
       </div>` : ''}
-      <div class="status-row" style="font-size:0.78rem;color:rgba(255,255,255,0.6);">
-        <i class="fa-solid fa-user" style="font-size:0.7rem;"></i>
-        <span class="nav-text" style="font-size:0.78rem;">${user?.username || ''} · ${user?.role || ''}</span>
+      <div class="status-row" style="overflow:hidden;">
+        <i class="fa-solid fa-user" style="font-size:0.7rem;flex-shrink:0;color:rgba(255,255,255,0.6);"></i>
+        <span class="status-text">${user?.username || ''} · ${user?.role || ''}</span>
       </div>
-      ${user?.is_superadmin ? `
-      <div style="font-size:0.68rem;background:rgba(255,215,0,0.15);color:gold;padding:2px 8px;border-radius:10px;border:1px solid rgba(255,215,0,0.3);margin-top:4px;text-align:center;">
-        ⚡ Super Admin
-      </div>` : ''}
       <button id="btn-logout" class="btn-logout">
         <i class="fa-solid fa-right-from-bracket"></i>
         <span class="nav-text">Deconnexion</span>

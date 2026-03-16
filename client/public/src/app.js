@@ -25,10 +25,22 @@ function isAuthenticated() {
   return !!localStorage.getItem('pamecas_token');
 }
 
+let offlineTimeout = null;
+
 function updateOfflineBanner() {
   const banner = document.getElementById('offline-banner');
   if (!banner) return;
-  navigator.onLine ? banner.classList.remove('visible') : banner.classList.add('visible');
+
+  if (!navigator.onLine) {
+    banner.classList.add('visible');
+    if (offlineTimeout) clearTimeout(offlineTimeout);
+    offlineTimeout = setTimeout(() => {
+      banner.classList.remove('visible');
+    }, 5000);
+  } else {
+    banner.classList.remove('visible');
+    if (offlineTimeout) { clearTimeout(offlineTimeout); offlineTimeout = null; }
+  }
 }
 
 function mountLayout(route, user) {
