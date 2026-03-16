@@ -1,4 +1,4 @@
-﻿{
+{
   "name": "gds-pointage",
   "version": "1.0.0",
   "description": "SystÃ¨me de pointage QR code offline-first pour Grands Domaines du SÃ©nÃ©gal (GDS).",
@@ -7,7 +7,6 @@
     "start": "node server/app.js",
     "dev": "nodemon server/app.js",
     "seed": "node server/seed.js",
-    "migrate": "node server/scripts/migrate_matricules.js",
     "migrate": "node server/scripts/migrate_matricules.js",
     "test": "jest"
   },
@@ -29,6 +28,7 @@
     "bcryptjs": "^2.4.3",
     "compression": "^1.7.5",
     "cors": "^2.8.5",
+    "csv-parse": "^6.1.0",
     "dotenv": "^16.4.5",
     "exceljs": "^4.4.0",
     "express": "^4.21.2",
@@ -37,6 +37,7 @@
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.8.1",
     "morgan": "^1.10.0",
+    "multer": "^2.1.1",
     "node-cron": "^4.2.1",
     "nodemailer": "^8.0.2",
     "qrcode": "^1.5.4",
@@ -49,5 +50,3 @@
     "supertest": "^7.1.1"
   }
 }
-
-
