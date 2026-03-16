@@ -446,8 +446,10 @@ router.post('/import-csv', authenticate, authorizeRoles('superadmin', 'admin'), 
           continue;
         }
 
-        const type_contrat = ['cdi','cdd','stage','prestataire'].includes(type_contrat_raw)
-          ? type_contrat_raw : 'CDI';
+        const tcUpper = type_contrat_raw.toUpperCase();
+        const type_contrat = ['CDI','CDD'].includes(tcUpper) ? tcUpper
+          : ['stage','prestataire'].includes(type_contrat_raw) ? type_contrat_raw
+          : 'CDI';
 
         const existing = await Agent.findOne({ nom: nom.trim(), prenom: prenom.trim(), site_id });
         if (existing) { results.skipped++; continue; }
