@@ -404,58 +404,84 @@ router.delete(
 );
 
 // ─── POST /import-csv — Import agents depuis CSV ─────────────────
-router.post('/import-csv', authorizeRoles('superadmin', 'admin'), upload.single('file'), async (req, res) => {
+router.post('/import-csv', authenticate, authorizeRoles('superadmin', 'admin'), upload.single('file'), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ message: 'Fichier CSV requis.' });
-
-    const content = req.file.buffer.toString('utf-8');
-    const records = csvParse(content, {
-      columns: true,
-      skip_empty_lines: true,
-      trim: true,
-      delimiter: [',', ';']
-    });
 
     const site_id = req.body.site_id || req.user.site_id;
     if (!site_id) return res.status(400).json({ message: 'site_id obligatoire.' });
 
+    // Parser le CSV manuellement pour eviter les problemes de module
+    const content = req.file.buffer.toString('utf-8');
+    const lines = content.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+
+    if (lines.length < 2) {
+      return res.status(400).json({ message: 'CSV vide ou sans donnees.' });
+    }
+
+    // Detecter separateur
+    const sep = lines[0].includes(';') ? ';' : ',';
+    const headers = lines[0].split(sep).map(h => h.trim().toLowerCase());
+
+    console.log('Headers CSV detectes:', headers);
+    console.log('Separateur:', sep);
+    console.log('Nombre de lignes:', lines.length - 1);
+
     const results = { created: 0, skipped: 0, errors: [] };
 
-    for (const row of records) {
+    for (let i = 1; i < lines.length; i++) {
+      const values = lines[i].split(sep).map(v => v.trim());
+      const row = {};
+      headers.forEach((h, idx) => { row[h] = values[idx] || ''; });
+
       try {
-        const nom = row.nom || row.NOM || row.Nom;
-        const prenom = row.prenom || row.PRENOM || row.Prenom;
-        const type_contrat = (row.type_contrat || row.contrat || 'CDI').toLowerCase();
-        const telephone = row.telephone || row.TELEPHONE || row.tel || '';
-        const poste = row.poste || row.POSTE || '';
+        const nom = row.nom || '';
+        const prenom = row.prenom || '';
+        const type_contrat_raw = (row.type_contrat || row.contrat || 'cdi').toLowerCase().trim();
+        const telephone = row.telephone || row.tel || '';
+        const poste = row.poste || '';
 
-        if (!nom || !prenom) { results.errors.push(`Ligne ignorée: nom/prenom manquant`); continue; }
+        if (!nom || !prenom) {
+          results.errors.push(`Ligne ${i}: nom ou prenom manquant`);
+          continue;
+        }
 
-        const existing = await Agent.findOne({ nom, prenom, site_id });
+        const type_contrat = ['cdi','cdd','stage','prestataire'].includes(type_contrat_raw)
+          ? type_contrat_raw : 'CDI';
+
+        const existing = await Agent.findOne({ nom: nom.trim(), prenom: prenom.trim(), site_id });
         if (existing) { results.skipped++; continue; }
 
         const agent = new Agent({
           nom: nom.trim(),
           prenom: prenom.trim(),
-          type_contrat: ['cdi','cdd','stage','prestataire'].includes(type_contrat) ? type_contrat : 'CDI',
+          type_contrat,
           telephone: telephone.trim(),
           poste: poste.trim(),
           site_id,
           statut: 'actif'
         });
+
         await agent.save();
         results.created++;
+        console.log(`Agent cree: ${nom} ${prenom}`);
+
       } catch (e) {
-        results.errors.push(`Erreur: ${e.message}`);
+        console.error(`Erreur ligne ${i}:`, e.message);
+        results.errors.push(`Ligne ${i}: ${e.message}`);
       }
     }
 
     return res.json({
-      message: `Import terminé: ${results.created} créés, ${results.skipped} ignorés`,
-      ...results
+      message: `Import termine: ${results.created} cree(s), ${results.skipped} ignore(s)`,
+      created: results.created,
+      skipped: results.skipped,
+      errors: results.errors
     });
+
   } catch (err) {
-    return res.status(500).json({ message: 'Erreur import CSV: ' + err.message });
+    console.error('Erreur import CSV:', err);
+    return res.status(500).json({ message: 'Erreur import: ' + err.message });
   }
 });
 
