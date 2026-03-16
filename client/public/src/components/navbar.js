@@ -40,8 +40,8 @@ export async function renderNavbar(container, currentRoute, user) {
     { path: '#/dashboard', label: 'Dashboard', icon: '<i class="fa-regular fa-house"></i>' },
   ];
 
-  // Pointage : uniquement admin/pointeur/superviseur (pas DR, pas superadmin UI)
-  if (user && ['admin', 'superviseur', 'pointeur'].includes(user.role)) {
+  // Pointage : uniquement admin/pointeur/superviseur et superadmin UI (pas DR)
+  if (user && ['admin', 'superadmin', 'superviseur', 'pointeur'].includes(user.role)) {
     links.push({ path: '#/pointage', label: 'Pointage', icon: '<i class="fa-regular fa-circle-dot"></i>' });
   }
 
