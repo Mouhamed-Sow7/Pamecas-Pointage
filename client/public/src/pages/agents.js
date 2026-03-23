@@ -61,16 +61,23 @@ function renderAgentsList(root, agents) {
         } catch (err) {}
         openAgentModal(action, agent, sites);
       } else if (action === 'delete') {
-        if (confirm('êtes-vous sûr de vouloir supprimer cet agent ?')) {
-          try {
-            await del(`/api/agents/${agentId}`);
-            showToast('Agent supprimé avec succés.', 'success');
-            const root = document.getElementById('app').querySelector('main') || document.getElementById('app');
-            renderAgents(root, JSON.parse(localStorage.getItem('pamecas_user')));
-          } catch (err) {
-            showToast("Erreur lors de la suppression de l'agent.", 'error');
+        showModal({
+          title: 'Supprimer l\'agent',
+          content: '<p style="margin:0;color:#555;">Etes-vous sur de vouloir supprimer cet agent ? Cette action est irreversible.</p>',
+          confirmText: 'Supprimer',
+          cancelText: 'Annuler',
+          onConfirm: async (close) => {
+            try {
+              await del(`/api/agents/${agentId}`);
+              showToast('Agent supprime.', 'success');
+              close();
+              const root = document.getElementById('app').querySelector('main') || document.getElementById('app');
+              renderAgents(root, JSON.parse(localStorage.getItem('pamecas_user')));
+            } catch (err) {
+              showToast("Erreur suppression.", 'error');
+            }
           }
-        }
+        });
       }
     });
   });
@@ -462,3 +469,4 @@ export async function renderAgents(root, user) {
 
   fetchAgents(root, 1);
 }
+

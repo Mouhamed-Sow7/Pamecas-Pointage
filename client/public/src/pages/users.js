@@ -1,6 +1,6 @@
 // client/public/src/pages/users.js
 import { showToast } from '../components/toast.js';
-
+import { showModal } from '../components/modal.js';
 const API = '/api';
 
 const roleConfig = {
@@ -130,18 +130,28 @@ export async function renderUsers(container, currentUser) {
 
     list.querySelectorAll('.btn-toggle-user').forEach(btn => {
       btn.addEventListener('click', async () => {
-        if (!confirm('Désactiver cet utilisateur ?')) return;
-        try {
-          const res = await fetch(`${API}/users/${btn.dataset.id}`, {
-            method: 'DELETE',
-            headers: { Authorization: `Bearer ${getToken()}` }
+        btn.addEventListener('click', () => {
+          showModal({
+            title: 'Desactiver l\'utilisateur',
+            content: '<p style="margin:0;color:#555;">Voulez-vous desactiver cet utilisateur ?</p>',
+            confirmText: 'Desactiver',
+            cancelText: 'Annuler',
+            onConfirm: async (close) => {
+              try {
+                const res = await fetch(`${API}/users/${btn.dataset.id}`, {
+                  method: 'DELETE',
+                  headers: { Authorization: `Bearer ${getToken()}` }
+                });
+                if (!res.ok) throw new Error((await res.json()).message);
+                showToast('Utilisateur desactive.', 'success');
+                close();
+                await loadAndRender();
+              } catch (err) {
+                showToast(err.message, 'error');
+              }
+            }
           });
-          if (!res.ok) throw new Error((await res.json()).message);
-          showToast('Utilisateur désactivé.', 'success');
-          await loadAndRender();
-        } catch (err) {
-          showToast(err.message, 'error');
-        }
+        });
       });
     });
   }
