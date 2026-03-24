@@ -1,4 +1,4 @@
-import { getPendingPointages, clearSynced } from './indexedDB.js';
+﻿import { getPendingPointages, clearSynced } from './indexedDB.js';
 
 const syncCallbacks = [];
 
@@ -16,13 +16,14 @@ export async function syncPending() {
     const response = await fetch('/api/pointages/sync', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + (localStorage.getItem('pamecas_token') || '')
       },
       body: JSON.stringify(body)
     });
 
     if (!response.ok) {
-      throw new Error('Sync échouée');
+      throw new Error('Sync Ã©chouÃ©e');
     }
 
     const localIds = pending.map((p) => p.local_id);
@@ -80,4 +81,5 @@ export function onSyncComplete(callback) {
     syncCallbacks.push(callback);
   }
 }
+
 

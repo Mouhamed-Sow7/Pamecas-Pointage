@@ -1,4 +1,4 @@
-const DB_NAME = 'gds-offline';
+﻿const DB_NAME = 'smartpointage-offline';
 const DB_VERSION = 1;
 const STORE_POINTAGES = 'pointages_pending';
 const STORE_AGENTS = 'agents_cache';
@@ -158,4 +158,5 @@ export async function getAuth() {
     request.onerror = () => reject(request.error);
   });
 }
+
 
