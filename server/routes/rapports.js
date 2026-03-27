@@ -215,7 +215,7 @@ router.get('/export', async (req, res) => {
     if (format === 'pdf') {
       return res.status(400).json({
         message:
-          'Le format PDF n'est pas encore supporté. Utilisez le format Excel.'
+          'Le format PDF n est pas encore supporte. Utilisez le format Excel.'
       });
     }
 
@@ -240,6 +240,7 @@ router.get('/test-email', authorizeRoles('superadmin'), async (req, res) => {
 
 
 module.exports = router;
+
 
 
 
