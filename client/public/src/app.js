@@ -172,7 +172,14 @@ document.addEventListener('DOMContentLoaded', () => {
   updateOfflineBanner();
   startAutoSync();
   onSyncComplete((count) => {
-    if (count > 0) showToast(`${count} pointage(s) synchronise(s).`, 'success');
+    if (count > 0) {
+      showToast(`${count} pointage(s) synchronise(s).`, 'success');
+      // Recharger la page de pointage si on est dessus
+      const hash = window.location.hash;
+      if (hash.includes('/pointage') || hash.includes('/dashboard')) {
+        setTimeout(() => router(), 500);
+      }
+    }
   });
   router();
 });
