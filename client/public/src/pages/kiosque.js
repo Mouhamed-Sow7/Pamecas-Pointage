@@ -1,4 +1,5 @@
 // client/public/src/pages/kiosque.js
+import { showModal } from '../components/modal.js';
 import { showToast } from '../components/toast.js';
 
 let animationId = null;
@@ -255,14 +256,14 @@ export async function renderKiosque(root) {
   const queryStr = hash.includes('?') ? hash.split('?')[1] : '';
   const params = new URLSearchParams(queryStr);
 
-  let token = params.get('token');
+  let token = window._kiosqueToken || params.get('ktoken') || params.get('token');
   let siteId = params.get('site');
-  let siteNom = params.get('nom') ? decodeURIComponent(params.get('nom')) : 'Agence';
+  let siteNom = window._kiosqueSiteNom || (params.get('nom') ? decodeURIComponent(params.get('nom')) : 'Agence');
 
   const ktoken = params.get('ktoken');
 
   // Mode B — token kiosque permanent
-  if (ktoken) {
+  if (!siteId && token && (!params.get('token') || ktoken)) {
     root.innerHTML = `
       <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0f2417;color:white;">
         <div class="kiosque-spinner"></div>
@@ -270,12 +271,14 @@ export async function renderKiosque(root) {
       <style>.kiosque-spinner{width:48px;height:48px;border:4px solid rgba(255,255,255,0.2);border-top-color:#4CAF50;border-radius:50%;animation:spin 0.8s linear infinite;}@keyframes spin{to{transform:rotate(360deg);}}</style>
     `;
     try {
-      const res = await fetch(`/api/auth/kiosque/${ktoken}`);
+      const res = await fetch(`/api/auth/kiosque/${token}`);
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Token invalide');
-      token = ktoken;
       siteId = data.site._id;
-      siteNom = data.site.nom;
+      if (!window._kiosqueSiteNom) {
+        siteNom = data.site.nom;
+        window._kiosqueSiteNom = data.site.nom;
+      }
     } catch (err) {
       root.innerHTML = `
         <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0f2417;color:white;text-align:center;padding:20px;">
@@ -309,7 +312,7 @@ export async function renderKiosque(root) {
       <!-- Header -->
       <div style="position:absolute;top:0;left:0;right:0;padding:16px 20px;display:flex;justify-content:space-between;align-items:center;background:rgba(0,0,0,0.3);z-index:10;">
         <div style="display:flex;align-items:center;gap:10px;">
-          <div style="width:36px;height:36px;background:#2e7d32;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:800;color:white;font-size:0.8rem;">SP</div>
+          <div id="kiosque-logo-sp" style="width:36px;height:36px;background:#2e7d32;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:800;color:white;font-size:0.8rem;cursor:pointer;">SP</div>
           <div>
             <div style="color:white;font-weight:700;font-size:0.9rem;">SmartPointage</div>
             <div style="color:rgba(255,255,255,0.6);font-size:0.72rem;">${siteNom}</div>
@@ -402,6 +405,75 @@ export async function renderKiosque(root) {
   const canvas = root.querySelector('#kiosque-canvas');
   const lastActivity = root.querySelector('#last-activity');
   const btnOtp = root.querySelector('#btn-otp-fallback');
+  const logoEl = root.querySelector('#kiosque-logo-sp');
+
+  // Plein ecran au premier tap utilisateur (necessaire sur Android)
+  document.addEventListener('click', function requestFS() {
+    if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
+      document.documentElement.requestFullscreen().catch(() => {});
+    }
+    document.removeEventListener('click', requestFS);
+  }, { once: true });
+
+  // Sortie secrete kiosque (5 taps sur logo)
+  let tapCount = 0;
+  let tapTimer = null;
+  if (logoEl) {
+    logoEl.addEventListener('click', () => {
+      tapCount++;
+      if (tapTimer) clearTimeout(tapTimer);
+      tapTimer = setTimeout(() => { tapCount = 0; }, 2000);
+      if (tapCount >= 5) {
+        tapCount = 0;
+        demanderPINSortie();
+      }
+    });
+  }
+
+  function demanderPINSortie() {
+    showModal({
+      title: 'Quitter le mode kiosque',
+      content: `
+        <div style="text-align:center;">
+          <i class="fa-solid fa-lock" style="font-size:2rem;color:#c62828;margin-bottom:12px;display:block;"></i>
+          <div style="margin-bottom:16px;color:#555;font-size:0.9rem;">Entrez le code PIN administrateur</div>
+          <input id="exit-pin" type="password" maxlength="4" inputmode="numeric"
+            placeholder="••••"
+            style="width:140px;padding:12px;border:1.5px solid #ddd;border-radius:8px;font-size:1.5rem;text-align:center;letter-spacing:0.4em;" />
+        </div>
+      `,
+      confirmText: 'Confirmer',
+      cancelText: 'Annuler',
+      onConfirm: (close) => {
+        const pin = document.getElementById('exit-pin')?.value;
+        const storedHash = localStorage.getItem('kiosque_pin');
+        const kiosqueToken = localStorage.getItem('kiosque_mode');
+
+        if (!pin || !storedHash || !kiosqueToken) {
+          showToast('PIN invalide.', 'error');
+          return;
+        }
+
+        const pinHash = btoa(pin + '_smartpointage_' + kiosqueToken.slice(0, 8));
+        if (pinHash !== storedHash) {
+          showToast('Code PIN incorrect.', 'error');
+          return;
+        }
+
+        localStorage.removeItem('kiosque_mode');
+        localStorage.removeItem('kiosque_nom');
+        localStorage.removeItem('kiosque_site');
+        localStorage.removeItem('kiosque_pin');
+        stopCamera();
+        close();
+        showToast('Mode kiosque desactive.', 'success');
+        setTimeout(() => {
+          window.location.hash = '#/login';
+          window.location.reload();
+        }, 500);
+      }
+    });
+  }
 
   // Horloge
   function updateClock() {

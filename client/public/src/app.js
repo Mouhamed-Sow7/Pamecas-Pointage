@@ -125,6 +125,22 @@ function mountLayout(route, user) {
 function router() {
   updateOfflineBanner();
 
+  // Mode kiosque permanent sur tablette
+  const kiosqueToken = localStorage.getItem('kiosque_mode');
+  if (kiosqueToken) {
+    const app = document.getElementById('app');
+    if (!app) return;
+    if (document.documentElement.requestFullscreen && !document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(() => {});
+    }
+    app.className = '';
+    app.innerHTML = '';
+    window._kiosqueToken = kiosqueToken;
+    window._kiosqueSiteNom = localStorage.getItem('kiosque_nom') || 'Agence';
+    renderKiosque(app);
+    return;
+  }
+
   const hash = window.location.hash || '#/dashboard';
   const route = hash.replace('#', '').split('?')[0] || '/dashboard';
 

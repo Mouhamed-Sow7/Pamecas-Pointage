@@ -62,6 +62,15 @@ function renderTable(root, sites) {
             title="${site.kiosque_url}">
             <i class="fa-solid fa-tablet-screen-button"></i> Copier URL
           </button>
+          ${site.kiosque_token ? `
+            <button class="btn-deploy-kiosque"
+              data-token="${site.kiosque_token}"
+              data-nom="${site.nom}"
+              data-site="${site._id}"
+              style="display:flex;align-items:center;gap:5px;padding:5px 10px;margin-top:6px;border-radius:8px;border:none;background:linear-gradient(135deg,#1b5e20,#2e7d32);color:white;cursor:pointer;font-size:0.75rem;font-weight:600;width:100%;">
+              <i class="fa-solid fa-tablet-screen-button"></i> Deployer kiosque
+            </button>
+          ` : ''}
         ` : `
           <button class="btn-gen-kiosque" data-id="${site._id}"
             style="padding:5px 10px;border-radius:8px;border:1.5px solid #aaa;background:white;color:#aaa;cursor:pointer;font-size:0.75rem;">
@@ -245,6 +254,7 @@ export async function renderSites(root, user) {
     const btnGen = e.target.closest('.btn-gen-kiosque');
     const btnEdit = e.target.closest('.btn-edit-site');
     const btnToggle = e.target.closest('.btn-toggle-site');
+    const btnDeploy = e.target.closest('.btn-deploy-kiosque');
 
     if (btnCopy) {
       await navigator.clipboard.writeText(btnCopy.dataset.url);
@@ -295,6 +305,65 @@ export async function renderSites(root, user) {
           } catch {
             showToast('Erreur lors du changement de statut.', 'error');
           }
+        }
+      });
+      return;
+    }
+
+    if (btnDeploy) {
+      const { token, nom, site } = btnDeploy.dataset;
+
+      showModal({
+        title: '🖥️ Deployer le kiosque',
+        content: `
+          <div style="display:flex;flex-direction:column;gap:14px;">
+            <div style="background:#e8f5e9;border-radius:10px;padding:14px;text-align:center;">
+              <i class="fa-solid fa-tablet-screen-button" style="font-size:2rem;color:#2e7d32;margin-bottom:8px;display:block;"></i>
+              <div style="font-weight:700;font-size:1rem;color:#1b5e20;">${nom}</div>
+              <div style="font-size:0.82rem;color:#666;margin-top:4px;">Cette tablette deviendra le terminal de pointage de cette agence</div>
+            </div>
+
+            <div style="background:#fff3e0;border-radius:8px;padding:10px;font-size:0.82rem;color:#e65100;">
+              <i class="fa-solid fa-triangle-exclamation"></i>
+              <strong>Attention :</strong> L'interface admin se fermera. Pour sortir du kiosque, vous aurez besoin d'un code PIN.
+            </div>
+
+            <div>
+              <label style="font-size:0.82rem;font-weight:600;display:block;margin-bottom:6px;">
+                <i class="fa-solid fa-lock"></i> Choisir un code PIN de sortie (4 chiffres)
+              </label>
+              <input id="deploy-pin" type="password" maxlength="4" inputmode="numeric"
+                placeholder="Ex: 1234"
+                style="width:100%;padding:12px;border:1.5px solid #ddd;border-radius:8px;font-size:1.2rem;text-align:center;letter-spacing:0.3em;box-sizing:border-box;" />
+              <div style="font-size:0.75rem;color:#aaa;margin-top:4px;">Ce PIN sera nécessaire pour quitter le mode kiosque</div>
+            </div>
+          </div>
+        `,
+        confirmText: 'Deployer maintenant',
+        cancelText: 'Annuler',
+        onConfirm: async (close) => {
+          const pin = document.getElementById('deploy-pin')?.value;
+          if (!pin || pin.length !== 4 || !/^\d{4}$/.test(pin)) {
+            showToast('PIN invalide — 4 chiffres requis.', 'warning');
+            return;
+          }
+
+          const pinHash = btoa(pin + '_smartpointage_' + token.slice(0, 8));
+
+          localStorage.setItem('kiosque_mode', token);
+          localStorage.setItem('kiosque_nom', nom);
+          localStorage.setItem('kiosque_site', site);
+          localStorage.setItem('kiosque_pin', pinHash);
+
+          localStorage.removeItem('pamecas_token');
+          localStorage.removeItem('pamecas_user');
+
+          showToast('Deploiement en cours...', 'success');
+          close();
+
+          setTimeout(() => {
+            window.location.reload();
+          }, 800);
         }
       });
       return;
