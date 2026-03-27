@@ -160,8 +160,11 @@ router.get('/', async (req, res) => {
     if (type_contrat) {
       query.type_contrat = type_contrat;
     }
+    // Par défaut: afficher uniquement les agents actifs
     if (statut) {
       query.statut = statut;
+    } else {
+      query.statut = 'actif';
     }
     if (search) {
       const regex = new RegExp(search, 'i');

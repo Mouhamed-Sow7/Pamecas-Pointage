@@ -1,4 +1,4 @@
-﻿const DB_NAME = 'smartpointage-offline';
+const DB_NAME = 'smartpointage-offline';
 const DB_VERSION = 1;
 const STORE_POINTAGES = 'pointages_pending';
 const STORE_AGENTS = 'agents_cache';
@@ -125,6 +125,28 @@ export async function getCachedAgents() {
   return new Promise((resolve, reject) => {
     const request = store.getAll();
     request.onsuccess = () => resolve(request.result || []);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+// Recherche offline par matricule (case-insensitive)
+export async function getAgentByMatricule(matricule) {
+  const db = await openDB();
+  const tx = db.transaction(STORE_AGENTS, 'readonly');
+  const store = tx.objectStore(STORE_AGENTS);
+
+  const target = (matricule || '').toString().toUpperCase();
+  if (!target) return null;
+
+  return new Promise((resolve, reject) => {
+    const request = store.getAll();
+    request.onsuccess = () => {
+      const agents = request.result || [];
+      const found = agents.find(a =>
+        (a.matricule || '').toString().toUpperCase() === target
+      );
+      resolve(found || null);
+    };
     request.onerror = () => reject(request.error);
   });
 }

@@ -23,7 +23,7 @@ export async function syncPending() {
     });
 
     if (!response.ok) {
-      throw new Error('Sync Ã©chouÃ©e');
+      throw new Error('Sync échouée');
     }
 
     const localIds = pending.map((p) => p.local_id);

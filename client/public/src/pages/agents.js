@@ -1,4 +1,4 @@
-﻿import { get, post, put, del } from '../api.js';
+import { get, post, put, del } from '../api.js';
 import { cacheAgents } from '../store/indexedDB.js';
 import { showModal } from '../components/modal.js';
 import { showToast } from '../components/toast.js';
@@ -27,11 +27,11 @@ function renderAgentsList(root, agents) {
     html += `
       <div class="card" style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px;">
         <div style="flex:1; min-width:0;">
-          <div style="font-weight:600; margin-bottom:4px;">${agent.matricule || agent.numero_employe || 'â€”'}</div>
+          <div style="font-weight:600; margin-bottom:4px;">${agent.matricule || agent.numero_employe || '—'}</div>
           <div style="font-size:0.9rem; color:#333; margin-bottom:4px;">${agent.prenom || ''} ${agent.nom || ''}</div>
           <div style="font-size:0.8rem; color:#666; margin-bottom:4px;">
-            <div>Type: ${agent.type_contrat || 'â€”'}</div>
-            <div>Site: ${agent.site_id?.nom || 'â€”'}</div>
+            <div>Type: ${agent.type_contrat || '—'}</div>
+            <div>Site: ${agent.site_id?.nom || '—'}</div>
           </div>
           <span class="${statusColor}" style="display:inline-block;">${agent.statut}</span>
         </div>
@@ -89,19 +89,28 @@ function renderTable(root, agents) {
 
 async function fetchAgents(root, page = 1) {
   const search = root.querySelector('#filter-search').value.trim();
+  const agenceId = root.querySelector('#filter-agence')?.value || '';
   const type = root.querySelector('#filter-type').value;
-  const statut = root.querySelector('#filter-statut').value;
+  const statut = root.querySelector('#filter-statut')?.value || 'actif';
 
   const params = new URLSearchParams();
   params.append('page', page);
-  params.append('limit', 50);
+  params.append('limit', 100);
   if (search) params.append('search', search);
   if (type) params.append('type_contrat', type);
   if (statut) params.append('statut', statut);
+  if (agenceId) params.append('site_id', agenceId);
 
   try {
     const res = await get(`/api/agents?${params.toString()}`);
     const agents = res.data || [];
+
+    const countEl = root.querySelector('#agents-count');
+    if (countEl) countEl.textContent = `${agents.length} agent(s) trouvé(s)`;
+
+    // Trier alphabétiquement pour un affichage plus lisible
+    agents.sort((a, b) => `${a.nom}${a.prenom}`.localeCompare(`${b.nom}${b.prenom}`));
+
     renderTable(root, agents);
     await cacheAgents(agents);
   } catch (err) {
@@ -362,8 +371,10 @@ export async function renderAgents(root, user) {
   root.innerHTML = `
     <div style="display:flex; flex-direction:column; gap:12px;">
       <div class="card">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-          <h2 style="font-size:1rem;font-weight:600;">Agents</h2>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+          <h2 style="font-size:1.1rem;font-weight:700;">
+            <i class="fa-solid fa-users" style="color:#2e7d32;margin-right:6px;"></i>Agents
+          </h2>
           ${canEdit ? `
           <div style="display:flex;gap:8px;">
             <button id="btn-import-csv" class="btn-primary" style="background:linear-gradient(135deg,#1565c0,#1976d2);font-size:0.78rem;padding:6px 10px;">
@@ -374,26 +385,64 @@ export async function renderAgents(root, user) {
             </button>
           </div>` : ''}
         </div>
-        <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:12px;">
-          <input id="filter-search" placeholder="Recherche par nom, prénom ou matricule" style="width:100%;" />
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
-            <select id="filter-type" style="width:100%;">
-              <option value="">Type</option>
-              <option value="CDI">CDI</option>
-              <option value="CDD">CDD</option>
-              <option value="stage">Stage</option>
-              <option value="prestataire">Prestataire</option>
-            </select>
-            <select id="filter-statut" style="width:100%;">
-              <option value="">Statut</option>
-              <option value="actif">Actif</option>
-              <option value="inactif">Inactif</option>
-              <option value="suspendu">Suspendu</option>
-            </select>
+
+        <!-- Filtres -->
+        <div style="background:white;border-radius:10px;padding:12px;box-shadow:0 1px 4px rgba(0,0,0,0.06);border:1px solid #eee;">
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:10px;align-items:end;">
+            <div>
+              <label style="font-size:0.75rem;font-weight:600;color:#666;display:block;margin-bottom:4px;">
+                <i class="fa-solid fa-magnifying-glass" style="color:#2e7d32;"></i> Recherche
+              </label>
+              <input id="filter-search" placeholder="Nom, prénom ou matricule..."
+                style="width:100%;padding:8px 10px;border:1.5px solid #ddd;border-radius:8px;font-size:0.85rem;box-sizing:border-box;" />
+            </div>
+
+            <div id="filter-agence-wrap">
+              <label style="font-size:0.75rem;font-weight:600;color:#666;display:block;margin-bottom:4px;">
+                <i class="fa-solid fa-building" style="color:#2e7d32;"></i> Agence
+              </label>
+              <select id="filter-agence"
+                style="width:100%;padding:8px 10px;border:1.5px solid #ddd;border-radius:8px;font-size:0.85rem;box-sizing:border-box;">
+                <option value="">Toutes les agences</option>
+              </select>
+            </div>
+
+            <div>
+              <label style="font-size:0.75rem;font-weight:600;color:#666;display:block;margin-bottom:4px;">
+                <i class="fa-solid fa-file-contract" style="color:#2e7d32;"></i> Type contrat
+              </label>
+              <select id="filter-type" style="width:100%;padding:8px 10px;border:1.5px solid #ddd;border-radius:8px;font-size:0.85rem;box-sizing:border-box;">
+                <option value="">Tous types</option>
+                <option value="CDI">CDI</option>
+                <option value="CDD">CDD</option>
+                <option value="stage">Stage</option>
+                <option value="prestataire">Prestataire</option>
+              </select>
+            </div>
+
+            <div>
+              <label style="font-size:0.75rem;font-weight:600;color:#666;display:block;margin-bottom:4px;">
+                <i class="fa-solid fa-circle-half-stroke" style="color:#2e7d32;"></i> Statut
+              </label>
+              <select id="filter-statut"
+                style="width:100%;padding:8px 10px;border:1.5px solid #ddd;border-radius:8px;font-size:0.85rem;box-sizing:border-box;">
+                <option value="actif">Actifs</option>
+                <option value="">Tous</option>
+                <option value="inactif">Inactifs</option>
+                <option value="suspendu">Suspendus</option>
+              </select>
+            </div>
           </div>
-          <button id="btn-filter-apply" class="btn-large">Filtrer</button>
+
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;">
+            <span id="agents-count" style="font-size:0.8rem;color:#888;">Chargement...</span>
+            <button id="btn-filter" class="btn-primary" style="padding:8px 16px;font-size:0.82rem;">
+              <i class="fa-solid fa-filter"></i> Filtrer
+            </button>
+          </div>
         </div>
       </div>
+
       <div id="agents-list" style="display:flex; flex-direction:column; gap:10px;">
         <div style="color:#999; text-align:center; padding:20px 10px;">Chargement...</div>
       </div>
@@ -401,13 +450,30 @@ export async function renderAgents(root, user) {
     ${canEdit ? `<button id="btn-add-agent" class="fab">+</button>` : ''}
   `;
 
-  const applyBtn = root.querySelector('#btn-filter-apply');
-  applyBtn.addEventListener('click', () => fetchAgents(root, 1));
+  // Filtre agence (superadmin seulement)
+  const filterAgenceWrap = root.querySelector('#filter-agence-wrap');
+  const filterAgence = root.querySelector('#filter-agence');
+  if (user?.role === 'superadmin') {
+    try {
+      const res = await get('/api/sites');
+      const sites = res.data || res || [];
+      sites.forEach(s => {
+        const opt = document.createElement('option');
+        opt.value = s._id;
+        opt.textContent = s.nom;
+        filterAgence.appendChild(opt);
+      });
+    } catch {}
+  } else {
+    if (filterAgenceWrap) filterAgenceWrap.style.display = 'none';
+  }
 
-  const searchInput = root.querySelector('#filter-search');
-  searchInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') fetchAgents(root, 1);
-  });
+  // Filtres en temps réel
+  root.querySelector('#filter-search')?.addEventListener('input', () => fetchAgents(root, 1));
+  root.querySelector('#filter-agence')?.addEventListener('change', () => fetchAgents(root, 1));
+  root.querySelector('#filter-type')?.addEventListener('change', () => fetchAgents(root, 1));
+  root.querySelector('#filter-statut')?.addEventListener('change', () => fetchAgents(root, 1));
+  root.querySelector('#btn-filter')?.addEventListener('click', () => fetchAgents(root, 1));
 
   if (canEdit) {
     const addBtn = root.querySelector('#btn-add-agent');

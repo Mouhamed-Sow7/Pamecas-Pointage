@@ -38,7 +38,7 @@ async function request(method, url, data) {
 
     if (response.status === 401) {
       handleUnauthorized();
-      throw new Error('Non autorisÃ©');
+      throw new Error('Non autorisé');
     }
 
     const contentType = response.headers.get('Content-Type') || '';

@@ -112,6 +112,10 @@ function setEtat(root, etat, data = {}) {
         <div style="display:inline-flex;align-items:center;gap:8px;background:${typeBg};padding:8px 20px;border-radius:20px;color:white;font-weight:600;font-size:0.95rem;">
           <i class="fa-solid ${typeIcon}"></i> ${typeLabel}
         </div>
+        ${data.offline ? `
+          <div style="margin-top:8px;font-size:0.75rem;background:rgba(255,152,0,0.2);color:#ffcc02;padding:4px 10px;border-radius:10px;display:inline-block;">
+            <i class="fa-solid fa-wifi-slash"></i> Sauvegarde hors ligne
+          </div>` : ''}
         <div style="color:rgba(255,255,255,0.6);font-size:0.8rem;margin-top:16px;" id="kiosque-countdown">Prochain scan dans 3s...</div>
       </div>
     `;
@@ -182,14 +186,25 @@ function startCountdown(root, secondes, onDone) {
 async function enregistrerPointageKiosque(token, agentId, siteId, type) {
   const now = new Date();
   const payload = {
+    local_id: crypto.randomUUID(),
     agent_id: agentId,
     site_id: siteId,
     date: now.toISOString().split('T')[0],
-    heure_arrivee: type === 'arrivee' ? now.toTimeString().slice(0,5) : undefined,
-    heure_depart: type === 'depart' ? now.toTimeString().slice(0,5) : undefined,
+    heure_arrivee: type === 'arrivee' ? now.toTimeString().slice(0, 5) : undefined,
+    heure_depart: type === 'depart' ? now.toTimeString().slice(0, 5) : undefined,
     methode: 'qr_code',
-    type
+    type,
+    sync_status: 'local'
   };
+
+  // Offline : sauvegarder en IndexedDB
+  if (!navigator.onLine) {
+    const { savePointage } = await import('../store/indexedDB.js');
+    await savePointage(payload);
+    return { offline: true, local_id: payload.local_id };
+  }
+
+  // Online : appel API
   const res = await fetch('/api/pointages', {
     method: 'POST',
     headers: {
@@ -201,6 +216,24 @@ async function enregistrerPointageKiosque(token, agentId, siteId, type) {
   const data = await res.json();
   if (!res.ok) throw new Error(data.message || 'Erreur pointage');
   return data;
+}
+
+async function rechercherAgentParMatricule(matricule, token) {
+  // Offline — chercher dans le cache IndexedDB
+  if (!navigator.onLine) {
+    const { getAgentByMatricule } = await import('../store/indexedDB.js');
+    const cached = await getAgentByMatricule(matricule);
+    if (cached) return cached;
+    throw new Error('Agent introuvable (mode hors ligne)');
+  }
+
+  // Online — appel API normal
+  const response = await fetch(
+    `/api/agents/search?matricule=${encodeURIComponent(matricule)}`,
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
+  if (!response.ok) throw new Error('Agent introuvable');
+  return await response.json();
 }
 
 // ─── Scanner QR ──────────────────────────────────────────────────
@@ -304,6 +337,30 @@ export async function renderKiosque(root) {
       </div>
     `;
     return;
+  }
+
+  // Mise en cache des agents (mode offline: recherche via IndexedDB)
+  async function chargerAgentsEnCache(siteIdToUse, tokenToUse) {
+    try {
+      const res = await fetch(`/api/agents?site_id=${siteIdToUse}&limit=500`, {
+        headers: { Authorization: `Bearer ${tokenToUse}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const agents = data.data || [];
+        if (agents.length > 0) {
+          const { cacheAgents } = await import('../store/indexedDB.js');
+          await cacheAgents(agents);
+          console.log(`${agents.length} agents mis en cache pour mode offline`);
+        }
+      }
+    } catch (e) {
+      console.warn('Cache agents impossible:', e.message);
+    }
+  }
+
+  if (navigator.onLine && siteId) {
+    chargerAgentsEnCache(siteId, token);
   }
 
   root.innerHTML = `
@@ -488,12 +545,8 @@ export async function renderKiosque(root) {
     setEtat(root, 'loading');
 
     try {
-      // Chercher l'agent par matricule
-      const res = await fetch(`/api/agents/search?matricule=${encodeURIComponent(matricule)}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (!res.ok) throw new Error('Agent introuvable');
-      const agent = await res.json();
+      // Chercher l'agent par matricule (cache offline ou API online)
+      const agent = await rechercherAgentParMatricule(matricule, token);
 
       // Cooldown local — vérifier avant appel API
       const agentId = (agent._id || agent.id).toString();
@@ -511,32 +564,60 @@ export async function renderKiosque(root) {
 
       // Verifier si arrivee ou depart
       const dateStr = new Date().toISOString().split('T')[0];
-      const resP = await fetch(`/api/pointages?date=${dateStr}&site_id=${siteId}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const dataP = await resP.json();
-      const pointages = dataP?.data || [];
-      const pointageAujourdhui = pointages.find(p =>
-        (p.agent_id?._id || p.agent_id)?.toString() === agentId
-      );
+      let type;
 
-      const type = (!pointageAujourdhui || !pointageAujourdhui.heure_arrivee) ? 'arrivee' : 'depart';
+      if (!navigator.onLine) {
+        // Offline — déduire arrivee/depart depuis les pointages pending
+        const { getPendingPointages } = await import('../store/indexedDB.js');
+        const pending = await getPendingPointages();
+        const pendingToday = pending.filter(p => {
+          const pAgentId = (p.agent_id?._id || p.agent_id)?.toString();
+          const pSiteId = (p.site_id?._id || p.site_id)?.toString();
+          return pAgentId === agentId && pSiteId === siteId?.toString() && p.date === dateStr;
+        });
 
-      if (type === 'depart' && pointageAujourdhui?.heure_depart) {
-        playBeep('erreur');
-        setEtat(root, 'erreur', { message: 'Depart deja enregistre aujourd\'hui' });
-        startCountdown(root, 2, () => resumeScanner(root, video, canvas, token, siteId, onQRDetected));
-        return;
+        const hasArrivee = pendingToday.some(p => !!p.heure_arrivee);
+        const hasDepart = pendingToday.some(p => !!p.heure_depart);
+
+        if (!hasArrivee) {
+          type = 'arrivee';
+        } else if (!hasDepart) {
+          type = 'depart';
+        } else {
+          playBeep('erreur');
+          setEtat(root, 'erreur', { message: 'Depart deja enregistre aujourd\'hui' });
+          startCountdown(root, 2, () => resumeScanner(root, video, canvas, token, siteId, onQRDetected));
+          return;
+        }
+      } else {
+        // Online — déduire arrivee/depart via API
+        const resP = await fetch(`/api/pointages?date=${dateStr}&site_id=${siteId}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const dataP = await resP.json();
+        const pointages = dataP?.data || [];
+        const pointageAujourdhui = pointages.find(p =>
+          (p.agent_id?._id || p.agent_id)?.toString() === agentId
+        );
+
+        type = (!pointageAujourdhui || !pointageAujourdhui.heure_arrivee) ? 'arrivee' : 'depart';
+
+        if (type === 'depart' && pointageAujourdhui?.heure_depart) {
+          playBeep('erreur');
+          setEtat(root, 'erreur', { message: 'Depart deja enregistre aujourd\'hui' });
+          startCountdown(root, 2, () => resumeScanner(root, video, canvas, token, siteId, onQRDetected));
+          return;
+        }
       }
 
       // Enregistrer pointage
-      await enregistrerPointageKiosque(token, agentId, siteId, type);
+      const result = await enregistrerPointageKiosque(token, agentId, siteId, type);
 
       // Enregistrer cooldown local après succès
       enregistrerCooldownLocal(agentId);
 
       playBeep(type); // 'arrivee' ou 'depart'
-      setEtat(root, 'succes', { agent, type });
+      setEtat(root, 'succes', { agent, type, offline: result?.offline });
 
       // Derniere activite
       const heure = new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
