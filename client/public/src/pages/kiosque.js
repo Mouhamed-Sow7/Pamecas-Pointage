@@ -280,6 +280,26 @@ function resumeScanner(root, video, canvas, token, siteId, onDetected) {
   animationId = requestAnimationFrame(scanFrame);
 }
 
+function renderKiosqueExpired(root, detail = "Le token de cette tablette n'est plus valide.") {
+  root.innerHTML = `
+    <div style="min-height:100vh;background:#0a1a0f;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;padding:20px;text-align:center;">
+      <i class="fa-solid fa-triangle-exclamation" style="font-size:3rem;color:#e65100;"></i>
+      <div style="color:white;font-size:1.1rem;font-weight:600;">Session kiosque expiree</div>
+      <div style="color:rgba(255,255,255,0.6);font-size:0.85rem;">${detail}</div>
+      <button onclick="
+        localStorage.removeItem('kiosque_mode');
+        localStorage.removeItem('kiosque_nom');
+        localStorage.removeItem('kiosque_site');
+        localStorage.removeItem('kiosque_pin');
+        window.location.hash='#/login';
+        window.location.reload();
+      " style="padding:12px 24px;background:#2e7d32;color:white;border:none;border-radius:10px;font-size:0.95rem;font-weight:600;cursor:pointer;margin-top:8px;">
+        <i class='fa-solid fa-right-to-bracket'></i> Reconnexion admin
+      </button>
+    </div>
+  `;
+}
+
 // ─── Render kiosque ──────────────────────────────────────────────
 export async function renderKiosque(root) {
   // Recuperer token et siteId depuis URL hash
@@ -305,34 +325,34 @@ export async function renderKiosque(root) {
     `;
     try {
       const res = await fetch(`/api/auth/kiosque/${token}`);
+      if (!res.ok) {
+        renderKiosqueExpired(root);
+        return;
+      }
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'Token invalide');
       siteId = data.site._id;
       if (!window._kiosqueSiteNom) {
         siteNom = data.site.nom;
         window._kiosqueSiteNom = data.site.nom;
       }
     } catch (err) {
-      root.innerHTML = `
-        <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0f2417;color:white;text-align:center;padding:20px;">
-          <div>
-            <div style="font-size:3rem;margin-bottom:16px;">⚠️</div>
-            <div style="font-size:1.2rem;font-weight:600;margin-bottom:8px;">Token kiosque invalide</div>
-            <div style="color:rgba(255,255,255,0.6);font-size:0.85rem;">${err.message}</div>
-          </div>
-        </div>
-      `;
+      renderKiosqueExpired(root, err?.message || "Le token de cette tablette n'est plus valide.");
       return;
     }
   }
 
-  if (!token || !siteId) {
+  if (!token) {
+    renderKiosqueExpired(root);
+    return;
+  }
+
+  if (!siteId) {
     root.innerHTML = `
       <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0f2417;color:white;text-align:center;padding:20px;">
         <div>
           <div style="font-size:3rem;margin-bottom:16px;">⚠️</div>
           <div style="font-size:1.2rem;font-weight:600;margin-bottom:8px;">Kiosque non configure</div>
-          <div style="color:rgba(255,255,255,0.6);font-size:0.85rem;">Token ou site manquant dans l'URL</div>
+          <div style="color:rgba(255,255,255,0.6);font-size:0.85rem;">Site manquant dans la configuration</div>
         </div>
       </div>
     `;

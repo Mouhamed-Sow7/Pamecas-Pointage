@@ -43,6 +43,23 @@ function updateOfflineBanner() {
   }
 }
 
+function clearKiosqueStorage() {
+  localStorage.removeItem('kiosque_mode');
+  localStorage.removeItem('kiosque_nom');
+  localStorage.removeItem('kiosque_site');
+  localStorage.removeItem('kiosque_pin');
+}
+
+function showKiosqueExpiredBanner() {
+  setTimeout(() => {
+    const banner = document.createElement('div');
+    banner.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#e65100;color:white;text-align:center;padding:10px;font-size:0.85rem;z-index:9999;';
+    banner.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Session kiosque expiree — reconnectez-vous pour redeployer.';
+    document.body.appendChild(banner);
+    setTimeout(() => banner.remove(), 5000);
+  }, 100);
+}
+
 function mountLayout(route, user) {
   const app = document.getElementById('app');
   if (!app) return;
@@ -122,12 +139,37 @@ function mountLayout(route, user) {
   initResponsiveSidebar();
 }
 
-function router() {
+async function router() {
   updateOfflineBanner();
 
   // Mode kiosque permanent sur tablette
   const kiosqueToken = localStorage.getItem('kiosque_mode');
   if (kiosqueToken) {
+    // Vérifier la validité du token avant de basculer
+    try {
+      const res = await fetch(`/api/auth/kiosque/${kiosqueToken}`);
+      if (!res.ok) {
+        console.warn('Token kiosque invalide — nettoyage automatique');
+        clearKiosqueStorage();
+        window.location.hash = '#/login';
+        showKiosqueExpiredBanner();
+        return;
+      }
+      const data = await res.json();
+      window._kiosqueToken = kiosqueToken;
+      window._kiosqueSiteNom = data.site?.nom || localStorage.getItem('kiosque_nom') || 'Agence';
+    } catch (err) {
+      // Hors ligne: continuer avec les infos locales
+      if (!navigator.onLine) {
+        window._kiosqueToken = kiosqueToken;
+        window._kiosqueSiteNom = localStorage.getItem('kiosque_nom') || 'Agence';
+      } else {
+        clearKiosqueStorage();
+        window.location.hash = '#/login';
+        return;
+      }
+    }
+
     const app = document.getElementById('app');
     if (!app) return;
     if (document.documentElement.requestFullscreen && !document.fullscreenElement) {
@@ -135,8 +177,6 @@ function router() {
     }
     app.className = '';
     app.innerHTML = '';
-    window._kiosqueToken = kiosqueToken;
-    window._kiosqueSiteNom = localStorage.getItem('kiosque_nom') || 'Agence';
     renderKiosque(app);
     return;
   }

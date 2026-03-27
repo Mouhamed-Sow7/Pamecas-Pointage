@@ -185,11 +185,19 @@ async function seed() {
     // 1. Agences
     const sitesMap = {};
     for (const agence of agences) {
-      agence.kiosque_token = agence.kiosque_token || uuidv4();
-      agence.kiosque_token_created_at = agence.kiosque_token_created_at || new Date();
+      // Préserver le kiosque_token existant — ne pas l'écraser au reseed
+      const existing = await Site.findOne({ code: agence.code });
+      const updateData = { ...agence, actif: true };
+      if (existing?.kiosque_token) {
+        delete updateData.kiosque_token;
+        delete updateData.kiosque_token_created_at;
+      } else {
+        updateData.kiosque_token = uuidv4();
+        updateData.kiosque_token_created_at = new Date();
+      }
       const site = await Site.findOneAndUpdate(
         { code: agence.code },
-        { ...agence, actif: true },
+        updateData,
         { upsert: true, new: true }
       );
       sitesMap[agence.code] = site;
