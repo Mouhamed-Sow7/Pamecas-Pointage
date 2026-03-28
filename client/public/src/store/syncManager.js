@@ -1,6 +1,7 @@
-﻿import { getPendingPointages, clearSynced } from './indexedDB.js';
+import { getPendingPointages, clearSynced } from './indexedDB.js';
 
 const syncCallbacks = [];
+let autoSyncStarted = false;
 
 export async function syncPending() {
   try {
@@ -45,9 +46,35 @@ export async function syncPending() {
 }
 
 export function startAutoSync() {
+  if (autoSyncStarted) return;
+  autoSyncStarted = true;
+
+  // Sync au retour connexion (délai: évite faux positifs iOS/Android)
   window.addEventListener('online', () => {
-    syncPending();
+    setTimeout(() => syncPending(), 1000);
   });
+
+  // Polling 30s — filet de sécurité mobile (online peu fiable)
+  setInterval(async () => {
+    if (!navigator.onLine) return;
+    try {
+      const pending = await getPendingPointages();
+      if (pending.length > 0) syncPending();
+    } catch {
+      // ignore
+    }
+  }, 30000);
+
+  // Au démarrage: tenter une sync si des pointages sont en attente
+  setTimeout(async () => {
+    if (!navigator.onLine) return;
+    try {
+      const pending = await getPendingPointages();
+      if (pending.length > 0) syncPending();
+    } catch {
+      // ignore
+    }
+  }, 3000);
 
   if ('serviceWorker' in navigator && 'SyncManager' in window) {
     navigator.serviceWorker.ready

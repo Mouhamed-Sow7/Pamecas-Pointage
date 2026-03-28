@@ -1,5 +1,5 @@
-// ✅ Version du cache — incrémentez ce numéro à chaque déploiement
-const CACHE_VERSION = 'smartpointage-v3';
+// Version du cache — incrementer a chaque deploiement majeur
+const CACHE_VERSION = 'smartpointage-v5';
 const CACHE_NAME = CACHE_VERSION;
 
 const STATIC_ASSETS = [
@@ -22,18 +22,18 @@ const STATIC_ASSETS = [
   '/manifest.json'
 ];
 
-// ─── Install : mise en cache des assets statiques ────────────────
+// â”€â”€â”€ Install : mise en cache des assets statiques â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 self.addEventListener('install', (event) => {
-  // ✅ Force l'activation immédiate sans attendre la fermeture des onglets
+  // âœ… Force l'activation immÃ©diate sans attendre la fermeture des onglets
   self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS))
   );
 });
 
-// ─── Activate : supprimer les anciens caches ─────────────────────
+// â”€â”€â”€ Activate : supprimer les anciens caches â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 self.addEventListener('activate', (event) => {
-  // ✅ Prendre le contrôle immédiatement de tous les onglets ouverts
+  // âœ… Prendre le contrÃ´le immÃ©diatement de tous les onglets ouverts
   clients.claim();
   event.waitUntil(
     caches.keys().then((keys) =>
@@ -49,18 +49,18 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// ─── Fetch : stratégie network-first pour API, cache-first pour static ──
+// â”€â”€â”€ Fetch : stratÃ©gie network-first pour API, cache-first pour static â”€â”€
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  // Ignorer les requêtes externes (fonts, CDN, etc.)
+  // Ignorer les requÃªtes externes (fonts, CDN, etc.)
   if (url.origin !== self.location.origin) return;
 
-  // ✅ API : network-first (toujours frais), pas de cache
+  // âœ… API : network-first (toujours frais), pas de cache
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(
       fetch(event.request).catch(() =>
-        new Response(JSON.stringify({ message: 'Hors ligne — réessayez plus tard.' }), {
+        new Response(JSON.stringify({ message: 'Hors ligne — reessayez plus tard.' }), {
           status: 503,
           headers: { 'Content-Type': 'application/json' }
         })
@@ -69,13 +69,13 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // ✅ SW.js lui-même : toujours depuis le réseau pour détecter les mises à jour
+  // âœ… SW.js lui-mÃªme : toujours depuis le rÃ©seau pour dÃ©tecter les mises Ã  jour
   if (url.pathname === '/sw.js') {
     event.respondWith(fetch(event.request));
     return;
   }
 
-  // ✅ Fichiers JS/CSS : network-first pour toujours avoir la dernière version
+  // âœ… Fichiers JS/CSS : network-first pour toujours avoir la derniÃ¨re version
   if (url.pathname.endsWith('.js') || url.pathname.endsWith('.css')) {
     event.respondWith(
       fetch(event.request)
@@ -91,7 +91,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // ✅ Autres assets (images, fonts locales) : cache-first
+  // âœ… Autres assets (images, fonts locales) : cache-first
   event.respondWith(
     caches.match(event.request).then((cached) => {
       if (cached) return cached;
