@@ -1,4 +1,4 @@
-import { getPendingPointages, clearSynced } from './indexedDB.js';
+﻿import { getPendingPointages, clearSynced } from './indexedDB.js';
 
 const syncCallbacks = [];
 let autoSyncStarted = false;
@@ -18,13 +18,13 @@ export async function syncPending() {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + (localStorage.getItem('pamecas_token') || '')
+        'Authorization': 'Bearer ' + (localStorage.getItem('pamecas_token') || localStorage.getItem('kiosque_mode') || '')
       },
       body: JSON.stringify(body)
     });
 
     if (!response.ok) {
-      throw new Error('Sync échouée');
+      throw new Error('Sync Ã©chouÃ©e');
     }
 
     const localIds = pending.map((p) => p.local_id);
@@ -49,12 +49,12 @@ export function startAutoSync() {
   if (autoSyncStarted) return;
   autoSyncStarted = true;
 
-  // Sync au retour connexion (délai: évite faux positifs iOS/Android)
+  // Sync au retour connexion (dÃ©lai: Ã©vite faux positifs iOS/Android)
   window.addEventListener('online', () => {
     setTimeout(() => syncPending(), 1000);
   });
 
-  // Polling 30s — filet de sécurité mobile (online peu fiable)
+  // Polling 30s â€” filet de sÃ©curitÃ© mobile (online peu fiable)
   setInterval(async () => {
     if (!navigator.onLine) return;
     try {
@@ -65,7 +65,7 @@ export function startAutoSync() {
     }
   }, 30000);
 
-  // Au démarrage: tenter une sync si des pointages sont en attente
+  // Au dÃ©marrage: tenter une sync si des pointages sont en attente
   setTimeout(async () => {
     if (!navigator.onLine) return;
     try {
@@ -108,5 +108,6 @@ export function onSyncComplete(callback) {
     syncCallbacks.push(callback);
   }
 }
+
 
 
