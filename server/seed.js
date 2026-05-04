@@ -563,6 +563,16 @@ async function seed() {
       console.log(
         `${agenceCode}: ${agentsInseres.length} agents, ${pointages.length} pointages`,
       );
+
+      // Activer comptes portail (mot de passe = derniers 4 chiffres matricule)
+      const bcrypt = require("bcryptjs");
+      for (const agent of agentsInseres) {
+        if (!agent.password_hash) {
+          const defaultPwd = agent.matricule.slice(-4); // Ex: "0001"
+          agent.password_hash = await bcrypt.hash(defaultPwd, 10);
+          await agent.save();
+        }
+      }
     }
 
     console.log("");

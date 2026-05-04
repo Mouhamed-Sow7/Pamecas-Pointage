@@ -1,92 +1,102 @@
-import { renderLogin } from './pages/login.js';
-import { renderDashboard } from './pages/dashboard.js';
-import { renderPointage } from './pages/pointage.js';
-import { renderAgents } from './pages/agents.js';
-import { renderRapports } from './pages/rapports.js';
-import { renderSites } from './pages/sites.js';
-import { renderKiosque } from './pages/kiosque.js';
-import { renderUsers } from './pages/users.js';
+import { renderLogin } from "./pages/login.js";
+import { renderDashboard } from "./pages/dashboard.js";
+import { renderPointage } from "./pages/pointage.js";
+import { renderAgents } from "./pages/agents.js";
+import { renderRapports } from "./pages/rapports.js";
+import { renderSites } from "./pages/sites.js";
+import { renderKiosque } from "./pages/kiosque.js";
+import { renderUsers } from "./pages/users.js";
+import { renderConges } from "./pages/conges.js";
 import {
   renderNavbar,
   initResponsiveSidebar,
   openSidebar,
-  closeSidebar
-} from './components/navbar.js';
-import { startAutoSync, onSyncComplete } from './store/syncManager.js';
-import { showToast } from './components/toast.js';
+  closeSidebar,
+} from "./components/navbar.js";
+import { startAutoSync, onSyncComplete } from "./store/syncManager.js";
+import { showToast } from "./components/toast.js";
 
 function getCurrentUser() {
-  const raw = localStorage.getItem('pamecas_user');
+  const raw = localStorage.getItem("pamecas_user");
   if (!raw) return null;
-  try { return JSON.parse(raw); } catch (e) { return null; }
+  try {
+    return JSON.parse(raw);
+  } catch (e) {
+    return null;
+  }
 }
 
 function isAuthenticated() {
-  return !!localStorage.getItem('pamecas_token');
+  return !!localStorage.getItem("pamecas_token");
 }
 
 let offlineTimeout = null;
 
 function updateOfflineBanner() {
-  const banner = document.getElementById('offline-banner');
+  const banner = document.getElementById("offline-banner");
   if (!banner) return;
 
   if (!navigator.onLine) {
-    banner.classList.add('visible');
+    banner.classList.add("visible");
     if (offlineTimeout) clearTimeout(offlineTimeout);
     offlineTimeout = setTimeout(() => {
-      banner.classList.remove('visible');
+      banner.classList.remove("visible");
     }, 5000);
   } else {
-    banner.classList.remove('visible');
-    if (offlineTimeout) { clearTimeout(offlineTimeout); offlineTimeout = null; }
+    banner.classList.remove("visible");
+    if (offlineTimeout) {
+      clearTimeout(offlineTimeout);
+      offlineTimeout = null;
+    }
   }
 }
 
 function clearKiosqueStorage() {
-  localStorage.removeItem('kiosque_mode');
-  localStorage.removeItem('kiosque_nom');
-  localStorage.removeItem('kiosque_site');
-  localStorage.removeItem('kiosque_pin');
+  localStorage.removeItem("kiosque_mode");
+  localStorage.removeItem("kiosque_nom");
+  localStorage.removeItem("kiosque_site");
+  localStorage.removeItem("kiosque_pin");
 }
 
 function showKiosqueExpiredBanner() {
   setTimeout(() => {
-    const banner = document.createElement('div');
-    banner.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#e65100;color:white;text-align:center;padding:10px;font-size:0.85rem;z-index:9999;';
-    banner.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Session kiosque expiree — reconnectez-vous pour redeployer.';
+    const banner = document.createElement("div");
+    banner.style.cssText =
+      "position:fixed;top:0;left:0;right:0;background:#e65100;color:white;text-align:center;padding:10px;font-size:0.85rem;z-index:9999;";
+    banner.innerHTML =
+      '<i class="fa-solid fa-triangle-exclamation"></i> Session kiosque expiree — reconnectez-vous pour redeployer.';
     document.body.appendChild(banner);
     setTimeout(() => banner.remove(), 5000);
   }, 100);
 }
 
 function mountLayout(route, user) {
-  const app = document.getElementById('app');
+  const app = document.getElementById("app");
   if (!app) return;
 
   // ─── Mode kiosque — pas de login, pas de sidebar ───────────────
-  if (route.startsWith('/kiosque')) {
-    app.className = '';
-    app.innerHTML = '';
+  if (route.startsWith("/kiosque")) {
+    app.className = "";
+    app.innerHTML = "";
     renderKiosque(app);
     return;
   }
 
-  if (route === '/login') {
-    app.className = '';
-    app.innerHTML = '';
+  if (route === "/login") {
+    app.className = "";
+    app.innerHTML = "";
     renderLogin(app);
     return;
   }
 
-  app.className = 'layout-with-sidebar';
+  app.className = "layout-with-sidebar";
   app.innerHTML = `
     <div class="topbar" id="topbar">
       <button id="topbar-menu-btn" class="topbar-menu-btn" type="button"><i class="fa-solid fa-bars"></i></button>
       <div class="topbar-title" id="topbar-title"></div>
       <div class="topbar-right">
-        <span class="status-dot ${navigator.onLine ? 'online' : 'offline'}"></span>
-        <span class="topbar-user">${user?.username || ''}</span>
+        <span class="status-dot ${navigator.onLine ? "online" : "offline"}"></span>
+        <span class="topbar-user">${user?.username || ""}</span>
       </div>
     </div>
     <div class="overlay" id="sidebar-overlay"></div>
@@ -94,31 +104,34 @@ function mountLayout(route, user) {
     <main class="main-content" id="main-content"></main>
   `;
 
-  const sidebar = document.getElementById('sidebar');
-  const main = document.getElementById('main-content');
-  const topbarTitle = document.getElementById('topbar-title');
-  const topbarMenuBtn = document.getElementById('topbar-menu-btn');
-  const overlay = document.getElementById('sidebar-overlay');
+  const sidebar = document.getElementById("sidebar");
+  const main = document.getElementById("main-content");
+  const topbarTitle = document.getElementById("topbar-title");
+  const topbarMenuBtn = document.getElementById("topbar-menu-btn");
+  const overlay = document.getElementById("sidebar-overlay");
 
   renderNavbar(sidebar, route, user);
 
-  if (route === '/' || route === '/dashboard') {
-    if (topbarTitle) topbarTitle.textContent = 'Dashboard';
+  if (route === "/" || route === "/dashboard") {
+    if (topbarTitle) topbarTitle.textContent = "Dashboard";
     renderDashboard(main, user);
-  } else if (route === '/pointage') {
-    if (topbarTitle) topbarTitle.textContent = 'Pointage';
+  } else if (route === "/pointage") {
+    if (topbarTitle) topbarTitle.textContent = "Pointage";
     renderPointage(main, user);
-  } else if (route === '/agents') {
-    if (topbarTitle) topbarTitle.textContent = 'Agents';
+  } else if (route === "/agents") {
+    if (topbarTitle) topbarTitle.textContent = "Agents";
     renderAgents(main, user);
-  } else if (route === '/sites') {
-    if (topbarTitle) topbarTitle.textContent = 'Sites';
+  } else if (route === "/sites") {
+    if (topbarTitle) topbarTitle.textContent = "Sites";
     renderSites(main, user);
-  } else if (route === '/rapports') {
-    if (topbarTitle) topbarTitle.textContent = 'Rapports';
+  } else if (route === "/rapports") {
+    if (topbarTitle) topbarTitle.textContent = "Rapports";
     renderRapports(main, user).catch(() => {});
-  } else if (route === '/users') {
-    if (topbarTitle) topbarTitle.textContent = 'Utilisateurs';
+  } else if (route === "/conges") {
+    if (topbarTitle) topbarTitle.textContent = "Congés";
+    renderConges(main, user);
+  } else if (route === "/users") {
+    if (topbarTitle) topbarTitle.textContent = "Utilisateurs";
     renderUsers(main, user);
   } else {
     main.innerHTML = `
@@ -134,8 +147,8 @@ function mountLayout(route, user) {
     `;
   }
 
-  if (topbarMenuBtn) topbarMenuBtn.addEventListener('click', openSidebar);
-  if (overlay) overlay.addEventListener('click', closeSidebar);
+  if (topbarMenuBtn) topbarMenuBtn.addEventListener("click", openSidebar);
+  if (overlay) overlay.addEventListener("click", closeSidebar);
   initResponsiveSidebar();
 }
 
@@ -143,80 +156,85 @@ async function router() {
   updateOfflineBanner();
 
   // Mode kiosque permanent sur tablette
-  const kiosqueToken = localStorage.getItem('kiosque_mode');
+  const kiosqueToken = localStorage.getItem("kiosque_mode");
   if (kiosqueToken) {
     // Vérifier la validité du token avant de basculer
     try {
       const res = await fetch(`/api/auth/kiosque/${kiosqueToken}`);
       if (!res.ok) {
-        console.warn('Token kiosque invalide — nettoyage automatique');
+        console.warn("Token kiosque invalide — nettoyage automatique");
         clearKiosqueStorage();
-        window.location.hash = '#/login';
+        window.location.hash = "#/login";
         showKiosqueExpiredBanner();
         return;
       }
       const data = await res.json();
       window._kiosqueToken = kiosqueToken;
-      window._kiosqueSiteNom = data.site?.nom || localStorage.getItem('kiosque_nom') || 'Agence';
+      window._kiosqueSiteNom =
+        data.site?.nom || localStorage.getItem("kiosque_nom") || "Agence";
     } catch (err) {
       // Hors ligne: continuer avec les infos locales
       if (!navigator.onLine) {
         window._kiosqueToken = kiosqueToken;
-        window._kiosqueSiteNom = localStorage.getItem('kiosque_nom') || 'Agence';
+        window._kiosqueSiteNom =
+          localStorage.getItem("kiosque_nom") || "Agence";
       } else {
         clearKiosqueStorage();
-        window.location.hash = '#/login';
+        window.location.hash = "#/login";
         return;
       }
     }
 
-    const app = document.getElementById('app');
+    const app = document.getElementById("app");
     if (!app) return;
-    if (document.documentElement.requestFullscreen && !document.fullscreenElement) {
+    if (
+      document.documentElement.requestFullscreen &&
+      !document.fullscreenElement
+    ) {
       document.documentElement.requestFullscreen().catch(() => {});
     }
-    app.className = '';
-    app.innerHTML = '';
+    app.className = "";
+    app.innerHTML = "";
     renderKiosque(app);
     return;
   }
 
-  const hash = window.location.hash || '#/dashboard';
-  const route = hash.replace('#', '').split('?')[0] || '/dashboard';
+  const hash = window.location.hash || "#/dashboard";
+  const route = hash.replace("#", "").split("?")[0] || "/dashboard";
 
   // Kiosque — pas besoin d'authentification
-  if (route.startsWith('/kiosque')) {
+  if (route.startsWith("/kiosque")) {
     mountLayout(route, null);
     return;
   }
 
-  if (!isAuthenticated() && route !== '/login') {
-    window.location.hash = '#/login';
+  if (!isAuthenticated() && route !== "/login") {
+    window.location.hash = "#/login";
     return;
   }
 
   const user = getCurrentUser();
-  if (!user && route !== '/login') {
-    window.location.hash = '#/login';
+  if (!user && route !== "/login") {
+    window.location.hash = "#/login";
     return;
   }
 
   mountLayout(route, user);
 }
 
-window.addEventListener('hashchange', router);
-window.addEventListener('online', updateOfflineBanner);
-window.addEventListener('offline', updateOfflineBanner);
+window.addEventListener("hashchange", router);
+window.addEventListener("online", updateOfflineBanner);
+window.addEventListener("offline", updateOfflineBanner);
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener("DOMContentLoaded", () => {
   updateOfflineBanner();
   startAutoSync();
   onSyncComplete((count) => {
     if (count > 0) {
-      showToast(`${count} pointage(s) synchronise(s).`, 'success');
+      showToast(`${count} pointage(s) synchronise(s).`, "success");
       // Recharger la page de pointage si on est dessus
       const hash = window.location.hash;
-      if (hash.includes('/pointage') || hash.includes('/dashboard')) {
+      if (hash.includes("/pointage") || hash.includes("/dashboard")) {
         setTimeout(() => router(), 500);
       }
     }

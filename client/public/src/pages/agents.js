@@ -1,37 +1,43 @@
-import { get, post, put, del } from '../api.js';
-import { cacheAgents } from '../store/indexedDB.js';
-import { showModal } from '../components/modal.js';
-import { showToast } from '../components/toast.js';
+import { get, post, put, del } from "../api.js";
+import { cacheAgents } from "../store/indexedDB.js";
+import { showModal } from "../components/modal.js";
+import { showToast } from "../components/toast.js";
 
 function getCurrentUser() {
-  try { return JSON.parse(localStorage.getItem('pamecas_user')); } catch { return null; }
+  try {
+    return JSON.parse(localStorage.getItem("pamecas_user"));
+  } catch {
+    return null;
+  }
 }
 
 function renderAgentsList(root, agents) {
-  const listContainer = root.querySelector('#agents-list');
+  const listContainer = root.querySelector("#agents-list");
   if (!listContainer) return;
 
   if (!agents || agents.length === 0) {
-    listContainer.innerHTML = '<div style="color:#999; text-align:center; padding:20px 10px;">Aucun agent trouvé.</div>';
+    listContainer.innerHTML =
+      '<div style="color:#999; text-align:center; padding:20px 10px;">Aucun agent trouvé.</div>';
     return;
   }
 
-  let html = '';
+  let html = "";
   agents.forEach((agent) => {
-    const statusColor = {
-      'actif': 'badge-present',
-      'inactif': 'badge-absent',
-      'suspendu': 'badge-retard'
-    }[agent.statut] || 'badge-absent';
+    const statusColor =
+      {
+        actif: "badge-present",
+        inactif: "badge-absent",
+        suspendu: "badge-retard",
+      }[agent.statut] || "badge-absent";
 
     html += `
       <div class="card" style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px;">
         <div style="flex:1; min-width:0;">
-          <div style="font-weight:600; margin-bottom:4px;">${agent.matricule || agent.numero_employe || '—'}</div>
-          <div style="font-size:0.9rem; color:#333; margin-bottom:4px;">${agent.prenom || ''} ${agent.nom || ''}</div>
+          <div style="font-weight:600; margin-bottom:4px;">${agent.matricule || agent.numero_employe || "—"}</div>
+          <div style="font-size:0.9rem; color:#333; margin-bottom:4px;">${agent.prenom || ""} ${agent.nom || ""}</div>
           <div style="font-size:0.8rem; color:#666; margin-bottom:4px;">
-            <div>Type: ${agent.type_contrat || '—'}</div>
-            <div>Site: ${agent.site_id?.nom || '—'}</div>
+            <div>Type: ${agent.type_contrat || "—"}</div>
+            <div>Site: ${agent.site_id?.nom || "—"}</div>
           </div>
           <span class="${statusColor}" style="display:inline-block;">${agent.statut}</span>
         </div>
@@ -46,37 +52,43 @@ function renderAgentsList(root, agents) {
 
   listContainer.innerHTML = html;
 
-  listContainer.querySelectorAll('.btn-action').forEach((btn) => {
-    btn.addEventListener('click', async (e) => {
+  listContainer.querySelectorAll(".btn-action").forEach((btn) => {
+    btn.addEventListener("click", async (e) => {
       e.stopPropagation();
-      const agentId = btn.getAttribute('data-id');
-      const action = btn.getAttribute('data-action');
+      const agentId = btn.getAttribute("data-id");
+      const action = btn.getAttribute("data-action");
       const agent = agents.find((a) => a._id === agentId);
 
-      if (action === 'view' || action === 'edit') {
+      if (action === "view" || action === "edit") {
         let sites = [];
         try {
-          const res = await get('/api/sites');
+          const res = await get("/api/sites");
           sites = res.data || res || [];
         } catch (err) {}
         openAgentModal(action, agent, sites);
-      } else if (action === 'delete') {
+      } else if (action === "delete") {
         showModal({
-          title: 'Supprimer l\'agent',
-          content: '<p style="margin:0;color:#555;">Etes-vous sur de vouloir supprimer cet agent ? Cette action est irreversible.</p>',
-          confirmText: 'Supprimer',
-          cancelText: 'Annuler',
+          title: "Supprimer l'agent",
+          content:
+            '<p style="margin:0;color:#555;">Etes-vous sur de vouloir supprimer cet agent ? Cette action est irreversible.</p>',
+          confirmText: "Supprimer",
+          cancelText: "Annuler",
           onConfirm: async (close) => {
             try {
               await del(`/api/agents/${agentId}`);
-              showToast('Agent supprime.', 'success');
+              showToast("Agent supprime.", "success");
               close();
-              const root = document.getElementById('app').querySelector('main') || document.getElementById('app');
-              renderAgents(root, JSON.parse(localStorage.getItem('pamecas_user')));
+              const root =
+                document.getElementById("app").querySelector("main") ||
+                document.getElementById("app");
+              renderAgents(
+                root,
+                JSON.parse(localStorage.getItem("pamecas_user")),
+              );
             } catch (err) {
-              showToast("Erreur suppression.", 'error');
+              showToast("Erreur suppression.", "error");
             }
-          }
+          },
         });
       }
     });
@@ -88,75 +100,82 @@ function renderTable(root, agents) {
 }
 
 async function fetchAgents(root, page = 1) {
-  const search = root.querySelector('#filter-search').value.trim();
-  const agenceId = root.querySelector('#filter-agence')?.value || '';
-  const type = root.querySelector('#filter-type').value;
-  const statut = root.querySelector('#filter-statut')?.value || 'actif';
+  const search = root.querySelector("#filter-search").value.trim();
+  const agenceId = root.querySelector("#filter-agence")?.value || "";
+  const type = root.querySelector("#filter-type").value;
+  const statut = root.querySelector("#filter-statut")?.value || "actif";
 
   const params = new URLSearchParams();
-  params.append('page', page);
-  params.append('limit', 100);
-  if (search) params.append('search', search);
-  if (type) params.append('type_contrat', type);
-  if (statut) params.append('statut', statut);
-  if (agenceId) params.append('site_id', agenceId);
+  params.append("page", page);
+  params.append("limit", 100);
+  if (search) params.append("search", search);
+  if (type) params.append("type_contrat", type);
+  if (statut) params.append("statut", statut);
+  if (agenceId) params.append("site_id", agenceId);
 
   try {
     const res = await get(`/api/agents?${params.toString()}`);
     const agents = res.data || [];
 
-    const countEl = root.querySelector('#agents-count');
+    const countEl = root.querySelector("#agents-count");
     if (countEl) countEl.textContent = `${agents.length} agent(s) trouvé(s)`;
 
     // Trier alphabétiquement pour un affichage plus lisible
-    agents.sort((a, b) => `${a.nom}${a.prenom}`.localeCompare(`${b.nom}${b.prenom}`));
+    agents.sort((a, b) =>
+      `${a.nom}${a.prenom}`.localeCompare(`${b.nom}${b.prenom}`),
+    );
 
     renderTable(root, agents);
     await cacheAgents(agents);
   } catch (err) {
-    showToast("Erreur lors du chargement des agents. Affichage du cache si disponible.", 'warning');
+    showToast(
+      "Erreur lors du chargement des agents. Affichage du cache si disponible.",
+      "warning",
+    );
   }
 }
 
 function openAgentModal(mode, agent, sites) {
-  const isEdit = mode === 'edit';
-  const isView = mode === 'view';
+  const isEdit = mode === "edit";
+  const isView = mode === "view";
 
   const siteOptions = (sites || [])
     .map(
       (s) =>
         `<option value="${s._id}" ${
-          agent && (agent.site_id?._id === s._id || agent.site_id === s._id) ? 'selected' : ''
-        }>${s.nom}</option>`
+          agent && (agent.site_id?._id === s._id || agent.site_id === s._id)
+            ? "selected"
+            : ""
+        }>${s.nom}</option>`,
     )
-    .join('');
+    .join("");
 
   const content = `
     <form id="agent-form" style="display:flex; flex-direction:column; gap:8px;">
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
         <div>
           <label style="font-size:13px;">Nom</label>
-          <input name="nom" value="${agent?.nom || ''}" ${
-    isView ? 'disabled' : ''
-  } style="width:100%; padding:6px 8px; border-radius:6px; border:1px solid #cfd8dc;" />
+          <input name="nom" value="${agent?.nom || ""}" ${
+            isView ? "disabled" : ""
+          } style="width:100%; padding:6px 8px; border-radius:6px; border:1px solid #cfd8dc;" />
         </div>
         <div>
           <label style="font-size:13px;">Prénom</label>
-          <input name="prenom" value="${agent?.prenom || ''}" ${
-    isView ? 'disabled' : ''
-  } style="width:100%; padding:6px 8px; border-radius:6px; border:1px solid #cfd8dc;" />
+          <input name="prenom" value="${agent?.prenom || ""}" ${
+            isView ? "disabled" : ""
+          } style="width:100%; padding:6px 8px; border-radius:6px; border:1px solid #cfd8dc;" />
         </div>
       </div>
       <div>
         <label style="font-size:13px;">Téléphone</label>
-        <input name="telephone" value="${agent?.telephone || ''}" ${
-    isView ? 'disabled' : ''
-  } style="width:100%; padding:6px 8px; border-radius:6px; border:1px solid #cfd8dc;" />
+        <input name="telephone" value="${agent?.telephone || ""}" ${
+          isView ? "disabled" : ""
+        } style="width:100%; padding:6px 8px; border-radius:6px; border:1px solid #cfd8dc;" />
       </div>
       <div>
         <label style="font-size:13px;">Site / Agence</label>
         <select name="site_id" ${
-          isView ? 'disabled' : ''
+          isView ? "disabled" : ""
         } style="width:100%; padding:6px 8px; border-radius:6px; border:1px solid #cfd8dc;">
           ${siteOptions}
         </select>
@@ -165,74 +184,124 @@ function openAgentModal(mode, agent, sites) {
         <div>
           <label style="font-size:13px;">Type de contrat</label>
           <select name="type_contrat" ${
-            isView ? 'disabled' : ''
+            isView ? "disabled" : ""
           } style="width:100%; padding:6px 8px; border-radius:6px; border:1px solid #cfd8dc;">
-            <option value="CDI" ${agent?.type_contrat === 'CDI' ? 'selected' : ''}>CDI</option>
-            <option value="CDD" ${agent?.type_contrat === 'CDD' ? 'selected' : ''}>CDD</option>
-            <option value="stage" ${agent?.type_contrat === 'stage' ? 'selected' : ''}>Stage</option>
-            <option value="prestataire" ${agent?.type_contrat === 'prestataire' ? 'selected' : ''}>Prestataire</option>
+            <option value="CDI" ${agent?.type_contrat === "CDI" ? "selected" : ""}>CDI</option>
+            <option value="CDD" ${agent?.type_contrat === "CDD" ? "selected" : ""}>CDD</option>
+            <option value="stage" ${agent?.type_contrat === "stage" ? "selected" : ""}>Stage</option>
+            <option value="prestataire" ${agent?.type_contrat === "prestataire" ? "selected" : ""}>Prestataire</option>
           </select>
         </div>
         <div>
           <label style="font-size:13px;">Statut</label>
           <select name="statut" ${
-            isView ? 'disabled' : ''
+            isView ? "disabled" : ""
           } style="width:100%; padding:6px 8px; border-radius:6px; border:1px solid #cfd8dc;">
-            <option value="actif" ${!agent || agent.statut === 'actif' ? 'selected' : ''}>Actif</option>
-            <option value="inactif" ${agent?.statut === 'inactif' ? 'selected' : ''}>Inactif</option>
-            <option value="suspendu" ${agent?.statut === 'suspendu' ? 'selected' : ''}>Suspendu</option>
+            <option value="actif" ${!agent || agent.statut === "actif" ? "selected" : ""}>Actif</option>
+            <option value="inactif" ${agent?.statut === "inactif" ? "selected" : ""}>Inactif</option>
+            <option value="suspendu" ${agent?.statut === "suspendu" ? "selected" : ""}>Suspendu</option>
           </select>
         </div>
       </div>
       <div>
         <label style="font-size:13px;">Poste</label>
-        <input name="poste" value="${agent?.poste || ''}" ${
-    isView ? 'disabled' : ''
-  } style="width:100%; padding:6px 8px; border-radius:6px; border:1px solid #cfd8dc;" />
+        <input name="poste" value="${agent?.poste || ""}" ${
+          isView ? "disabled" : ""
+        } style="width:100%; padding:6px 8px; border-radius:6px; border:1px solid #cfd8dc;" />
       </div>
       <div>
         <label style="font-size:13px;">Photo</label>
-        <input name="photo" type="file" accept="image/*" ${isView ? 'disabled' : ''} />
+        <input name="photo" type="file" accept="image/*" ${isView ? "disabled" : ""} />
         ${
           agent?.photo
             ? `<div style="margin-top:6px;"><img src="${agent.photo}" style="width:80px; height:80px; border-radius:8px; object-fit:cover;" /></div>`
-            : ''
+            : ""
         }
       </div>
+      ${
+        isEdit
+          ? `
+      <div style="background:#f0f4ff;border-radius:10px;padding:14px;margin-top:12px;">
+        <div style="font-size:0.82rem;font-weight:600;margin-bottom:10px;color:#1565c0;">
+          <i class="fa-solid fa-mobile-screen"></i> Portail Agent (Mon Badge)
+        </div>
+
+        <div style="margin-bottom:10px;">
+          <label style="font-size:0.78rem;font-weight:500;display:block;margin-bottom:5px;">
+            Mot de passe portail
+          </label>
+          <input id="agent-portal-pwd" type="password" placeholder="Définir ou changer le mot de passe"
+            style="width:100%;padding:9px;border:1.5px solid #ddd;border-radius:8px;box-sizing:border-box;font-size:0.85rem;">
+          <div style="font-size:0.72rem;color:#888;margin-top:3px;">
+            L'agent se connectera avec son matricule + ce mot de passe sur /agent
+          </div>
+        </div>
+
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <span style="font-size:0.78rem;color:${agent.totp_enabled ? "#2e7d32" : "#888"};">
+            ${agent.totp_enabled ? "🔄 QR Dynamique activé" : "⚠️ QR Statique"}
+          </span>
+          ${
+            !agent.totp_enabled
+              ? `
+            <button id="btn-activer-totp" type="button"
+              style="padding:5px 12px;background:#2e7d32;color:white;border:none;border-radius:6px;font-size:0.75rem;cursor:pointer;">
+              Activer QR Dynamique
+            </button>
+          `
+              : ""
+          }
+        </div>
+      </div>
+      `
+          : ""
+      }
       ${
         agent && (agent.matricule || agent.numero_employe)
           ? `<div style="margin-top:6px;">
               <div style="font-size:13px; margin-bottom:4px;">QR Code</div>
               <img id="agent-qr-img" alt="QR" />
             </div>`
-          : ''
+          : ""
       }
     </form>
   `;
 
   const title =
-    mode === 'create' ? 'Ajouter un agent' :
-    mode === 'edit' ? 'Modifier un agent' : 'Détail agent';
+    mode === "create"
+      ? "Ajouter un agent"
+      : mode === "edit"
+        ? "Modifier un agent"
+        : "Détail agent";
 
   showModal({
     title,
     content,
-    confirmText: isView ? 'Fermer' : 'Enregistrer',
-    cancelText: 'Annuler',
+    confirmText: isView ? "Fermer" : "Enregistrer",
+    cancelText: "Annuler",
     onConfirm: async (close) => {
-      if (isView) { close(); return; }
+      if (isView) {
+        close();
+        return;
+      }
 
-      const form = document.getElementById('agent-form');
+      const form = document.getElementById("agent-form");
       const formData = new FormData(form);
       const payload = {
-        nom: formData.get('nom'),
-        prenom: formData.get('prenom'),
-        telephone: formData.get('telephone'),
-        site_id: formData.get('site_id'),
-        type_contrat: formData.get('type_contrat'),
-        statut: formData.get('statut'),
-        poste: formData.get('poste')
+        nom: formData.get("nom"),
+        prenom: formData.get("prenom"),
+        telephone: formData.get("telephone"),
+        site_id: formData.get("site_id"),
+        type_contrat: formData.get("type_contrat"),
+        statut: formData.get("statut"),
+        poste: formData.get("poste"),
       };
+
+      // Portail agent
+      const portalPwd = document.getElementById("agent-portal-pwd")?.value;
+      if (portalPwd) {
+        payload.portal_password = portalPwd;
+      }
 
       const file = form.querySelector('input[name="photo"]').files[0];
       if (file) {
@@ -248,29 +317,55 @@ function openAgentModal(mode, agent, sites) {
 
       async function save(data) {
         try {
-          if (mode === 'create') {
-            await post('/api/agents', data);
-            showToast('Agent crée avec succés.', 'success');
-          } else if (mode === 'edit') {
+          if (mode === "create") {
+            await post("/api/agents", data);
+            showToast("Agent crée avec succés.", "success");
+          } else if (mode === "edit") {
             await put(`/api/agents/${agent._id}`, data);
-            showToast('Agent mis á  jour avec succés.', 'success');
+            showToast("Agent mis á  jour avec succés.", "success");
           }
           close();
-          const root = document.getElementById('app').querySelector('main') || document.getElementById('app');
-          renderAgents(root, JSON.parse(localStorage.getItem('pamecas_user')));
+          const root =
+            document.getElementById("app").querySelector("main") ||
+            document.getElementById("app");
+          renderAgents(root, JSON.parse(localStorage.getItem("pamecas_user")));
         } catch (err) {
-          showToast("Erreur lors de l'enregistrement de l'agent. Vérifiez les données.", 'error');
+          showToast(
+            "Erreur lors de l'enregistrement de l'agent. Vérifiez les données.",
+            "error",
+          );
         }
       }
-    }
+    },
   });
+
+  // Event pour activer TOTP
+  const btnTotp = document.getElementById("btn-activer-totp");
+  if (btnTotp) {
+    btnTotp.addEventListener("click", async () => {
+      try {
+        await post(`/api/agents/${agent._id}/totp/activate`, {});
+        showToast("QR dynamique activé.", "success");
+        close(); // Fermer le modal
+        // Recharger la liste
+        const root =
+          document.getElementById("app").querySelector("main") ||
+          document.getElementById("app");
+        renderAgents(root, JSON.parse(localStorage.getItem("pamecas_user")));
+      } catch (err) {
+        showToast("Erreur activation TOTP.", "error");
+      }
+    });
+  }
 
   if (agent && agent._id) {
     setTimeout(() => {
-      const qrImg = document.getElementById('agent-qr-img');
+      const qrImg = document.getElementById("agent-qr-img");
       if (qrImg) {
         get(`/api/agents/${agent._id}/qr`)
-          .then((res) => { qrImg.src = `data:image/png;base64,${res.qr_base64}`; })
+          .then((res) => {
+            qrImg.src = `data:image/png;base64,${res.qr_base64}`;
+          })
           .catch(() => {});
       }
     }, 100);
@@ -280,19 +375,22 @@ function openAgentModal(mode, agent, sites) {
 async function openImportModal(root) {
   let sites = [];
   try {
-    const res = await get('/api/sites');
+    const res = await get("/api/sites");
     sites = res.data || res || [];
   } catch {}
 
   const user = getCurrentUser();
-  const defaultSiteId = user?.site_id || '';
+  const defaultSiteId = user?.site_id || "";
 
-  const siteOptions = sites.map(s =>
-    `<option value="${s._id}" ${s._id === defaultSiteId ? 'selected' : ''}>${s.nom}</option>`
-  ).join('');
+  const siteOptions = sites
+    .map(
+      (s) =>
+        `<option value="${s._id}" ${s._id === defaultSiteId ? "selected" : ""}>${s.nom}</option>`,
+    )
+    .join("");
 
   showModal({
-    title: 'Importer agents depuis CSV',
+    title: "Importer agents depuis CSV",
     content: `
       <div style="display:flex;flex-direction:column;gap:14px;">
         <div style="background:#e3f2fd;border-radius:8px;padding:12px;font-size:0.82rem;color:#1565c0;">
@@ -317,56 +415,62 @@ async function openImportModal(root) {
         <div id="import-result" style="display:none;padding:10px;border-radius:8px;font-size:0.82rem;"></div>
       </div>
     `,
-    confirmText: 'Importer',
-    cancelText: 'Annuler',
+    confirmText: "Importer",
+    cancelText: "Annuler",
     onConfirm: async (close) => {
-      const file = document.getElementById('import-file')?.files[0];
-      const siteId = document.getElementById('import-site-id')?.value;
-      const resultDiv = document.getElementById('import-result');
+      const file = document.getElementById("import-file")?.files[0];
+      const siteId = document.getElementById("import-site-id")?.value;
+      const resultDiv = document.getElementById("import-result");
 
-      if (!siteId) { showToast('Selectionnez une agence.', 'warning'); return; }
-      if (!file) { showToast('Selectionnez un fichier CSV.', 'warning'); return; }
+      if (!siteId) {
+        showToast("Selectionnez une agence.", "warning");
+        return;
+      }
+      if (!file) {
+        showToast("Selectionnez un fichier CSV.", "warning");
+        return;
+      }
 
       const formData = new FormData();
-      formData.append('file', file);
-      formData.append('site_id', siteId);
+      formData.append("file", file);
+      formData.append("site_id", siteId);
 
       try {
-        const token = localStorage.getItem('pamecas_token');
-        const res = await fetch('/api/agents/import-csv', {
-          method: 'POST',
+        const token = localStorage.getItem("pamecas_token");
+        const res = await fetch("/api/agents/import-csv", {
+          method: "POST",
           headers: { Authorization: `Bearer ${token}` },
-          body: formData
+          body: formData,
         });
         const data = await res.json();
 
         if (res.ok) {
           if (resultDiv) {
-            resultDiv.style.display = 'block';
-            resultDiv.style.background = '#e8f5e9';
-            resultDiv.style.color = '#2e7d32';
+            resultDiv.style.display = "block";
+            resultDiv.style.background = "#e8f5e9";
+            resultDiv.style.color = "#2e7d32";
             resultDiv.innerHTML = `
               <i class="fa-solid fa-circle-check"></i> ${data.message}
-              ${data.errors?.length > 0 ? '<br><small>' + data.errors.join('<br>') + '</small>' : ''}
+              ${data.errors?.length > 0 ? "<br><small>" + data.errors.join("<br>") + "</small>" : ""}
             `;
           }
-          showToast(data.message, 'success');
+          showToast(data.message, "success");
           setTimeout(() => {
             close();
-            window.location.hash = '#/agents';
+            window.location.hash = "#/agents";
           }, 1500);
         } else {
-          showToast(data.message || 'Erreur import.', 'error');
+          showToast(data.message || "Erreur import.", "error");
         }
       } catch (err) {
-        showToast('Erreur reseau: ' + err.message, 'error');
+        showToast("Erreur reseau: " + err.message, "error");
       }
-    }
+    },
   });
 }
 
 export async function renderAgents(root, user) {
-  const canEdit = user && (user.role === 'admin' || user.role === 'superadmin');
+  const canEdit = user && (user.role === "admin" || user.role === "superadmin");
 
   root.innerHTML = `
     <div style="display:flex; flex-direction:column; gap:12px;">
@@ -375,7 +479,9 @@ export async function renderAgents(root, user) {
           <h2 style="font-size:1.1rem;font-weight:700;">
             <i class="fa-solid fa-users" style="color:#2e7d32;margin-right:6px;"></i>Agents
           </h2>
-          ${canEdit ? `
+          ${
+            canEdit
+              ? `
           <div style="display:flex;gap:8px;">
             <button id="btn-import-csv" class="btn-primary" style="background:linear-gradient(135deg,#1565c0,#1976d2);font-size:0.78rem;padding:6px 10px;">
               <i class="fa-solid fa-file-csv"></i> Importer CSV
@@ -383,7 +489,9 @@ export async function renderAgents(root, user) {
             <button id="btn-qr-sheet" class="btn-primary" style="background:linear-gradient(135deg,#6a1b9a,#8e24aa);font-size:0.78rem;padding:6px 10px;">
               <i class="fa-solid fa-id-card"></i> QR Cards
             </button>
-          </div>` : ''}
+          </div>`
+              : ""
+          }
         </div>
 
         <!-- Filtres -->
@@ -447,71 +555,84 @@ export async function renderAgents(root, user) {
         <div style="color:#999; text-align:center; padding:20px 10px;">Chargement...</div>
       </div>
     </div>
-    ${canEdit ? `<button id="btn-add-agent" class="fab">+</button>` : ''}
+    ${canEdit ? `<button id="btn-add-agent" class="fab">+</button>` : ""}
   `;
 
   // Filtre agence (superadmin seulement)
-  const filterAgenceWrap = root.querySelector('#filter-agence-wrap');
-  const filterAgence = root.querySelector('#filter-agence');
-  if (user?.role === 'superadmin') {
+  const filterAgenceWrap = root.querySelector("#filter-agence-wrap");
+  const filterAgence = root.querySelector("#filter-agence");
+  if (user?.role === "superadmin") {
     try {
-      const res = await get('/api/sites');
+      const res = await get("/api/sites");
       const sites = res.data || res || [];
-      sites.forEach(s => {
-        const opt = document.createElement('option');
+      sites.forEach((s) => {
+        const opt = document.createElement("option");
         opt.value = s._id;
         opt.textContent = s.nom;
         filterAgence.appendChild(opt);
       });
     } catch {}
   } else {
-    if (filterAgenceWrap) filterAgenceWrap.style.display = 'none';
+    if (filterAgenceWrap) filterAgenceWrap.style.display = "none";
   }
 
   // Filtres en temps réel
-  root.querySelector('#filter-search')?.addEventListener('input', () => fetchAgents(root, 1));
-  root.querySelector('#filter-agence')?.addEventListener('change', () => fetchAgents(root, 1));
-  root.querySelector('#filter-type')?.addEventListener('change', () => fetchAgents(root, 1));
-  root.querySelector('#filter-statut')?.addEventListener('change', () => fetchAgents(root, 1));
-  root.querySelector('#btn-filter')?.addEventListener('click', () => fetchAgents(root, 1));
+  root
+    .querySelector("#filter-search")
+    ?.addEventListener("input", () => fetchAgents(root, 1));
+  root
+    .querySelector("#filter-agence")
+    ?.addEventListener("change", () => fetchAgents(root, 1));
+  root
+    .querySelector("#filter-type")
+    ?.addEventListener("change", () => fetchAgents(root, 1));
+  root
+    .querySelector("#filter-statut")
+    ?.addEventListener("change", () => fetchAgents(root, 1));
+  root
+    .querySelector("#btn-filter")
+    ?.addEventListener("click", () => fetchAgents(root, 1));
 
   if (canEdit) {
-    const addBtn = root.querySelector('#btn-add-agent');
-    addBtn.addEventListener('click', async () => {
+    const addBtn = root.querySelector("#btn-add-agent");
+    addBtn.addEventListener("click", async () => {
       let sites = [];
       try {
-        const res = await get('/api/sites');
+        const res = await get("/api/sites");
         sites = res.data || res || [];
       } catch (err) {}
-      openAgentModal('create', null, sites);
+      openAgentModal("create", null, sites);
     });
 
-    const btnImportCsv = root.querySelector('#btn-import-csv');
-    btnImportCsv.addEventListener('click', () => openImportModal(root));
+    const btnImportCsv = root.querySelector("#btn-import-csv");
+    btnImportCsv.addEventListener("click", () => openImportModal(root));
 
-    const btnQrSheet = root.querySelector('#btn-qr-sheet');
-    btnQrSheet.addEventListener('click', async () => {
+    const btnQrSheet = root.querySelector("#btn-qr-sheet");
+    btnQrSheet.addEventListener("click", async () => {
       const currentUser = getCurrentUser();
-      const token = localStorage.getItem('pamecas_token');
+      const token = localStorage.getItem("pamecas_token");
 
       if (currentUser?.site_id) {
-        window.open(`/api/agents/qr-sheet/${currentUser.site_id}?token=${token}`, '_blank');
+        window.open(
+          `/api/agents/qr-sheet/${currentUser.site_id}?token=${token}`,
+          "_blank",
+        );
         return;
       }
 
       // Superadmin — demander quelle agence
       let sites = [];
       try {
-        const res = await get('/api/sites');
+        const res = await get("/api/sites");
         sites = res.data || res || [];
       } catch {}
 
-      const siteOptions = sites.map(s =>
-        `<option value="${s._id}">${s.nom}</option>`
-      ).join('');
+      const siteOptions = sites
+        .map((s) => `<option value="${s._id}">${s.nom}</option>`)
+        .join("");
 
       showModal({
-        title: 'QR Cards — Choisir une agence',
+        title: "QR Cards — Choisir une agence",
         content: `
           <div>
             <label style="font-size:0.85rem;font-weight:600;display:block;margin-bottom:8px;">Agence</label>
@@ -521,18 +642,23 @@ export async function renderAgents(root, user) {
             </select>
           </div>
         `,
-        confirmText: 'Generer QR Cards',
-        cancelText: 'Annuler',
+        confirmText: "Generer QR Cards",
+        cancelText: "Annuler",
         onConfirm: (close) => {
-          const siteId = document.getElementById('qr-site-select')?.value;
-          if (!siteId) { showToast('Selectionnez une agence.', 'warning'); return; }
+          const siteId = document.getElementById("qr-site-select")?.value;
+          if (!siteId) {
+            showToast("Selectionnez une agence.", "warning");
+            return;
+          }
           close();
-          window.open(`/api/agents/qr-sheet/${siteId}?token=${token}`, '_blank');
-        }
+          window.open(
+            `/api/agents/qr-sheet/${siteId}?token=${token}`,
+            "_blank",
+          );
+        },
       });
     });
   }
 
   fetchAgents(root, 1);
 }
-

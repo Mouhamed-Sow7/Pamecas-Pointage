@@ -1,0 +1,1006 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
+    <title>SmartPointage — Mon Badge</title>
+    <meta name="theme-color" content="#1b5e20" />
+    <link rel="manifest" href="/agent-manifest.json" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family: "Inter", sans-serif;
+        background: linear-gradient(
+          135deg,
+          #1b5e20 0%,
+          #2e7d32 50%,
+          #43a047 100%
+        );
+        min-height: 100vh;
+        min-height: 100dvh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+      }
+
+      /* PAGE LOGIN */
+      .login-page {
+        background: white;
+        border-radius: 20px;
+        padding: 32px 24px;
+        width: 100%;
+        max-width: 380px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      }
+      .login-logo {
+        text-align: center;
+        margin-bottom: 24px;
+      }
+      .login-logo .sp-mark {
+        width: 56px;
+        height: 56px;
+        background: #2e7d32;
+        border-radius: 14px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 800;
+        font-size: 1.1rem;
+        margin-bottom: 8px;
+      }
+      .login-logo h1 {
+        font-size: 1.2rem;
+        color: #1f2933;
+        font-weight: 700;
+      }
+      .login-logo p {
+        font-size: 0.82rem;
+        color: #888;
+        margin-top: 4px;
+      }
+      .field {
+        margin-bottom: 14px;
+      }
+      .field label {
+        display: block;
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: #555;
+        margin-bottom: 5px;
+      }
+      .field input {
+        width: 100%;
+        padding: 11px 14px;
+        border: 1.5px solid #ddd;
+        border-radius: 10px;
+        font-size: 0.92rem;
+        font-family: inherit;
+        transition: border-color 0.2s;
+      }
+      .field input:focus {
+        outline: none;
+        border-color: #2e7d32;
+      }
+      .btn-login {
+        width: 100%;
+        padding: 13px;
+        background: linear-gradient(135deg, #2e7d32, #43a047);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        font-size: 0.95rem;
+        font-weight: 600;
+        cursor: pointer;
+        margin-top: 6px;
+      }
+      .error-msg {
+        background: #ffebee;
+        color: #c62828;
+        border-radius: 8px;
+        padding: 10px 12px;
+        font-size: 0.82rem;
+        margin-top: 12px;
+        display: none;
+      }
+
+      /* PAGE BADGE */
+      .badge-page {
+        width: 100%;
+        max-width: 380px;
+      }
+      .badge-card {
+        background: white;
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      }
+      .badge-header {
+        background: linear-gradient(135deg, #1b5e20, #2e7d32);
+        padding: 16px 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .badge-header-left {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .badge-sp {
+        width: 36px;
+        height: 36px;
+        background: white;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 800;
+        color: #2e7d32;
+        font-size: 0.8rem;
+      }
+      .badge-header h2 {
+        color: white;
+        font-size: 0.9rem;
+        font-weight: 700;
+      }
+      .badge-header p {
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 0.72rem;
+      }
+      .online-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #4caf50;
+      }
+      .offline-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #f44336;
+      }
+
+      .badge-body {
+        padding: 24px 20px;
+      }
+      .agent-info {
+        text-align: center;
+        margin-bottom: 20px;
+      }
+      .agent-avatar {
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 1.4rem;
+        color: #2e7d32;
+        margin-bottom: 10px;
+      }
+      .agent-name {
+        font-weight: 700;
+        font-size: 1.1rem;
+        color: #1f2933;
+      }
+      .agent-matricule {
+        font-size: 0.82rem;
+        color: #2e7d32;
+        font-weight: 600;
+        margin-top: 2px;
+      }
+      .agent-poste {
+        font-size: 0.78rem;
+        color: #888;
+        margin-top: 2px;
+      }
+
+      .qr-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin: 16px 0;
+      }
+      #qr-canvas {
+        border: 2px solid #e8f5e9;
+        border-radius: 12px;
+        padding: 12px;
+        background: white;
+      }
+      .timer-bar {
+        width: 100%;
+        height: 4px;
+        background: #e8f5e9;
+        border-radius: 2px;
+        margin-top: 12px;
+        overflow: hidden;
+      }
+      .timer-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #2e7d32, #4caf50);
+        border-radius: 2px;
+        transition: width 1s linear;
+      }
+      .timer-text {
+        font-size: 0.78rem;
+        color: #888;
+        text-align: center;
+        margin-top: 6px;
+      }
+      .dynamic-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 3px 10px;
+        background: #e8f5e9;
+        color: #2e7d32;
+        border-radius: 10px;
+        font-size: 0.72rem;
+        font-weight: 600;
+        margin-top: 8px;
+      }
+      .static-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 3px 10px;
+        background: #fff3e0;
+        color: #e65100;
+        border-radius: 10px;
+        font-size: 0.72rem;
+        font-weight: 600;
+        margin-top: 8px;
+      }
+
+      /* STATS */
+      .stats-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-top: 16px;
+      }
+      .stat-card {
+        background: #f8f9f8;
+        border-radius: 10px;
+        padding: 12px;
+        text-align: center;
+      }
+      .stat-value {
+        font-size: 1.6rem;
+        font-weight: 700;
+      }
+      .stat-label {
+        font-size: 0.72rem;
+        color: #888;
+        margin-top: 2px;
+      }
+      .green {
+        color: #2e7d32;
+      }
+      .red {
+        color: #c62828;
+      }
+      .orange {
+        color: #e65100;
+      }
+      .blue {
+        color: #1565c0;
+      }
+
+      /* ONGLETS */
+      .tabs {
+        display: flex;
+        border-bottom: 2px solid #eee;
+        margin: 16px 0 0;
+      }
+      .tab {
+        flex: 1;
+        padding: 10px;
+        text-align: center;
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: #888;
+        cursor: pointer;
+        border-bottom: 2px solid transparent;
+        margin-bottom: -2px;
+        transition: all 0.15s;
+      }
+      .tab.active {
+        color: #2e7d32;
+        border-bottom-color: #2e7d32;
+      }
+
+      .tab-content {
+        display: none;
+        padding: 16px 0;
+      }
+      .tab-content.active {
+        display: block;
+      }
+
+      /* CONGES */
+      .conge-solde {
+        background: linear-gradient(135deg, #1b5e20, #2e7d32);
+        border-radius: 12px;
+        padding: 16px;
+        color: white;
+        margin-bottom: 16px;
+      }
+      .conge-solde h3 {
+        font-size: 0.85rem;
+        opacity: 0.8;
+        margin-bottom: 4px;
+      }
+      .conge-solde .jours {
+        font-size: 2.5rem;
+        font-weight: 800;
+      }
+      .conge-solde .jours span {
+        font-size: 0.9rem;
+        font-weight: 400;
+        opacity: 0.8;
+      }
+
+      .btn-demande {
+        width: 100%;
+        padding: 12px;
+        background: linear-gradient(135deg, #1565c0, #1976d2);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+        margin-bottom: 16px;
+      }
+
+      .demande-card {
+        background: #f8f9f8;
+        border-radius: 10px;
+        padding: 12px 14px;
+        margin-bottom: 8px;
+        border-left: 3px solid #ddd;
+      }
+      .demande-card.en_attente {
+        border-left-color: #e65100;
+      }
+      .demande-card.approuve {
+        border-left-color: #2e7d32;
+      }
+      .demande-card.refuse {
+        border-left-color: #c62828;
+      }
+      .demande-dates {
+        font-weight: 600;
+        font-size: 0.85rem;
+        color: #1f2933;
+      }
+      .demande-info {
+        font-size: 0.75rem;
+        color: #888;
+        margin-top: 3px;
+      }
+      .demande-statut {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        margin-top: 6px;
+      }
+      .statut-en_attente {
+        background: #fff3e0;
+        color: #e65100;
+      }
+      .statut-approuve {
+        background: #e8f5e9;
+        color: #2e7d32;
+      }
+      .statut-refuse {
+        background: #ffebee;
+        color: #c62828;
+      }
+
+      /* HISTORIQUE */
+      .historique-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 0;
+        border-bottom: 1px solid #f0f0f0;
+        font-size: 0.82rem;
+      }
+      .hist-date {
+        color: #666;
+      }
+      .hist-statut {
+        font-weight: 600;
+      }
+
+      .btn-logout-agent {
+        width: 100%;
+        padding: 11px;
+        background: #f5f5f5;
+        color: #666;
+        border: none;
+        border-radius: 10px;
+        font-size: 0.85rem;
+        cursor: pointer;
+        margin-top: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app-agent"></div>
+
+    <script type="module">
+      const API = "";
+      let currentAgent = null;
+      let qrInterval = null;
+      let qrCodeInstance = null;
+
+      // ── Auth ──────────────────────────────────────────────────
+      function getToken() {
+        return localStorage.getItem("agent_token");
+      }
+      function getAgent() {
+        try {
+          return JSON.parse(localStorage.getItem("agent_data"));
+        } catch {
+          return null;
+        }
+      }
+
+      // ── Génération QR dynamique (TOTP côté client) ────────────
+      async function generateToken(matricule, secret, window) {
+        const enc = new TextEncoder();
+        const key = await crypto.subtle.importKey(
+          "raw",
+          enc.encode(secret),
+          { name: "HMAC", hash: "SHA-256" },
+          false,
+          ["sign"],
+        );
+        const sig = await crypto.subtle.sign(
+          "HMAC",
+          key,
+          enc.encode(`${matricule}:${window}`),
+        );
+        const arr = Array.from(new Uint8Array(sig));
+        return arr
+          .map((b) => b.toString(16).padStart(2, "0"))
+          .join("")
+          .substring(0, 12);
+      }
+
+      function getTimeWindow() {
+        return Math.floor(Date.now() / 30000);
+      }
+      function getSecondsLeft() {
+        const now = Date.now();
+        const windowStart = Math.floor(now / 30000) * 30000;
+        return Math.ceil((windowStart + 30000 - now) / 1000);
+      }
+
+      async function generateQRData(matricule, secret) {
+        const win = getTimeWindow();
+        const token = await generateToken(matricule, secret, win);
+        return `SP:${matricule}:${token}:${win}`;
+      }
+
+      // ── Rendu QR ──────────────────────────────────────────────
+      async function renderQR() {
+        const agent = getAgent();
+        if (!agent) return;
+
+        const container = document.getElementById("qr-canvas");
+        if (!container) return;
+
+        container.innerHTML = "";
+
+        let qrData;
+        if (agent.totp_secret && agent.totp_enabled) {
+          // QR dynamique
+          qrData = await generateQRData(agent.matricule, agent.totp_secret);
+        } else {
+          // QR statique (rétro-compat)
+          qrData = agent.matricule;
+        }
+
+        new QRCode(container, {
+          text: qrData,
+          width: 200,
+          height: 200,
+          colorDark: "#1b5e20",
+          colorLight: "#ffffff",
+          correctLevel: QRCode.CorrectLevel.H,
+        });
+      }
+
+      // ── Timer ──────────────────────────────────────────────────
+      function startTimer() {
+        if (qrInterval) clearInterval(qrInterval);
+
+        const updateTimer = async () => {
+          const secs = getSecondsLeft();
+          const fill = document.getElementById("timer-fill");
+          const text = document.getElementById("timer-text");
+          if (fill) fill.style.width = `${(secs / 30) * 100}%`;
+          if (text) text.textContent = `Renouvellement dans ${secs}s`;
+          if (secs === 30) await renderQR(); // Nouveau QR à chaque fenêtre
+        };
+
+        updateTimer();
+        qrInterval = setInterval(updateTimer, 1000);
+      }
+
+      // ── Stats agent ───────────────────────────────────────────
+      async function chargerStats() {
+        try {
+          const token = getToken();
+          const res = await fetch("/api/agent-portal/stats", {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (!res.ok) return null;
+          return await res.json();
+        } catch {
+          return null;
+        }
+      }
+
+      async function chargerConges() {
+        try {
+          const token = getToken();
+          const res = await fetch("/api/agent-portal/conges", {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (!res.ok) return null;
+          return await res.json();
+        } catch {
+          return null;
+        }
+      }
+
+      // ── Rendu badge ───────────────────────────────────────────
+      async function renderBadge() {
+        const agent = getAgent();
+        const app = document.getElementById("app-agent");
+
+        const stats = await chargerStats();
+        const conges = await chargerConges();
+
+        const initiales = `${(agent.nom || "?").charAt(0)}${(agent.prenom || "?").charAt(0)}`;
+        const isDynamic = agent.totp_enabled && agent.totp_secret;
+
+        app.innerHTML = `
+        <div class="badge-page">
+          <div class="badge-card">
+            <!-- Header -->
+            <div class="badge-header">
+              <div class="badge-header-left">
+                <div class="badge-sp">SP</div>
+                <div>
+                  <h2>SmartPointage</h2>
+                  <p>${agent.site_nom || "Mon Agence"}</p>
+                </div>
+              </div>
+              <div id="online-indicator" class="${navigator.onLine ? "online-dot" : "offline-dot"}"></div>
+            </div>
+
+            <!-- Body -->
+            <div class="badge-body">
+
+              <!-- Info agent -->
+              <div class="agent-info">
+                <div class="agent-avatar">${initiales}</div>
+                <div class="agent-name">${agent.nom} ${agent.prenom}</div>
+                <div class="agent-matricule">${agent.matricule}</div>
+                <div class="agent-poste">${agent.poste || agent.type_contrat || ""}</div>
+              </div>
+
+              <!-- QR Code -->
+              <div class="qr-container">
+                <div id="qr-canvas"></div>
+                ${
+                  isDynamic
+                    ? `
+                  <div class="timer-bar"><div class="timer-fill" id="timer-fill" style="width:100%"></div></div>
+                  <div class="timer-text" id="timer-text">Calcul...</div>
+                  <div class="dynamic-badge">🔄 QR Dynamique — Sécurisé</div>
+                `
+                    : `
+                  <div class="static-badge">⚠️ QR Statique — Demandez activation dynamique</div>
+                `
+                }
+              </div>
+
+              <!-- Stats rapides -->
+              <div class="stats-grid">
+                <div class="stat-card">
+                  <div class="stat-value green">${stats?.presents || 0}</div>
+                  <div class="stat-label">Présences ce mois</div>
+                </div>
+                <div class="stat-card">
+                  <div class="stat-value red">${stats?.absents || 0}</div>
+                  <div class="stat-label">Absences</div>
+                </div>
+                <div class="stat-card">
+                  <div class="stat-value orange">${stats?.retards || 0}</div>
+                  <div class="stat-label">Retards</div>
+                </div>
+                <div class="stat-card">
+                  <div class="stat-value blue">${conges?.solde_disponible || 0}</div>
+                  <div class="stat-label">Jours congé dispo</div>
+                </div>
+              </div>
+
+              <!-- Onglets -->
+              <div class="tabs">
+                <div class="tab active" data-tab="conges">Congés</div>
+                <div class="tab" data-tab="historique">Historique</div>
+              </div>
+
+              <!-- Tab Congés -->
+              <div class="tab-content active" id="tab-conges">
+                <div class="conge-solde">
+                  <h3>Solde congés disponible</h3>
+                  <div class="jours">${conges?.solde_disponible || 0} <span>jours</span></div>
+                  <div style="font-size:0.78rem;opacity:0.8;margin-top:4px;">
+                    ${conges?.jours_acquis || 0} acquis — ${conges?.jours_pris || 0} pris — ${conges?.jours_en_attente || 0} en attente
+                  </div>
+                </div>
+
+                <button class="btn-demande" id="btn-nouvelle-demande">
+                  + Nouvelle demande de congé
+                </button>
+
+                ${
+                  (conges?.demandes || []).length === 0
+                    ? `
+                  <div style="text-align:center;padding:20px;color:#aaa;font-size:0.85rem;">
+                    Aucune demande de congé
+                  </div>
+                `
+                    : (conges?.demandes || [])
+                        .map(
+                          (d) => `
+                  <div class="demande-card ${d.statut}">
+                    <div class="demande-dates">${d.date_debut} → ${d.date_fin} (${d.nb_jours} jours)</div>
+                    <div class="demande-info">${d.motif || "Congé annuel"}</div>
+                    <span class="demande-statut statut-${d.statut}">
+                      ${d.statut === "en_attente" ? "⏳ En attente" : d.statut === "approuve" ? "✅ Approuvé" : "❌ Refusé"}
+                    </span>
+                    ${d.commentaire_rh ? `<div style="font-size:0.72rem;color:#888;margin-top:4px;">Note RH: ${d.commentaire_rh}</div>` : ""}
+                  </div>
+                `,
+                        )
+                        .join("")
+                }
+              </div>
+
+              <!-- Tab Historique -->
+              <div class="tab-content" id="tab-historique">
+                ${
+                  (stats?.historique || []).length === 0
+                    ? `
+                  <div style="text-align:center;padding:20px;color:#aaa;font-size:0.85rem;">
+                    Aucun historique disponible
+                  </div>
+                `
+                    : (stats?.historique || [])
+                        .map(
+                          (h) => `
+                  <div class="historique-item">
+                    <span class="hist-date">${h.date}</span>
+                    <span class="hist-statut ${h.statut === "present" ? "green" : h.statut === "absent" ? "red" : "orange"}">
+                      ${h.statut === "present" ? "✅ Présent" : h.statut === "absent" ? "❌ Absent" : "⏰ Retard"}
+                    </span>
+                    <span style="color:#888;">${h.heure_arrivee || "--:--"}</span>
+                  </div>
+                `,
+                        )
+                        .join("")
+                }
+              </div>
+
+              <button class="btn-logout-agent" id="btn-logout-agent">Se déconnecter</button>
+            </div>
+          </div>
+        </div>
+      `;
+
+        // QR
+        await renderQR();
+        if (isDynamic) startTimer();
+
+        // Tabs
+        document.querySelectorAll(".tab").forEach((tab) => {
+          tab.addEventListener("click", () => {
+            document
+              .querySelectorAll(".tab")
+              .forEach((t) => t.classList.remove("active"));
+            document
+              .querySelectorAll(".tab-content")
+              .forEach((c) => c.classList.remove("active"));
+            tab.classList.add("active");
+            document
+              .getElementById(`tab-${tab.dataset.tab}`)
+              ?.classList.add("active");
+          });
+        });
+
+        // Nouvelle demande
+        document
+          .getElementById("btn-nouvelle-demande")
+          ?.addEventListener("click", () => {
+            renderFormulaireConge(conges?.solde_disponible || 0);
+          });
+
+        // Logout
+        document
+          .getElementById("btn-logout-agent")
+          ?.addEventListener("click", () => {
+            localStorage.removeItem("agent_token");
+            localStorage.removeItem("agent_data");
+            renderLogin();
+          });
+
+        // Online indicator
+        window.addEventListener("online", () => {
+          document
+            .getElementById("online-indicator")
+            ?.setAttribute("class", "online-dot");
+        });
+        window.addEventListener("offline", () => {
+          document
+            .getElementById("online-indicator")
+            ?.setAttribute("class", "offline-dot");
+        });
+      }
+
+      // ── Formulaire demande congé ──────────────────────────────
+      function renderFormulaireConge(soldeDisponible) {
+        const overlay = document.createElement("div");
+        overlay.style.cssText =
+          "position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:100;display:flex;align-items:flex-end;justify-content:center;padding:16px;";
+
+        overlay.innerHTML = `
+        <div style="background:white;border-radius:20px 20px 16px 16px;width:100%;max-width:380px;padding:24px;max-height:85vh;overflow-y:auto;">
+          <h3 style="font-size:1rem;font-weight:700;margin-bottom:16px;">Demande de congé</h3>
+
+          <div style="background:#e8f5e9;border-radius:10px;padding:12px;margin-bottom:16px;font-size:0.82rem;color:#2e7d32;">
+            <strong>${soldeDisponible} jours disponibles</strong>
+          </div>
+
+          <div style="margin-bottom:12px;">
+            <label style="font-size:0.8rem;font-weight:600;display:block;margin-bottom:5px;">Date début</label>
+            <input type="date" id="conge-debut" style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:0.9rem;box-sizing:border-box;">
+          </div>
+          <div style="margin-bottom:12px;">
+            <label style="font-size:0.8rem;font-weight:600;display:block;margin-bottom:5px;">Date fin</label>
+            <input type="date" id="conge-fin" style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:0.9rem;box-sizing:border-box;">
+          </div>
+          <div style="margin-bottom:12px;">
+            <label style="font-size:0.8rem;font-weight:600;display:block;margin-bottom:5px;">Type</label>
+            <select id="conge-type" style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:0.9rem;box-sizing:border-box;">
+              <option value="annuel">Congé annuel</option>
+              <option value="maladie">Congé maladie</option>
+              <option value="maternite">Congé maternité</option>
+              <option value="exceptionnel">Congé exceptionnel</option>
+            </select>
+          </div>
+          <div style="margin-bottom:16px;">
+            <label style="font-size:0.8rem;font-weight:600;display:block;margin-bottom:5px;">Motif (optionnel)</label>
+            <textarea id="conge-motif" rows="3" placeholder="Décrivez le motif..." style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:0.85rem;resize:vertical;box-sizing:border-box;font-family:inherit;"></textarea>
+          </div>
+
+          <div id="conge-calcul" style="background:#f8f9f8;border-radius:8px;padding:10px;margin-bottom:16px;font-size:0.82rem;display:none;"></div>
+          <div id="conge-error" style="background:#ffebee;color:#c62828;border-radius:8px;padding:10px;margin-bottom:12px;font-size:0.82rem;display:none;"></div>
+
+          <div style="display:flex;gap:10px;">
+            <button id="btn-annuler-conge" style="flex:1;padding:12px;background:#f5f5f5;color:#666;border:none;border-radius:10px;font-size:0.9rem;cursor:pointer;">Annuler</button>
+            <button id="btn-soumettre-conge" style="flex:1;padding:12px;background:linear-gradient(135deg,#1565c0,#1976d2);color:white;border:none;border-radius:10px;font-size:0.9rem;font-weight:600;cursor:pointer;">Soumettre</button>
+          </div>
+        </div>
+      `;
+
+        document.body.appendChild(overlay);
+
+        // Calcul jours
+        const calcul = () => {
+          const debut = document.getElementById("conge-debut")?.value;
+          const fin = document.getElementById("conge-fin")?.value;
+          const calculDiv = document.getElementById("conge-calcul");
+          const errorDiv = document.getElementById("conge-error");
+
+          if (debut && fin) {
+            const d1 = new Date(debut);
+            const d2 = new Date(fin);
+            const diff = Math.ceil((d2 - d1) / (1000 * 60 * 60 * 24)) + 1;
+
+            calculDiv.style.display = "block";
+            if (diff <= 0) {
+              calculDiv.innerHTML =
+                "⚠️ La date de fin doit être après la date de début.";
+              calculDiv.style.background = "#fff3e0";
+              calculDiv.style.color = "#e65100";
+            } else if (diff > soldeDisponible) {
+              calculDiv.innerHTML = `❌ ${diff} jours demandés — Seulement ${soldeDisponible} disponibles`;
+              calculDiv.style.background = "#ffebee";
+              calculDiv.style.color = "#c62828";
+            } else {
+              calculDiv.innerHTML = `✅ ${diff} jour(s) demandé(s) — Il vous restera ${soldeDisponible - diff} jour(s)`;
+              calculDiv.style.background = "#e8f5e9";
+              calculDiv.style.color = "#2e7d32";
+            }
+          }
+        };
+
+        document
+          .getElementById("conge-debut")
+          ?.addEventListener("change", calcul);
+        document
+          .getElementById("conge-fin")
+          ?.addEventListener("change", calcul);
+
+        document
+          .getElementById("btn-annuler-conge")
+          ?.addEventListener("click", () => overlay.remove());
+        overlay.addEventListener("click", (e) => {
+          if (e.target === overlay) overlay.remove();
+        });
+
+        document
+          .getElementById("btn-soumettre-conge")
+          ?.addEventListener("click", async () => {
+            const debut = document.getElementById("conge-debut")?.value;
+            const fin = document.getElementById("conge-fin")?.value;
+            const type = document.getElementById("conge-type")?.value;
+            const motif = document.getElementById("conge-motif")?.value;
+            const errorDiv = document.getElementById("conge-error");
+
+            if (!debut || !fin) {
+              errorDiv.textContent = "Dates obligatoires.";
+              errorDiv.style.display = "block";
+              return;
+            }
+
+            const d1 = new Date(debut);
+            const d2 = new Date(fin);
+            const nb_jours = Math.ceil((d2 - d1) / (1000 * 60 * 60 * 24)) + 1;
+
+            if (nb_jours <= 0) {
+              errorDiv.textContent = "Date de fin invalide.";
+              errorDiv.style.display = "block";
+              return;
+            }
+
+            if (nb_jours > soldeDisponible) {
+              errorDiv.textContent = `Solde insuffisant: ${nb_jours} demandés, ${soldeDisponible} disponibles.`;
+              errorDiv.style.display = "block";
+              return;
+            }
+
+            try {
+              const token = getToken();
+              const res = await fetch("/api/agent-portal/conges", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                  date_debut: debut,
+                  date_fin: fin,
+                  type,
+                  motif,
+                  nb_jours,
+                }),
+              });
+              const data = await res.json();
+              if (!res.ok) throw new Error(data.message);
+              overlay.remove();
+              await renderBadge(); // Recharger
+            } catch (err) {
+              errorDiv.textContent = err.message || "Erreur soumission.";
+              errorDiv.style.display = "block";
+            }
+          });
+      }
+
+      // ── Rendu Login ───────────────────────────────────────────
+      function renderLogin() {
+        const app = document.getElementById("app-agent");
+        app.innerHTML = `
+        <div class="login-page">
+          <div class="login-logo">
+            <div class="sp-mark">SP</div>
+            <h1>Mon Espace Agent</h1>
+            <p>SmartPointage — Portail personnel</p>
+          </div>
+
+          <div style="margin-bottom:12px;">
+            <label style="font-size:0.8rem;font-weight:600;display:block;margin-bottom:5px;">Matricule ou Téléphone</label>
+            <input id="login-id" type="text" placeholder="SMP-0001 ou 77XXXXXXX" autocomplete="username">
+          </div>
+          <div style="margin-bottom:14px;">
+            <label style="font-size:0.8rem;font-weight:600;display:block;margin-bottom:5px;">Mot de passe</label>
+            <input id="login-pwd" type="password" placeholder="••••••••" autocomplete="current-password">
+          </div>
+          <button class="btn-login" id="btn-login">Se connecter</button>
+          <div class="error-msg" id="login-error"></div>
+        </div>
+      `;
+
+        document
+          .getElementById("login-id")
+          ?.addEventListener("keydown", (e) => {
+            if (e.key === "Enter")
+              document.getElementById("login-pwd")?.focus();
+          });
+        document
+          .getElementById("login-pwd")
+          ?.addEventListener("keydown", (e) => {
+            if (e.key === "Enter")
+              document.getElementById("btn-login")?.click();
+          });
+
+        document
+          .getElementById("btn-login")
+          ?.addEventListener("click", async () => {
+            const identifiant = document
+              .getElementById("login-id")
+              ?.value?.trim();
+            const password = document.getElementById("login-pwd")?.value;
+            const errorDiv = document.getElementById("login-error");
+
+            if (!identifiant || !password) {
+              errorDiv.textContent = "Identifiant et mot de passe requis.";
+              errorDiv.style.display = "block";
+              return;
+            }
+
+            try {
+              const res = await fetch("/api/agent-portal/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ identifiant, password }),
+              });
+              const data = await res.json();
+              if (!res.ok) throw new Error(data.message);
+
+              localStorage.setItem("agent_token", data.token);
+              localStorage.setItem("agent_data", JSON.stringify(data.agent));
+              await renderBadge();
+            } catch (err) {
+              errorDiv.textContent = err.message || "Erreur connexion.";
+              errorDiv.style.display = "block";
+            }
+          });
+      }
+
+      // ── Init ──────────────────────────────────────────────────
+      if (getToken() && getAgent()) {
+        renderBadge();
+      } else {
+        renderLogin();
+      }
+    </script>
+  </body>
+</html>
