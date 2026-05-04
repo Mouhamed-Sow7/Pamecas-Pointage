@@ -1,211 +1,168 @@
 const express = require("express");
+const bcrypt = require("bcryptjs");
+const Agent = require("../models/Agent");
+const Conge = require("../models/Conge");
+const Pointage = require("../models/Pointage");
+const {
+  authenticate,
+  authorizeRoles,
+  tenantFilter,
+} = require("../middleware/auth");
+
 const router = express.Router();
 
-router.get("/test", (req, res) => res.json({ message: "test" }));
-
-module.exports = router;
-
-// ── Middleware auth portail agent ─────────────────────────────
-async function authenticateAgent(req, res, next) {
+// Middleware d'authentification agent
+const authenticateAgent = async (req, res, next) => {
   try {
-    const header = req.headers.authorization || "";
-    const token = header.startsWith("Bearer ") ? header.slice(7) : null;
-    if (!token) return res.status(401).json({ message: "Token manquant." });
-
-    const secret = process.env.JWT_SECRET || "change-me";
-    const payload = jwt.verify(token, secret);
-
-    if (payload.type !== "agent") {
-      return res.status(401).json({ message: "Token invalide." });
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith("Basic ")) {
+      return res.status(401).json({ message: "Authentification requise" });
     }
 
-    const agent = await Agent.findById(payload.agent_id).populate(
-      "site_id",
-      "nom code config",
-    );
+    const base64Credentials = authHeader.split(" ")[1];
+    const credentials = Buffer.from(base64Credentials, "base64").toString("ascii");
+    const [matricule, password] = credentials.split(":");
 
-    if (!agent || agent.statut !== "actif") {
-      return res.status(401).json({ message: "Agent inactif ou introuvable." });
+    if (!matricule || !password) {
+      return res.status(401).json({ message: "Matricule et mot de passe requis" });
+    }
+
+    const agent = await Agent.findOne({ matricule }).populate("site_id", "nom code");
+    if (!agent || !agent.password_hash) {
+      return res.status(401).json({ message: "Agent non trouvé ou compte non activé" });
+    }
+
+    const isValidPassword = await bcrypt.compare(password, agent.password_hash);
+    if (!isValidPassword) {
+      return res.status(401).json({ message: "Mot de passe incorrect" });
     }
 
     req.agent = agent;
-    return next();
-  } catch (err) {
-    return res.status(401).json({ message: "Token invalide ou expiré." });
+    next();
+  } catch (error) {
+    console.error("Erreur authentification agent:", error);
+    res.status(500).json({ message: "Erreur serveur" });
   }
-}
+};
 
-// ── POST /login ───────────────────────────────────────────────
-router.post("/login", async (req, res) => {
+// POST /login - Authentification agent
+router.post("/login", authenticateAgent, async (req, res) => {
   try {
-    const { identifiant, password } = req.body;
-    if (!identifiant || !password) {
-      return res
-        .status(400)
-        .json({ message: "Identifiant et mot de passe requis." });
-    }
+    const agent = req.agent;
 
-    // Chercher par matricule ou téléphone
-    const agent = await Agent.findOne({
-      $or: [
-        { matricule: identifiant.toUpperCase() },
-        { telephone: identifiant },
-      ],
-      statut: "actif",
-    }).populate("site_id", "nom code");
-
-    if (!agent) {
-      return res.status(401).json({ message: "Agent introuvable." });
-    }
-
-    // Vérifier mot de passe
-    if (!agent.password_hash) {
-      return res
-        .status(401)
-        .json({ message: "Compte non activé. Contactez votre responsable." });
-    }
-
-    const valid = await bcrypt.compare(password, agent.password_hash);
-    if (!valid) {
-      return res.status(401).json({ message: "Mot de passe incorrect." });
-    }
-
-    // Générer token agent (type différent du token admin)
-    const secret = process.env.JWT_SECRET || "change-me";
+    // Générer un token JWT pour la session
+    const jwt = require("jsonwebtoken");
     const token = jwt.sign(
-      { type: "agent", agent_id: agent._id.toString() },
-      secret,
-      { expiresIn: "30d" }, // Token longue durée pour les agents
+      { id: agent._id, matricule: agent.matricule, role: "agent" },
+      process.env.JWT_SECRET || "secret",
+      { expiresIn: "24h" }
     );
 
-    return res.json({
-      token,
+    res.json({
+      message: "Connexion réussie",
       agent: {
         _id: agent._id,
         nom: agent.nom,
         prenom: agent.prenom,
         matricule: agent.matricule,
-        poste: agent.poste,
-        type_contrat: agent.type_contrat,
-        site_nom: agent.site_id?.nom,
-        totp_enabled: agent.totp_enabled,
-        totp_secret: agent.totp_secret, // nécessaire pour générer QR côté client
+        site: agent.site_id,
       },
+      token,
     });
-  } catch (err) {
-    return res.status(500).json({ message: "Erreur connexion." });
+  } catch (error) {
+    console.error("Erreur login:", error);
+    res.status(500).json({ message: "Erreur serveur" });
   }
 });
 
-// ── GET /stats ────────────────────────────────────────────────
+// GET /stats - Statistiques de l'agent
 router.get("/stats", authenticateAgent, async (req, res) => {
   try {
     const agent = req.agent;
-    const now = new Date();
-    const debutMois = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
-    const finMois = now.toISOString().slice(0, 10);
 
-    // Stats du mois courant
+    // Pointages du mois en cours
+    const debutMois = new Date();
+    debutMois.setDate(1);
+    debutMois.setHours(0, 0, 0, 0);
+
     const pointagesMois = await Pointage.find({
       agent_id: agent._id,
-      date: { $gte: debutMois, $lte: finMois },
+      date: { $gte: debutMois },
     }).sort({ date: -1 });
 
-    const presents = pointagesMois.filter((p) => p.statut === "present").length;
-    const absents = pointagesMois.filter((p) => p.statut === "absent").length;
-    const retards = pointagesMois.filter((p) => p.statut === "retard").length;
+    // Statistiques
+    const totalPointages = pointagesMois.length;
+    const pointagesAujourdHui = pointagesMois.filter(
+      (p) => p.date.toDateString() === new Date().toDateString()
+    ).length;
 
-    // Historique 30 derniers jours
-    const historique = pointagesMois.slice(0, 30).map((p) => ({
-      date: p.date,
-      statut: p.statut,
-      heure_arrivee: p.heure_arrivee,
-      heure_depart: p.heure_depart,
-    }));
+    // Congés en attente
+    const congesEnAttente = await Conge.countDocuments({
+      agent_id: agent._id,
+      statut: "en_attente",
+    });
 
-    return res.json({ presents, absents, retards, historique });
-  } catch (err) {
-    return res.status(500).json({ message: "Erreur stats." });
+    res.json({
+      totalPointages,
+      pointagesAujourdHui,
+      congesEnAttente,
+      dernierPointage: pointagesMois[0] || null,
+    });
+  } catch (error) {
+    console.error("Erreur stats:", error);
+    res.status(500).json({ message: "Erreur serveur" });
   }
 });
 
-// ── GET /conges ───────────────────────────────────────────────
+// GET /conges - Liste des congés de l'agent
 router.get("/conges", authenticateAgent, async (req, res) => {
   try {
     const agent = req.agent;
-    const annee = new Date().getFullYear();
 
-    // Demandes de congé de l'agent
-    const demandes = await Conge.find({
-      agent_id: agent._id,
-    })
-      .sort({ createdAt: -1 })
-      .limit(20);
+    const conges = await Conge.find({ agent_id: agent._id })
+      .populate("site_id", "nom code")
+      .sort({ createdAt: -1 });
 
-    // Calcul solde
-    // Règle : 2.5 jours acquis par mois travaillé (standard Sénégal)
-    const moisTravailles = Math.min(new Date().getMonth() + 1, 12);
-    const jours_acquis = Math.floor(moisTravailles * 2.5);
-
-    // Jours pris (approuvés cette année)
-    const joursApprouves = await Conge.aggregate([
-      {
-        $match: {
-          agent_id: agent._id,
-          statut: "approuve",
-          date_debut: { $gte: `${annee}-01-01` },
-        },
-      },
-      { $group: { _id: null, total: { $sum: "$nb_jours" } } },
-    ]);
-    const jours_pris = joursApprouves[0]?.total || 0;
-
-    // Jours en attente
-    const joursEnAttente = await Conge.aggregate([
-      {
-        $match: {
-          agent_id: agent._id,
-          statut: "en_attente",
-          date_debut: { $gte: `${annee}-01-01` },
-        },
-      },
-      { $group: { _id: null, total: { $sum: "$nb_jours" } } },
-    ]);
-    const jours_en_attente = joursEnAttente[0]?.total || 0;
-
-    const solde_disponible = Math.max(
-      0,
-      jours_acquis - jours_pris - jours_en_attente,
-    );
-
-    return res.json({
-      jours_acquis,
-      jours_pris,
-      jours_en_attente,
-      solde_disponible,
-      demandes: demandes.map((d) => ({
-        _id: d._id,
-        date_debut: d.date_debut,
-        date_fin: d.date_fin,
-        nb_jours: d.nb_jours,
-        type: d.type,
-        motif: d.motif,
-        statut: d.statut,
-        commentaire_rh: d.commentaire_rh,
-      })),
-    });
-  } catch (err) {
-    return res.status(500).json({ message: "Erreur congés." });
+    res.json({ data: conges });
+  } catch (error) {
+    console.error("Erreur conges:", error);
+    res.status(500).json({ message: "Erreur serveur" });
   }
 });
 
-// ── POST /conges ──────────────────────────────────────────────
+// POST /conges - Demander un congé
 router.post("/conges", authenticateAgent, async (req, res) => {
   try {
     const agent = req.agent;
-    const { date_debut, date_fin, type, motif, nb_jours } = req.body;
+    const { date_debut, date_fin, motif, commentaire } = req.body;
 
-    if (!date_debut || !date_fin || !nb_jours) {
+    if (!date_debut || !date_fin || !motif) {
+      return res.status(400).json({ message: "Champs requis manquants" });
+    }
+
+    const conge = new Conge({
+      agent_id: agent._id,
+      site_id: agent.site_id,
+      date_debut: new Date(date_debut),
+      date_fin: new Date(date_fin),
+      motif,
+      commentaire: commentaire || "",
+      statut: "en_attente",
+    });
+
+    await conge.save();
+
+    res.status(201).json({
+      message: "Demande de congé soumise",
+      conge,
+    });
+  } catch (error) {
+    console.error("Erreur création congé:", error);
+    res.status(500).json({ message: "Erreur serveur" });
+  }
+});
+
+module.exports = router;
       return res.status(400).json({ message: "Données incomplètes." });
     }
 

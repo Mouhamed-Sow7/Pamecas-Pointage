@@ -91,7 +91,7 @@ app.use("/api/sites", sitesRouter);
 app.use("/api/rapports", rapportsRouter);
 app.use("/api/users", usersRouter);
 app.use("/api/admin", adminRouter);
-// app.use("/api/agent-portal", agentPortalRouter);
+app.use("/api/agent-portal", agentPortalRouter);
 app.use("/api/conges", congesRouter);
 
 // Servir agent.html sur /agent
