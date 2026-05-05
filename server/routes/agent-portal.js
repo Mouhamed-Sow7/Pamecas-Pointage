@@ -7,43 +7,85 @@ const Pointage = require("../models/Pointage");
 
 const router = express.Router();
 
-// Middleware d'authentification agent
+// Middleware d'authentification agent - Support Basic Auth (login) et Bearer JWT (API)
 const authenticateAgent = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith("Basic ")) {
+    if (!authHeader) {
       return res.status(401).json({ message: "Authentification requise" });
     }
 
-    const base64Credentials = authHeader.split(" ")[1];
-    const credentials = Buffer.from(base64Credentials, "base64").toString(
-      "ascii",
-    );
-    const [matricule, password] = credentials.split(":");
+    // Gestion Basic Auth (pour le login)
+    if (authHeader.startsWith("Basic ")) {
+      const base64Credentials = authHeader.split(" ")[1];
+      const credentials = Buffer.from(base64Credentials, "base64").toString(
+        "ascii",
+      );
+      const [matricule, password] = credentials.split(":");
 
-    if (!matricule || !password) {
-      return res
-        .status(401)
-        .json({ message: "Matricule et mot de passe requis" });
+      if (!matricule || !password) {
+        return res
+          .status(401)
+          .json({ message: "Matricule et mot de passe requis" });
+      }
+
+      const agent = await Agent.findOne({ matricule }).populate(
+        "site_id",
+        "nom code",
+      );
+      if (!agent || !agent.password_hash) {
+        return res
+          .status(401)
+          .json({ message: "Agent non trouvé ou compte non activé" });
+      }
+
+      const isValidPassword = await bcrypt.compare(
+        password,
+        agent.password_hash,
+      );
+      if (!isValidPassword) {
+        return res.status(401).json({ message: "Mot de passe incorrect" });
+      }
+
+      req.agent = agent;
+      return next();
     }
 
-    const agent = await Agent.findOne({ matricule }).populate(
-      "site_id",
-      "nom code",
-    );
-    if (!agent || !agent.password_hash) {
-      return res
-        .status(401)
-        .json({ message: "Agent non trouvé ou compte non activé" });
+    // Gestion Bearer JWT (pour les appels API après login)
+    if (authHeader.startsWith("Bearer ")) {
+      const token = authHeader.split(" ")[1];
+
+      if (!token) {
+        return res.status(401).json({ message: "Token manquant" });
+      }
+
+      try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || "secret");
+
+        if (decoded.role !== "agent") {
+          return res.status(403).json({ message: "Accès non autorisé" });
+        }
+
+        const agent = await Agent.findById(decoded.id).populate(
+          "site_id",
+          "nom code",
+        );
+        if (!agent) {
+          return res.status(401).json({ message: "Agent non trouvé" });
+        }
+
+        req.agent = agent;
+        return next();
+      } catch (jwtError) {
+        console.error("Erreur JWT:", jwtError);
+        return res.status(401).json({ message: "Token invalide ou expiré" });
+      }
     }
 
-    const isValidPassword = await bcrypt.compare(password, agent.password_hash);
-    if (!isValidPassword) {
-      return res.status(401).json({ message: "Mot de passe incorrect" });
-    }
-
-    req.agent = agent;
-    next();
+    // Type d'authentification non supporté
+    return res
+      .status(401)
+      .json({ message: "Type d'authentification non supporté" });
   } catch (error) {
     console.error("Erreur authentification agent:", error);
     res.status(500).json({ message: "Erreur serveur" });
