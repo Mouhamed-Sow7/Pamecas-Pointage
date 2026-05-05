@@ -1284,20 +1284,24 @@
       });
 
       // Tab switching
-      document.querySelectorAll('.nav-item').forEach(btn => {
-        btn.addEventListener('click', () => {
+      document.querySelectorAll(".nav-item").forEach((btn) => {
+        btn.addEventListener("click", () => {
           // Remove active from all nav-items
-          document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+          document
+            .querySelectorAll(".nav-item")
+            .forEach((b) => b.classList.remove("active"));
           // Add active to clicked
-          btn.classList.add('active');
+          btn.classList.add("active");
           // Hide all tab-panels
-          document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+          document
+            .querySelectorAll(".tab-panel")
+            .forEach((p) => p.classList.remove("active"));
           // Show the corresponding tab-panel
-          const tab = btn.getAttribute('data-tab');
-          document.getElementById('tab-' + tab).classList.add('active');
+          const tab = btn.getAttribute("data-tab");
+          document.getElementById("tab-" + tab).classList.add("active");
           // Load content if needed
-          if (tab === 'conges') loadConges();
-          else if (tab === 'historique') loadHistorique();
+          if (tab === "conges") loadConges();
+          else if (tab === "historique") loadHistorique();
         });
       });
 

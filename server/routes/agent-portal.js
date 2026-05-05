@@ -110,6 +110,8 @@ router.post("/login", authenticateAgent, async (req, res) => {
         prenom: agent.prenom,
         matricule: agent.matricule,
         site: agent.site_id,
+        totp_enabled: agent.totp_enabled,
+        totp_secret: agent.totp_secret, // ← ajouter
       },
       token,
     });
