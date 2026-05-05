@@ -14,6 +14,7 @@
       content="black-translucent"
     />
     <meta name="apple-mobile-web-app-title" content="Mon Badge" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/manifest.json" />
     <title>SmartPointage — Mon Badge</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -1111,68 +1112,110 @@
         return ((prenom || "?")[0] + (nom || "?")[0]).toUpperCase();
       }
 
-      let qrInstance = null;
+      // ── TOTP/QR block ──────────────────────────────────────────
+
+      const _keyCache = new Map();
       let totpInterval = null;
+      let currentWindow = null;
+      let _qrInstance = null;
 
-      async function renderQR(agent) {
-        const container = $("qr-container");
-        container.innerHTML = "";
-        if (qrInstance) {
-          try {
-            qrInstance.clear();
-          } catch {}
-        }
+      async function getHmacKey(secret) {
+        if (_keyCache.has(secret)) return _keyCache.get(secret);
+        const key = await crypto.subtle.importKey(
+          "raw",
+          new TextEncoder().encode(secret),
+          { name: "HMAC", hash: "SHA-256" },
+          false,
+          ["sign"],
+        );
+        _keyCache.set(secret, key);
+        return key;
+      }
 
-        let qrData;
-        const isDynamic = Boolean(agent.totp_enabled && agent.totp_secret);
+      async function hmacHex(secret, message) {
+        const key = await getHmacKey(secret);
+        const sig = await crypto.subtle.sign(
+          "HMAC",
+          key,
+          new TextEncoder().encode(message),
+        );
+        return Array.from(new Uint8Array(sig))
+          .map((b) => b.toString(16).padStart(2, "0"))
+          .join("");
+      }
 
-        if (isDynamic) {
-          qrData = generateTOTP(agent.totp_secret);
-          startTOTPTimer(agent);
-          $("qr-totp-bar").style.display = "block";
-          $("qr-static-badge").style.display = "none";
+      async function buildQRData(matricule, secret) {
+        const win = Math.floor(Date.now() / 30000);
+        const hex = await hmacHex(secret, `${matricule}:${win}`);
+        return { data: `SP:${matricule}:${hex.substring(0, 12)}:${win}`, win };
+      }
+
+      async function drawQR(matricule, secret) {
+        const container = document.getElementById("qr-container");
+        const { data } = await buildQRData(matricule, secret);
+        if (_qrInstance) {
+          _qrInstance.clear();
+          _qrInstance.makeCode(data);
         } else {
-          qrData = agent.matricule || agent._id || "SMP-0000";
-          $("qr-totp-bar").style.display = "none";
-          $("qr-static-badge").style.display = "inline-flex";
-        }
-
-        try {
-          qrInstance = new QRCode(container, {
-            text: qrData,
+          container.innerHTML = "";
+          _qrInstance = new QRCode(container, {
+            text: data,
             width: 176,
             height: 176,
             colorDark: "#0f5132",
             colorLight: "#ffffff",
             correctLevel: QRCode.CorrectLevel.M,
           });
-        } catch {
-          container.innerHTML =
-            '<div style="color:#aaa;font-size:12px">QR indisponible</div>';
         }
       }
 
-      function generateTOTP(secret) {
-        const epoch = Math.floor(Date.now() / 1000);
-        const counter = Math.floor(epoch / 30);
-        return `${secret.slice(0, 6)}${counter.toString().slice(-4)}`;
-      }
-
-      function startTOTPTimer(agent) {
+      function startTOTPTimer(matricule, secret) {
         clearInterval(totpInterval);
-        function tick() {
+        currentWindow = null;
+
+        drawQR(matricule, secret);
+
+        totpInterval = setInterval(() => {
           const now = Math.floor(Date.now() / 1000);
           const remaining = 30 - (now % 30);
-          const pct = (remaining / 30) * 100;
-          const fill = $("timer-fill");
-          const txt = $("timer-text");
-          if (fill) fill.style.width = pct + "%";
+          const win = Math.floor(now / 30);
+
+          const fill = document.getElementById("timer-fill");
+          const txt = document.getElementById("timer-text");
+          if (fill) fill.style.width = (remaining / 30) * 100 + "%";
           if (txt) txt.textContent = remaining + "s";
-          if (remaining === 30) renderQR(agent);
-        }
-        tick();
-        totpInterval = setInterval(tick, 1000);
+
+          if (win !== currentWindow) {
+            currentWindow = win;
+            drawQR(matricule, secret);
+          }
+        }, 1000);
       }
+
+      async function renderQR(agent) {
+        _qrInstance = null;
+        const container = document.getElementById("qr-container");
+        container.innerHTML = "";
+        document.getElementById("qr-static-badge").style.display = "none";
+        document.getElementById("qr-totp-bar").style.display = "none";
+
+        if (agent.totp_enabled && agent.totp_secret) {
+          document.getElementById("qr-totp-bar").style.display = "block";
+          startTOTPTimer(agent.matricule, agent.totp_secret);
+        } else {
+          document.getElementById("qr-static-badge").style.display =
+            "inline-flex";
+          _qrInstance = new QRCode(container, {
+            text: agent.matricule,
+            width: 176,
+            height: 176,
+            colorDark: "#0f5132",
+            colorLight: "#ffffff",
+            correctLevel: QRCode.CorrectLevel.M,
+          });
+        }
+      }
+      // ── END TOTP/QR block ──────────────────────────────────
 
       async function loadStats() {
         try {
