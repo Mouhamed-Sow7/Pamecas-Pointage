@@ -735,4 +735,18 @@ router.post(
   },
 );
 
+// ROUTE TEMPORAIRE — activer portail agent
+router.post(
+  "/:id/set-password",
+  authenticate,
+  authorizeRoles("superadmin", "admin"),
+  async (req, res) => {
+    const bcrypt = require("bcryptjs");
+    const { password } = req.body;
+    const hash = await bcrypt.hash(password, 10);
+    await Agent.findByIdAndUpdate(req.params.id, { password_hash: hash });
+    res.json({ message: "Mot de passe activé" });
+  },
+);
+
 module.exports = router;
