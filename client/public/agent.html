@@ -979,8 +979,10 @@
             try {
               const res = await fetch("/api/agent-portal/login", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ identifiant, password }),
+                headers: {
+                  Authorization: "Basic " + btoa(identifiant + ":" + password),
+                  "Content-Type": "application/json",
+                },
               });
               const data = await res.json();
               if (!res.ok) throw new Error(data.message);
