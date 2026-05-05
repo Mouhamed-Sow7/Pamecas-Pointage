@@ -1,461 +1,1075 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="fr">
   <head>
     <meta charset="UTF-8" />
     <meta
       name="viewport"
-      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+      content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"
     />
+    <meta name="theme-color" content="#0f5132" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
+    <meta name="apple-mobile-web-app-title" content="Mon Badge" />
+    <link rel="manifest" href="/manifest.json" />
     <title>SmartPointage — Mon Badge</title>
-    <meta name="theme-color" content="#1b5e20" />
-    <link rel="manifest" href="/agent-manifest.json" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap"
       rel="stylesheet"
     />
-    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
       * {
         box-sizing: border-box;
         margin: 0;
         padding: 0;
+        -webkit-tap-highlight-color: transparent;
       }
+      :root {
+        --green: #0f5132;
+        --green-mid: #1a7a4a;
+        --green-light: #e8f5ee;
+        --green-pale: #f0faf4;
+        --accent: #f4b942;
+        --accent-dark: #c8911a;
+        --text: #111814;
+        --text-2: #4a5e54;
+        --text-3: #8fa99a;
+        --border: #d4e6da;
+        --surface: #ffffff;
+        --bg: #f5f9f6;
+        --danger: #c0392b;
+        --danger-light: #fdf0ef;
+        --radius: 16px;
+        --radius-sm: 10px;
+        --shadow: 0 2px 16px rgba(15, 81, 50, 0.08);
+        --shadow-card: 0 1px 4px rgba(15, 81, 50, 0.06);
+      }
+      html,
       body {
-        font-family: "Inter", sans-serif;
-        background: linear-gradient(
-          135deg,
-          #1b5e20 0%,
-          #2e7d32 50%,
-          #43a047 100%
-        );
+        height: 100%;
+        background: var(--bg);
+        font-family: "DM Sans", sans-serif;
+        color: var(--text);
+        overscroll-behavior: none;
+      }
+
+      /* ── ÉCRAN LOGIN ── */
+      #screen-login {
         min-height: 100vh;
-        min-height: 100dvh;
+        display: flex;
+        flex-direction: column;
+        background: var(--green);
+        position: relative;
+        overflow: hidden;
+      }
+      #screen-login::before {
+        content: "";
+        position: absolute;
+        top: -80px;
+        right: -60px;
+        width: 260px;
+        height: 260px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.04);
+      }
+      #screen-login::after {
+        content: "";
+        position: absolute;
+        bottom: -100px;
+        left: -80px;
+        width: 320px;
+        height: 320px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.03);
+      }
+      .login-header {
+        padding: 60px 32px 32px;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        position: relative;
+        z-index: 1;
+      }
+      .login-logo {
+        width: 52px;
+        height: 52px;
+        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.15);
         display: flex;
         align-items: center;
         justify-content: center;
-        padding: 16px;
-      }
-
-      /* PAGE LOGIN */
-      .login-page {
-        background: white;
-        border-radius: 20px;
-        padding: 32px 24px;
-        width: 100%;
-        max-width: 380px;
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-      }
-      .login-logo {
-        text-align: center;
         margin-bottom: 24px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
       }
-      .login-logo .sp-mark {
-        width: 56px;
-        height: 56px;
-        background: #2e7d32;
-        border-radius: 14px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
+      .login-logo svg {
+        width: 28px;
+        height: 28px;
+        fill: white;
+      }
+      .login-title {
+        font-size: 28px;
+        font-weight: 600;
         color: white;
-        font-weight: 800;
-        font-size: 1.1rem;
-        margin-bottom: 8px;
+        line-height: 1.2;
       }
-      .login-logo h1 {
-        font-size: 1.2rem;
-        color: #1f2933;
-        font-weight: 700;
+      .login-sub {
+        font-size: 15px;
+        color: rgba(255, 255, 255, 0.65);
+        margin-top: 6px;
+        font-weight: 300;
       }
-      .login-logo p {
-        font-size: 0.82rem;
-        color: #888;
-        margin-top: 4px;
+      .login-card {
+        flex: 1;
+        background: var(--surface);
+        border-radius: 28px 28px 0 0;
+        padding: 36px 28px 48px;
+        position: relative;
+        z-index: 1;
+        margin-top: auto;
+        box-shadow: var(--shadow);
+      }
+      .login-card h2 {
+        font-size: 20px;
+        font-weight: 600;
+        color: var(--text);
+        margin-bottom: 28px;
       }
       .field {
-        margin-bottom: 14px;
+        margin-bottom: 20px;
       }
       .field label {
         display: block;
-        font-size: 0.8rem;
-        font-weight: 600;
-        color: #555;
-        margin-bottom: 5px;
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--text-2);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        margin-bottom: 8px;
       }
       .field input {
         width: 100%;
-        padding: 11px 14px;
-        border: 1.5px solid #ddd;
-        border-radius: 10px;
-        font-size: 0.92rem;
-        font-family: inherit;
+        height: 52px;
+        border-radius: var(--radius-sm);
+        border: 1.5px solid var(--border);
+        background: var(--bg);
+        padding: 0 16px;
+        font-size: 16px;
+        font-family: "DM Sans", sans-serif;
+        color: var(--text);
+        outline: none;
         transition: border-color 0.2s;
       }
       .field input:focus {
-        outline: none;
-        border-color: #2e7d32;
+        border-color: var(--green);
+        background: white;
       }
-      .btn-login {
+      .btn-primary {
         width: 100%;
-        padding: 13px;
-        background: linear-gradient(135deg, #2e7d32, #43a047);
+        height: 54px;
+        border-radius: var(--radius-sm);
+        background: var(--green);
         color: white;
         border: none;
-        border-radius: 10px;
-        font-size: 0.95rem;
+        font-size: 16px;
         font-weight: 600;
+        font-family: "DM Sans", sans-serif;
         cursor: pointer;
-        margin-top: 6px;
+        transition:
+          opacity 0.15s,
+          transform 0.1s;
+        margin-top: 8px;
+        letter-spacing: 0.02em;
       }
-      .error-msg {
-        background: #ffebee;
-        color: #c62828;
-        border-radius: 8px;
-        padding: 10px 12px;
-        font-size: 0.82rem;
-        margin-top: 12px;
+      .btn-primary:active {
+        opacity: 0.85;
+        transform: scale(0.99);
+      }
+      .login-error {
+        background: var(--danger-light);
+        color: var(--danger);
+        border-radius: var(--radius-sm);
+        padding: 12px 16px;
+        font-size: 14px;
+        margin-top: 16px;
         display: none;
+        border-left: 3px solid var(--danger);
       }
 
-      /* PAGE BADGE */
-      .badge-page {
-        width: 100%;
-        max-width: 380px;
+      /* ── APP PRINCIPALE ── */
+      #screen-app {
+        display: none;
+        flex-direction: column;
+        min-height: 100vh;
+        padding-bottom: 88px;
       }
-      .badge-card {
-        background: white;
-        border-radius: 20px;
-        overflow: hidden;
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-      }
-      .badge-header {
-        background: linear-gradient(135deg, #1b5e20, #2e7d32);
-        padding: 16px 20px;
+
+      /* HEADER */
+      .app-header {
+        background: var(--green);
+        padding: 0 20px;
+        height: 64px;
         display: flex;
         align-items: center;
         justify-content: space-between;
+        position: sticky;
+        top: 0;
+        z-index: 100;
       }
-      .badge-header-left {
+      .header-brand {
         display: flex;
         align-items: center;
         gap: 10px;
       }
-      .badge-sp {
-        width: 36px;
-        height: 36px;
-        background: white;
-        border-radius: 8px;
+      .header-logo {
+        width: 34px;
+        height: 34px;
+        border-radius: 9px;
+        background: rgba(255, 255, 255, 0.15);
         display: flex;
         align-items: center;
         justify-content: center;
-        font-weight: 800;
-        color: #2e7d32;
-        font-size: 0.8rem;
       }
-      .badge-header h2 {
+      .header-logo svg {
+        width: 18px;
+        height: 18px;
+        fill: white;
+      }
+      .header-name {
+        font-size: 15px;
+        font-weight: 600;
         color: white;
-        font-size: 0.9rem;
-        font-weight: 700;
       }
-      .badge-header p {
-        color: rgba(255, 255, 255, 0.7);
-        font-size: 0.72rem;
+      .header-agence {
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.75);
+        font-weight: 300;
       }
-      .online-dot {
-        width: 8px;
-        height: 8px;
+      .btn-logout {
+        width: 36px;
+        height: 36px;
         border-radius: 50%;
-        background: #4caf50;
+        border: none;
+        background: rgba(255, 255, 255, 0.12);
+        color: white;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.15s;
       }
-      .offline-dot {
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        background: #f44336;
+      .btn-logout:active {
+        background: rgba(255, 255, 255, 0.2);
+      }
+      .btn-logout svg {
+        width: 18px;
+        height: 18px;
+        fill: white;
       }
 
-      .badge-body {
-        padding: 24px 20px;
+      /* CONTENU */
+      .app-content {
+        flex: 1;
+        padding: 20px 16px;
+        max-width: 480px;
+        margin: 0 auto;
+        width: 100%;
       }
-      .agent-info {
+
+      /* BADGE QR */
+      .badge-card {
+        background: var(--surface);
+        border-radius: var(--radius);
+        padding: 28px 24px;
         text-align: center;
-        margin-bottom: 20px;
+        box-shadow: var(--shadow);
+        margin-bottom: 16px;
+        border: 1px solid var(--border);
       }
       .agent-avatar {
         width: 64px;
         height: 64px;
         border-radius: 50%;
-        background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
-        display: inline-flex;
+        margin: 0 auto 12px;
+        background: var(--green-light);
+        display: flex;
         align-items: center;
         justify-content: center;
-        font-weight: 700;
-        font-size: 1.4rem;
-        color: #2e7d32;
-        margin-bottom: 10px;
+        font-size: 22px;
+        font-weight: 600;
+        color: var(--green);
+        border: 2px solid var(--green-light);
       }
       .agent-name {
-        font-weight: 700;
-        font-size: 1.1rem;
-        color: #1f2933;
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--text);
+        margin-bottom: 2px;
       }
       .agent-matricule {
-        font-size: 0.82rem;
-        color: #2e7d32;
-        font-weight: 600;
-        margin-top: 2px;
+        font-family: "DM Mono", monospace;
+        font-size: 13px;
+        color: var(--text-3);
+        letter-spacing: 0.05em;
       }
       .agent-poste {
-        font-size: 0.78rem;
-        color: #888;
-        margin-top: 2px;
+        font-size: 13px;
+        color: var(--text-2);
+        margin-top: 6px;
+        padding: 6px 14px;
+        background: var(--green-light);
+        border-radius: 20px;
+        display: inline-block;
       }
-
-      .qr-container {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        margin: 16px 0;
-      }
-      #qr-canvas {
-        border: 2px solid #e8f5e9;
-        border-radius: 12px;
-        padding: 12px;
+      .qr-wrapper {
+        margin: 24px auto 0;
+        width: 200px;
+        height: 200px;
+        border-radius: 16px;
+        overflow: hidden;
         background: white;
+        padding: 12px;
+        border: 1.5px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
       }
-      .timer-bar {
-        width: 100%;
+      #qr-container canvas,
+      #qr-container img {
+        border-radius: 8px;
+      }
+      .qr-timer {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        margin-top: 14px;
+      }
+      .qr-timer-bar {
+        flex: 1;
         height: 4px;
-        background: #e8f5e9;
-        border-radius: 2px;
-        margin-top: 12px;
+        background: var(--border);
+        border-radius: 999px;
         overflow: hidden;
       }
-      .timer-fill {
+      .qr-timer-fill {
         height: 100%;
-        background: linear-gradient(90deg, #2e7d32, #4caf50);
-        border-radius: 2px;
+        background: var(--green);
+        border-radius: 999px;
         transition: width 1s linear;
       }
-      .timer-text {
-        font-size: 0.78rem;
-        color: #888;
-        text-align: center;
-        margin-top: 6px;
+      .qr-timer-text {
+        font-size: 12px;
+        font-family: "DM Mono", monospace;
+        color: var(--text-3);
+        min-width: 28px;
       }
-      .dynamic-badge {
+      .qr-badge-static {
+        font-size: 12px;
+        color: var(--accent-dark);
+        background: #fff8e8;
+        border-radius: 20px;
+        padding: 8px 14px;
         display: inline-flex;
         align-items: center;
-        gap: 4px;
-        padding: 3px 10px;
-        background: #e8f5e9;
-        color: #2e7d32;
-        border-radius: 10px;
-        font-size: 0.72rem;
-        font-weight: 600;
-        margin-top: 8px;
+        gap: 8px;
+        margin-top: 14px;
+        border: 1px solid #f0d78a;
       }
-      .static-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        padding: 3px 10px;
-        background: #fff3e0;
-        color: #e65100;
-        border-radius: 10px;
-        font-size: 0.72rem;
-        font-weight: 600;
-        margin-top: 8px;
+      .qr-badge-static svg {
+        width: 14px;
+        height: 14px;
+        fill: var(--accent-dark);
       }
 
-      /* STATS */
+      /* STATS GRID */
       .stats-grid {
         display: grid;
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: repeat(2, 1fr);
         gap: 10px;
-        margin-top: 16px;
+        margin-bottom: 16px;
       }
       .stat-card {
-        background: #f8f9f8;
-        border-radius: 10px;
-        padding: 12px;
-        text-align: center;
-      }
-      .stat-value {
-        font-size: 1.6rem;
-        font-weight: 700;
+        background: var(--surface);
+        border-radius: var(--radius-sm);
+        padding: 18px;
+        border: 1px solid var(--border);
+        box-shadow: var(--shadow-card);
       }
       .stat-label {
-        font-size: 0.72rem;
-        color: #888;
-        margin-top: 2px;
-      }
-      .green {
-        color: #2e7d32;
-      }
-      .red {
-        color: #c62828;
-      }
-      .orange {
-        color: #e65100;
-      }
-      .blue {
-        color: #1565c0;
-      }
-
-      /* ONGLETS */
-      .tabs {
-        display: flex;
-        border-bottom: 2px solid #eee;
-        margin: 16px 0 0;
-      }
-      .tab {
-        flex: 1;
-        padding: 10px;
-        text-align: center;
-        font-size: 0.8rem;
-        font-weight: 600;
-        color: #888;
-        cursor: pointer;
-        border-bottom: 2px solid transparent;
-        margin-bottom: -2px;
-        transition: all 0.15s;
-      }
-      .tab.active {
-        color: #2e7d32;
-        border-bottom-color: #2e7d32;
-      }
-
-      .tab-content {
-        display: none;
-        padding: 16px 0;
-      }
-      .tab-content.active {
-        display: block;
-      }
-
-      /* CONGES */
-      .conge-solde {
-        background: linear-gradient(135deg, #1b5e20, #2e7d32);
-        border-radius: 12px;
-        padding: 16px;
-        color: white;
-        margin-bottom: 16px;
-      }
-      .conge-solde h3 {
-        font-size: 0.85rem;
-        opacity: 0.8;
-        margin-bottom: 4px;
-      }
-      .conge-solde .jours {
-        font-size: 2.5rem;
-        font-weight: 800;
-      }
-      .conge-solde .jours span {
-        font-size: 0.9rem;
-        font-weight: 400;
-        opacity: 0.8;
-      }
-
-      .btn-demande {
-        width: 100%;
-        padding: 12px;
-        background: linear-gradient(135deg, #1565c0, #1976d2);
-        color: white;
-        border: none;
-        border-radius: 10px;
-        font-size: 0.9rem;
-        font-weight: 600;
-        cursor: pointer;
-        margin-bottom: 16px;
-      }
-
-      .demande-card {
-        background: #f8f9f8;
-        border-radius: 10px;
-        padding: 12px 14px;
+        font-size: 11px;
+        font-weight: 500;
+        color: var(--text-3);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
         margin-bottom: 8px;
-        border-left: 3px solid #ddd;
       }
-      .demande-card.en_attente {
-        border-left-color: #e65100;
-      }
-      .demande-card.approuve {
-        border-left-color: #2e7d32;
-      }
-      .demande-card.refuse {
-        border-left-color: #c62828;
-      }
-      .demande-dates {
+      .stat-value {
+        font-size: 26px;
         font-weight: 600;
-        font-size: 0.85rem;
-        color: #1f2933;
+        color: var(--text);
+        line-height: 1;
       }
-      .demande-info {
-        font-size: 0.75rem;
-        color: #888;
-        margin-top: 3px;
+      .stat-value.green {
+        color: var(--green);
       }
-      .demande-statut {
-        display: inline-block;
-        padding: 2px 8px;
-        border-radius: 10px;
-        font-size: 0.7rem;
-        font-weight: 600;
+      .stat-value.amber {
+        color: var(--accent-dark);
+      }
+      .stat-value.red {
+        color: var(--danger);
+      }
+      .stat-sub {
+        font-size: 11px;
+        color: var(--text-3);
         margin-top: 6px;
       }
-      .statut-en_attente {
-        background: #fff3e0;
-        color: #e65100;
-      }
-      .statut-approuve {
-        background: #e8f5e9;
-        color: #2e7d32;
-      }
-      .statut-refuse {
-        background: #ffebee;
-        color: #c62828;
-      }
 
-      /* HISTORIQUE */
-      .historique-item {
+      /* SECTION CONGÉS */
+      .section-header {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 10px 0;
-        border-bottom: 1px solid #f0f0f0;
-        font-size: 0.82rem;
+        margin: 24px 0 12px;
       }
-      .hist-date {
-        color: #666;
-      }
-      .hist-statut {
+      .section-title {
+        font-size: 16px;
         font-weight: 600;
+        color: var(--text);
+      }
+      .btn-new-conge {
+        height: 36px;
+        padding: 0 16px;
+        border-radius: 20px;
+        background: var(--green);
+        color: white;
+        border: none;
+        font-size: 13px;
+        font-weight: 500;
+        font-family: "DM Sans", sans-serif;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        transition: opacity 0.15s;
+      }
+      .btn-new-conge:active {
+        opacity: 0.8;
+      }
+      .btn-new-conge svg {
+        width: 14px;
+        height: 14px;
+        fill: white;
       }
 
-      .btn-logout-agent {
-        width: 100%;
-        padding: 11px;
-        background: #f5f5f5;
-        color: #666;
-        border: none;
-        border-radius: 10px;
-        font-size: 0.85rem;
+      /* SOLDE CONGÉ */
+      .solde-card {
+        background: linear-gradient(
+          135deg,
+          var(--green) 0%,
+          var(--green-mid) 100%
+        );
+        border-radius: var(--radius-sm);
+        padding: 16px 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 12px;
+      }
+      .solde-info {
+      }
+      .solde-label {
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.85);
+        font-weight: 400;
+      }
+      .solde-value {
+        font-size: 28px;
+        font-weight: 600;
+        color: white;
+        line-height: 1.1;
+      }
+      .solde-unit {
+        font-size: 13px;
+        color: rgba(255, 255, 255, 0.85);
+      }
+      .solde-detail {
+        font-size: 11px;
+        color: rgba(255, 255, 255, 0.75);
+        margin-top: 4px;
+      }
+      .solde-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.12);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .solde-icon svg {
+        width: 24px;
+        height: 24px;
+        fill: white;
+      }
+
+      /* LISTE CONGÉS */
+      .conge-item {
+        background: var(--surface);
+        border-radius: var(--radius-sm);
+        padding: 14px 16px;
+        border: 1px solid var(--border);
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        box-shadow: var(--shadow-card);
+      }
+      .conge-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+      .conge-dot.en_attente {
+        background: var(--accent);
+      }
+      .conge-dot.approuve {
+        background: #22c55e;
+      }
+      .conge-dot.refuse {
+        background: var(--danger);
+      }
+      .conge-body {
+        flex: 1;
+      }
+      .conge-dates {
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--text);
+      }
+      .conge-meta {
+        font-size: 12px;
+        color: var(--text-3);
+        margin-top: 2px;
+      }
+      .conge-badge {
+        font-size: 11px;
+        font-weight: 500;
+        padding: 4px 10px;
+        border-radius: 20px;
+        white-space: nowrap;
+      }
+      .conge-badge.en_attente {
+        background: #fff8e8;
+        color: var(--accent-dark);
+      }
+      .conge-badge.approuve {
+        background: #f0fdf4;
+        color: #15803d;
+      }
+      .conge-badge.refuse {
+        background: var(--danger-light);
+        color: var(--danger);
+      }
+
+      .empty-state {
+        text-align: center;
+        padding: 40px 20px;
+        color: var(--text-3);
+      }
+      .empty-state svg {
+        width: 40px;
+        height: 40px;
+        fill: var(--border);
+        margin-bottom: 12px;
+      }
+      .empty-state p {
+        font-size: 14px;
+      }
+
+      .bottom-nav {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 72px;
+        background: var(--surface);
+        border-top: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        z-index: 100;
+        padding: 0 8px;
+        max-width: 480px;
+        margin: 0 auto;
+      }
+      .nav-item {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        padding: 8px 4px;
         cursor: pointer;
-        margin-top: 8px;
+        border: none;
+        background: none;
+        color: var(--text-3);
+        font-family: "DM Sans", sans-serif;
+        font-size: 10px;
+        border-radius: var(--radius-sm);
+        transition:
+          color 0.15s,
+          background 0.15s;
+      }
+      .nav-item svg {
+        width: 22px;
+        height: 22px;
+        fill: currentColor;
+      }
+      .nav-item.active {
+        color: var(--green);
+        background: rgba(15, 81, 50, 0.08);
+      }
+      .nav-item span {
+        font-weight: 500;
+      }
+
+      .tab-panel {
+        display: none;
+      }
+      .tab-panel.active {
+        display: block;
+      }
+
+      .modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.45);
+        z-index: 200;
+        display: none;
+        align-items: flex-end;
+      }
+      .modal-overlay.open {
+        display: flex;
+      }
+      .modal-sheet {
+        background: var(--surface);
+        border-radius: 24px 24px 0 0;
+        width: 100%;
+        max-width: 480px;
+        margin: 0 auto;
+        padding: 0 0 env(safe-area-inset-bottom, 16px);
+        animation: slideUp 0.25s ease;
+        max-height: 90vh;
+        overflow-y: auto;
+      }
+      @keyframes slideUp {
+        from {
+          transform: translateY(100%);
+        }
+        to {
+          transform: translateY(0);
+        }
+      }
+      .modal-handle {
+        width: 40px;
+        height: 4px;
+        background: var(--border);
+        border-radius: 2px;
+        margin: 12px auto 0;
+      }
+      .modal-header {
+        padding: 20px 24px 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid var(--border);
+      }
+      .modal-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--text);
+      }
+      .btn-close {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        border: none;
+        background: var(--bg);
+        color: var(--text-2);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .btn-close svg {
+        width: 16px;
+        height: 16px;
+        fill: currentColor;
+      }
+      .modal-body {
+        padding: 20px 24px;
+      }
+      .modal-body .field input,
+      .modal-body .field select,
+      .modal-body .field textarea {
+        background: var(--bg);
+        border: 1.5px solid var(--border);
+        border-radius: var(--radius-sm);
+        width: 100%;
+        padding: 12px 14px;
+        font-size: 15px;
+        font-family: "DM Sans", sans-serif;
+        color: var(--text);
+        outline: none;
+      }
+      .modal-body .field select {
+        height: 48px;
+        appearance: none;
+        cursor: pointer;
+      }
+      .modal-body .field textarea {
+        height: 88px;
+        resize: none;
+        line-height: 1.5;
+      }
+      .modal-body .field input:focus,
+      .modal-body .field select:focus,
+      .modal-body .field textarea:focus {
+        border-color: var(--green);
+      }
+      .modal-footer {
+        padding: 0 24px 24px;
+      }
+      .date-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+
+      .loading {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 40px;
+        color: var(--text-3);
+        gap: 10px;
+        font-size: 14px;
+      }
+      .spinner {
+        width: 20px;
+        height: 20px;
+        border: 2px solid var(--border);
+        border-top-color: var(--green);
+        border-radius: 50%;
+        animation: spin 0.7s linear infinite;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      .toast {
+        position: fixed;
+        top: 80px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: var(--text);
+        color: white;
+        padding: 12px 20px;
+        border-radius: var(--radius-sm);
+        font-size: 14px;
+        font-weight: 500;
+        z-index: 999;
+        opacity: 0;
+        transition: opacity 0.2s;
+        white-space: nowrap;
+        max-width: 90vw;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+      }
+      .toast.success {
+        background: var(--green);
+      }
+      .toast.error {
+        background: var(--danger);
+      }
+      .toast.show {
+        opacity: 1;
       }
     </style>
   </head>
   <body>
-    <div id="app-agent"></div>
+    <!-- ─── ÉCRAN LOGIN ─────────────────────────────── -->
+    <div id="screen-login">
+      <div class="login-header">
+        <div class="login-logo">
+          <svg viewBox="0 0 24 24">
+            <path
+              d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"
+            />
+          </svg>
+        </div>
+        <div class="login-title">SmartPointage</div>
+        <div class="login-sub">Portail personnel agent</div>
+      </div>
+      <div class="login-card">
+        <h2>Connexion</h2>
+        <div class="field">
+          <label>Matricule</label>
+          <input
+            type="text"
+            id="login-id"
+            placeholder="SMP-0001"
+            autocomplete="username"
+            autocapitalize="off"
+          />
+        </div>
+        <div class="field">
+          <label>Mot de passe</label>
+          <input
+            type="password"
+            id="login-pwd"
+            placeholder="••••"
+            autocomplete="current-password"
+          />
+        </div>
+        <button class="btn-primary" id="btn-login">Se connecter</button>
+        <div class="login-error" id="login-error"></div>
+      </div>
+    </div>
 
-    <script type="module">
-      const API = "";
-      let currentAgent = null;
-      let qrInterval = null;
-      let qrCodeInstance = null;
+    <!-- ─── APP ────────────────────────────────────── -->
+    <div id="screen-app">
+      <header class="app-header">
+        <div class="header-brand">
+          <div class="header-logo">
+            <svg viewBox="0 0 24 24">
+              <path
+                d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"
+              />
+            </svg>
+          </div>
+          <div>
+            <div class="header-name" id="header-name">Mon Espace</div>
+            <div class="header-agence" id="header-agence">SmartPointage</div>
+          </div>
+        </div>
+        <button class="btn-logout" id="btn-logout" title="Déconnexion">
+          <svg viewBox="0 0 24 24">
+            <path
+              d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"
+            />
+          </svg>
+        </button>
+      </header>
 
-      // ── Auth ──────────────────────────────────────────────────
+      <div class="app-content">
+        <!-- TAB BADGE -->
+        <div class="tab-panel active" id="tab-badge">
+          <div class="badge-card">
+            <div class="agent-avatar" id="agent-avatar">--</div>
+            <div class="agent-name" id="agent-name">Chargement...</div>
+            <div class="agent-matricule" id="agent-matricule">---</div>
+            <div class="agent-poste" id="agent-poste" style="margin-top: 10px">
+              ---
+            </div>
+            <div class="qr-wrapper" id="qr-wrapper">
+              <div id="qr-container"></div>
+            </div>
+            <div id="qr-totp-bar" style="display: none">
+              <div class="qr-timer">
+                <div class="qr-timer-bar">
+                  <div class="qr-timer-fill" id="timer-fill"></div>
+                </div>
+                <span class="qr-timer-text" id="timer-text">30s</span>
+              </div>
+            </div>
+            <div
+              id="qr-static-badge"
+              class="qr-badge-static"
+              style="display: none"
+            >
+              <svg viewBox="0 0 24 24">
+                <path
+                  d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"
+                />
+              </svg>
+              QR Statique — demandez l'activation dynamique
+            </div>
+          </div>
+
+          <!-- STATS -->
+          <div class="stats-grid" id="stats-grid">
+            <div class="stat-card">
+              <div class="stat-label">Ce mois</div>
+              <div class="stat-value green" id="stat-presences">—</div>
+              <div class="stat-sub">présences</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Absences</div>
+              <div class="stat-value red" id="stat-absences">—</div>
+              <div class="stat-sub">ce mois</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Retards</div>
+              <div class="stat-value amber" id="stat-retards">—</div>
+              <div class="stat-sub">ce mois</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Congés dispo</div>
+              <div class="stat-value green" id="stat-conges">—</div>
+              <div class="stat-sub">jours</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB CONGÉS -->
+        <div class="tab-panel" id="tab-conges">
+          <div class="solde-card" id="solde-card">
+            <div class="solde-info">
+              <div class="solde-label">Solde disponible</div>
+              <div>
+                <span class="solde-value" id="solde-value">—</span>
+                <span class="solde-unit">jours</span>
+              </div>
+              <div class="solde-detail" id="solde-detail">Chargement...</div>
+            </div>
+            <div class="solde-icon">
+              <svg viewBox="0 0 24 24">
+                <path
+                  d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z"
+                />
+              </svg>
+            </div>
+          </div>
+
+          <div class="section-header">
+            <div class="section-title">Mes demandes</div>
+            <button class="btn-new-conge" id="btn-new-conge">
+              <svg viewBox="0 0 24 24">
+                <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
+              </svg>
+              Nouvelle
+            </button>
+          </div>
+          <div id="conges-list">
+            <div class="loading">
+              <div class="spinner"></div>
+              Chargement...
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB HISTORIQUE -->
+        <div class="tab-panel" id="tab-historique">
+          <div class="section-header">
+            <div class="section-title">Historique pointages</div>
+          </div>
+          <div id="historique-list">
+            <div class="loading">
+              <div class="spinner"></div>
+              Chargement...
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- BOTTOM NAV -->
+      <nav class="bottom-nav">
+        <button class="nav-item active" data-tab="badge">
+          <svg viewBox="0 0 24 24">
+            <path
+              d="M3 11h8V3H3v8zm2-6h4v4H5V5zM3 21h8v-8H3v8zm2-6h4v4H5v-4zM13 3v8h8V3h-8zm6 6h-4V5h4v4zM13 13h2v2h-2zm2 2h2v2h-2zm2-2h2v2h-2zm-2 4h2v2h-2zm2 0h2v2h-2zm2-4h2v2h-2z"
+            />
+          </svg>
+          <span>Badge</span>
+        </button>
+        <button class="nav-item" data-tab="conges">
+          <svg viewBox="0 0 24 24">
+            <path
+              d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z"
+            />
+          </svg>
+          <span>Congés</span>
+        </button>
+        <button class="nav-item" data-tab="historique">
+          <svg viewBox="0 0 24 24">
+            <path
+              d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"
+            />
+          </svg>
+          <span>Historique</span>
+        </button>
+      </nav>
+    </div>
+
+    <!-- ─── MODAL NOUVELLE DEMANDE ─────────────────── -->
+    <div class="modal-overlay" id="modal-conge">
+      <div class="modal-sheet">
+        <div class="modal-handle"></div>
+        <div class="modal-header">
+          <div class="modal-title">Demande de congé</div>
+          <button class="btn-close" id="btn-close-modal">
+            <svg viewBox="0 0 24 24">
+              <path
+                d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"
+              />
+            </svg>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="date-row">
+            <div class="field">
+              <label>Date début</label><input type="date" id="conge-debut" />
+            </div>
+            <div class="field">
+              <label>Date fin</label><input type="date" id="conge-fin" />
+            </div>
+          </div>
+          <div class="field">
+            <label>Type</label>
+            <select id="conge-type">
+              <option value="annuel">Congé annuel</option>
+              <option value="maladie">Congé maladie</option>
+              <option value="maternite">Congé maternité</option>
+              <option value="exceptionnel">Congé exceptionnel</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Motif (optionnel)</label>
+            <textarea
+              id="conge-motif"
+              placeholder="Précisez si nécessaire..."
+            ></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-primary" id="btn-submit-conge">
+            Soumettre la demande
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TOAST -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+      const $ = (id) => document.getElementById(id);
+
+      function showToast(msg, type = "success", dur = 3000) {
+        const t = $("toast");
+        t.textContent = msg;
+        t.className = "toast " + type + " show";
+        clearTimeout(t._t);
+        t._t = setTimeout(() => t.classList.remove("show"), dur);
+      }
+
       function getToken() {
         return localStorage.getItem("agent_token");
       }
@@ -466,543 +1080,330 @@
           return null;
         }
       }
-
-      // ── Génération QR dynamique (TOTP côté client) ────────────
-      async function generateToken(matricule, secret, window) {
-        const enc = new TextEncoder();
-        const key = await crypto.subtle.importKey(
-          "raw",
-          enc.encode(secret),
-          { name: "HMAC", hash: "SHA-256" },
-          false,
-          ["sign"],
-        );
-        const sig = await crypto.subtle.sign(
-          "HMAC",
-          key,
-          enc.encode(`${matricule}:${window}`),
-        );
-        const arr = Array.from(new Uint8Array(sig));
-        return arr
-          .map((b) => b.toString(16).padStart(2, "0"))
-          .join("")
-          .substring(0, 12);
+      function setAuth(token, agent) {
+        localStorage.setItem("agent_token", token);
+        localStorage.setItem("agent_data", JSON.stringify(agent));
+      }
+      function clearAuth() {
+        localStorage.removeItem("agent_token");
+        localStorage.removeItem("agent_data");
       }
 
-      function getTimeWindow() {
-        return Math.floor(Date.now() / 30000);
-      }
-      function getSecondsLeft() {
-        const now = Date.now();
-        const windowStart = Math.floor(now / 30000) * 30000;
-        return Math.ceil((windowStart + 30000 - now) / 1000);
+      function authHeaders() {
+        return {
+          Authorization: "Bearer " + getToken(),
+          "Content-Type": "application/json",
+        };
       }
 
-      async function generateQRData(matricule, secret) {
-        const win = getTimeWindow();
-        const token = await generateToken(matricule, secret, win);
-        return `SP:${matricule}:${token}:${win}`;
+      function formatDate(d) {
+        if (!d) return "—";
+        const dt = new Date(d);
+        return dt.toLocaleDateString("fr-FR", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+        });
       }
 
-      // ── Rendu QR ──────────────────────────────────────────────
-      async function renderQR() {
-        const agent = getAgent();
-        if (!agent) return;
+      function initials(prenom, nom) {
+        return ((prenom || "?")[0] + (nom || "?")[0]).toUpperCase();
+      }
 
-        const container = document.getElementById("qr-canvas");
-        if (!container) return;
+      let qrInstance = null;
+      let totpInterval = null;
 
+      async function renderQR(agent) {
+        const container = $("qr-container");
         container.innerHTML = "";
+        if (qrInstance) {
+          try {
+            qrInstance.clear();
+          } catch {}
+        }
 
         let qrData;
-        if (agent.totp_secret && agent.totp_enabled) {
-          // QR dynamique
-          qrData = await generateQRData(agent.matricule, agent.totp_secret);
+        const isDynamic = Boolean(agent.totp_enabled && agent.totp_secret);
+
+        if (isDynamic) {
+          qrData = generateTOTP(agent.totp_secret);
+          startTOTPTimer(agent);
+          $("qr-totp-bar").style.display = "block";
+          $("qr-static-badge").style.display = "none";
         } else {
-          // QR statique (rétro-compat)
-          qrData = agent.matricule;
+          qrData = agent.matricule || agent._id || "SMP-0000";
+          $("qr-totp-bar").style.display = "none";
+          $("qr-static-badge").style.display = "inline-flex";
         }
 
-        new QRCode(container, {
-          text: qrData,
-          width: 200,
-          height: 200,
-          colorDark: "#1b5e20",
-          colorLight: "#ffffff",
-          correctLevel: QRCode.CorrectLevel.H,
-        });
-      }
-
-      // ── Timer ──────────────────────────────────────────────────
-      function startTimer() {
-        if (qrInterval) clearInterval(qrInterval);
-
-        const updateTimer = async () => {
-          const secs = getSecondsLeft();
-          const fill = document.getElementById("timer-fill");
-          const text = document.getElementById("timer-text");
-          if (fill) fill.style.width = `${(secs / 30) * 100}%`;
-          if (text) text.textContent = `Renouvellement dans ${secs}s`;
-          if (secs === 30) await renderQR(); // Nouveau QR à chaque fenêtre
-        };
-
-        updateTimer();
-        qrInterval = setInterval(updateTimer, 1000);
-      }
-
-      // ── Stats agent ───────────────────────────────────────────
-      async function chargerStats() {
         try {
-          const token = getToken();
-          const res = await fetch("/api/agent-portal/stats", {
-            headers: { Authorization: `Bearer ${token}` },
+          qrInstance = new QRCode(container, {
+            text: qrData,
+            width: 176,
+            height: 176,
+            colorDark: "#0f5132",
+            colorLight: "#ffffff",
+            correctLevel: QRCode.CorrectLevel.M,
           });
-          if (!res.ok) return null;
-          return await res.json();
         } catch {
-          return null;
+          container.innerHTML =
+            '<div style="color:#aaa;font-size:12px">QR indisponible</div>';
         }
       }
 
-      async function chargerConges() {
+      function generateTOTP(secret) {
+        const epoch = Math.floor(Date.now() / 1000);
+        const counter = Math.floor(epoch / 30);
+        return `${secret.slice(0, 6)}${counter.toString().slice(-4)}`;
+      }
+
+      function startTOTPTimer(agent) {
+        clearInterval(totpInterval);
+        function tick() {
+          const now = Math.floor(Date.now() / 1000);
+          const remaining = 30 - (now % 30);
+          const pct = (remaining / 30) * 100;
+          const fill = $("timer-fill");
+          const txt = $("timer-text");
+          if (fill) fill.style.width = pct + "%";
+          if (txt) txt.textContent = remaining + "s";
+          if (remaining === 30) renderQR(agent);
+        }
+        tick();
+        totpInterval = setInterval(tick, 1000);
+      }
+
+      async function loadStats() {
         try {
-          const token = getToken();
-          const res = await fetch("/api/agent-portal/conges", {
-            headers: { Authorization: `Bearer ${token}` },
+          const r = await fetch("/api/agent-portal/stats", {
+            headers: authHeaders(),
           });
-          if (!res.ok) return null;
-          return await res.json();
-        } catch {
-          return null;
+          if (!r.ok) return;
+          const d = await r.json();
+          $("stat-presences").textContent = d.presencesMois ?? "0";
+          $("stat-absences").textContent = d.absencesMois ?? "0";
+          $("stat-retards").textContent = d.retardsMois ?? "0";
+          $("stat-conges").textContent = d.soldeConge ?? "0";
+          $("solde-value").textContent = d.soldeConge ?? "0";
+          const acquis = d.joursAcquis ?? 0,
+            pris = d.joursPris ?? 0,
+            pending = d.joursPending ?? 0;
+          $("solde-detail").textContent =
+            `${acquis} acquis — ${pris} pris — ${pending} en attente`;
+        } catch (e) {
+          console.error("Stats:", e);
         }
       }
 
-      // ── Rendu badge ───────────────────────────────────────────
-      async function renderBadge() {
-        const agent = getAgent();
-        const app = document.getElementById("app-agent");
-
-        const stats = await chargerStats();
-        const conges = await chargerConges();
-
-        const initiales = `${(agent.nom || "?").charAt(0)}${(agent.prenom || "?").charAt(0)}`;
-        const isDynamic = agent.totp_enabled && agent.totp_secret;
-
-        app.innerHTML = `
-        <div class="badge-page">
-          <div class="badge-card">
-            <!-- Header -->
-            <div class="badge-header">
-              <div class="badge-header-left">
-                <div class="badge-sp">SP</div>
-                <div>
-                  <h2>SmartPointage</h2>
-                  <p>${agent.site_nom || "Mon Agence"}</p>
-                </div>
-              </div>
-              <div id="online-indicator" class="${navigator.onLine ? "online-dot" : "offline-dot"}"></div>
-            </div>
-
-            <!-- Body -->
-            <div class="badge-body">
-
-              <!-- Info agent -->
-              <div class="agent-info">
-                <div class="agent-avatar">${initiales}</div>
-                <div class="agent-name">${agent.nom} ${agent.prenom}</div>
-                <div class="agent-matricule">${agent.matricule}</div>
-                <div class="agent-poste">${agent.poste || agent.type_contrat || ""}</div>
-              </div>
-
-              <!-- QR Code -->
-              <div class="qr-container">
-                <div id="qr-canvas"></div>
-                ${
-                  isDynamic
-                    ? `
-                  <div class="timer-bar"><div class="timer-fill" id="timer-fill" style="width:100%"></div></div>
-                  <div class="timer-text" id="timer-text">Calcul...</div>
-                  <div class="dynamic-badge">🔄 QR Dynamique — Sécurisé</div>
-                `
-                    : `
-                  <div class="static-badge">⚠️ QR Statique — Demandez activation dynamique</div>
-                `
-                }
-              </div>
-
-              <!-- Stats rapides -->
-              <div class="stats-grid">
-                <div class="stat-card">
-                  <div class="stat-value green">${stats?.presents || 0}</div>
-                  <div class="stat-label">Présences ce mois</div>
-                </div>
-                <div class="stat-card">
-                  <div class="stat-value red">${stats?.absents || 0}</div>
-                  <div class="stat-label">Absences</div>
-                </div>
-                <div class="stat-card">
-                  <div class="stat-value orange">${stats?.retards || 0}</div>
-                  <div class="stat-label">Retards</div>
-                </div>
-                <div class="stat-card">
-                  <div class="stat-value blue">${conges?.solde_disponible || 0}</div>
-                  <div class="stat-label">Jours congé dispo</div>
-                </div>
-              </div>
-
-              <!-- Onglets -->
-              <div class="tabs">
-                <div class="tab active" data-tab="conges">Congés</div>
-                <div class="tab" data-tab="historique">Historique</div>
-              </div>
-
-              <!-- Tab Congés -->
-              <div class="tab-content active" id="tab-conges">
-                <div class="conge-solde">
-                  <h3>Solde congés disponible</h3>
-                  <div class="jours">${conges?.solde_disponible || 0} <span>jours</span></div>
-                  <div style="font-size:0.78rem;opacity:0.8;margin-top:4px;">
-                    ${conges?.jours_acquis || 0} acquis — ${conges?.jours_pris || 0} pris — ${conges?.jours_en_attente || 0} en attente
-                  </div>
-                </div>
-
-                <button class="btn-demande" id="btn-nouvelle-demande">
-                  + Nouvelle demande de congé
-                </button>
-
-                ${
-                  (conges?.demandes || []).length === 0
-                    ? `
-                  <div style="text-align:center;padding:20px;color:#aaa;font-size:0.85rem;">
-                    Aucune demande de congé
-                  </div>
-                `
-                    : (conges?.demandes || [])
-                        .map(
-                          (d) => `
-                  <div class="demande-card ${d.statut}">
-                    <div class="demande-dates">${d.date_debut} → ${d.date_fin} (${d.nb_jours} jours)</div>
-                    <div class="demande-info">${d.motif || "Congé annuel"}</div>
-                    <span class="demande-statut statut-${d.statut}">
-                      ${d.statut === "en_attente" ? "⏳ En attente" : d.statut === "approuve" ? "✅ Approuvé" : "❌ Refusé"}
-                    </span>
-                    ${d.commentaire_rh ? `<div style="font-size:0.72rem;color:#888;margin-top:4px;">Note RH: ${d.commentaire_rh}</div>` : ""}
-                  </div>
-                `,
-                        )
-                        .join("")
-                }
-              </div>
-
-              <!-- Tab Historique -->
-              <div class="tab-content" id="tab-historique">
-                ${
-                  (stats?.historique || []).length === 0
-                    ? `
-                  <div style="text-align:center;padding:20px;color:#aaa;font-size:0.85rem;">
-                    Aucun historique disponible
-                  </div>
-                `
-                    : (stats?.historique || [])
-                        .map(
-                          (h) => `
-                  <div class="historique-item">
-                    <span class="hist-date">${h.date}</span>
-                    <span class="hist-statut ${h.statut === "present" ? "green" : h.statut === "absent" ? "red" : "orange"}">
-                      ${h.statut === "present" ? "✅ Présent" : h.statut === "absent" ? "❌ Absent" : "⏰ Retard"}
-                    </span>
-                    <span style="color:#888;">${h.heure_arrivee || "--:--"}</span>
-                  </div>
-                `,
-                        )
-                        .join("")
-                }
-              </div>
-
-              <button class="btn-logout-agent" id="btn-logout-agent">Se déconnecter</button>
-            </div>
-          </div>
-        </div>
-      `;
-
-        // QR
-        await renderQR();
-        if (isDynamic) startTimer();
-
-        // Tabs
-        document.querySelectorAll(".tab").forEach((tab) => {
-          tab.addEventListener("click", () => {
-            document
-              .querySelectorAll(".tab")
-              .forEach((t) => t.classList.remove("active"));
-            document
-              .querySelectorAll(".tab-content")
-              .forEach((c) => c.classList.remove("active"));
-            tab.classList.add("active");
-            document
-              .getElementById(`tab-${tab.dataset.tab}`)
-              ?.classList.add("active");
+      async function loadConges() {
+        const list = $("conges-list");
+        list.innerHTML =
+          '<div class="loading"><div class="spinner"></div> Chargement...</div>';
+        try {
+          const r = await fetch("/api/agent-portal/conges", {
+            headers: authHeaders(),
           });
-        });
-
-        // Nouvelle demande
-        document
-          .getElementById("btn-nouvelle-demande")
-          ?.addEventListener("click", () => {
-            renderFormulaireConge(conges?.solde_disponible || 0);
-          });
-
-        // Logout
-        document
-          .getElementById("btn-logout-agent")
-          ?.addEventListener("click", () => {
-            localStorage.removeItem("agent_token");
-            localStorage.removeItem("agent_data");
-            renderLogin();
-          });
-
-        // Online indicator
-        window.addEventListener("online", () => {
-          document
-            .getElementById("online-indicator")
-            ?.setAttribute("class", "online-dot");
-        });
-        window.addEventListener("offline", () => {
-          document
-            .getElementById("online-indicator")
-            ?.setAttribute("class", "offline-dot");
-        });
-      }
-
-      // ── Formulaire demande congé ──────────────────────────────
-      function renderFormulaireConge(soldeDisponible) {
-        const overlay = document.createElement("div");
-        overlay.style.cssText =
-          "position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:100;display:flex;align-items:flex-end;justify-content:center;padding:16px;";
-
-        overlay.innerHTML = `
-        <div style="background:white;border-radius:20px 20px 16px 16px;width:100%;max-width:380px;padding:24px;max-height:85vh;overflow-y:auto;">
-          <h3 style="font-size:1rem;font-weight:700;margin-bottom:16px;">Demande de congé</h3>
-
-          <div style="background:#e8f5e9;border-radius:10px;padding:12px;margin-bottom:16px;font-size:0.82rem;color:#2e7d32;">
-            <strong>${soldeDisponible} jours disponibles</strong>
-          </div>
-
-          <div style="margin-bottom:12px;">
-            <label style="font-size:0.8rem;font-weight:600;display:block;margin-bottom:5px;">Date début</label>
-            <input type="date" id="conge-debut" style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:0.9rem;box-sizing:border-box;">
-          </div>
-          <div style="margin-bottom:12px;">
-            <label style="font-size:0.8rem;font-weight:600;display:block;margin-bottom:5px;">Date fin</label>
-            <input type="date" id="conge-fin" style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:0.9rem;box-sizing:border-box;">
-          </div>
-          <div style="margin-bottom:12px;">
-            <label style="font-size:0.8rem;font-weight:600;display:block;margin-bottom:5px;">Type</label>
-            <select id="conge-type" style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:0.9rem;box-sizing:border-box;">
-              <option value="annuel">Congé annuel</option>
-              <option value="maladie">Congé maladie</option>
-              <option value="maternite">Congé maternité</option>
-              <option value="exceptionnel">Congé exceptionnel</option>
-            </select>
-          </div>
-          <div style="margin-bottom:16px;">
-            <label style="font-size:0.8rem;font-weight:600;display:block;margin-bottom:5px;">Motif (optionnel)</label>
-            <textarea id="conge-motif" rows="3" placeholder="Décrivez le motif..." style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:0.85rem;resize:vertical;box-sizing:border-box;font-family:inherit;"></textarea>
-          </div>
-
-          <div id="conge-calcul" style="background:#f8f9f8;border-radius:8px;padding:10px;margin-bottom:16px;font-size:0.82rem;display:none;"></div>
-          <div id="conge-error" style="background:#ffebee;color:#c62828;border-radius:8px;padding:10px;margin-bottom:12px;font-size:0.82rem;display:none;"></div>
-
-          <div style="display:flex;gap:10px;">
-            <button id="btn-annuler-conge" style="flex:1;padding:12px;background:#f5f5f5;color:#666;border:none;border-radius:10px;font-size:0.9rem;cursor:pointer;">Annuler</button>
-            <button id="btn-soumettre-conge" style="flex:1;padding:12px;background:linear-gradient(135deg,#1565c0,#1976d2);color:white;border:none;border-radius:10px;font-size:0.9rem;font-weight:600;cursor:pointer;">Soumettre</button>
-          </div>
-        </div>
-      `;
-
-        document.body.appendChild(overlay);
-
-        // Calcul jours
-        const calcul = () => {
-          const debut = document.getElementById("conge-debut")?.value;
-          const fin = document.getElementById("conge-fin")?.value;
-          const calculDiv = document.getElementById("conge-calcul");
-          const errorDiv = document.getElementById("conge-error");
-
-          if (debut && fin) {
-            const d1 = new Date(debut);
-            const d2 = new Date(fin);
-            const diff = Math.ceil((d2 - d1) / (1000 * 60 * 60 * 24)) + 1;
-
-            calculDiv.style.display = "block";
-            if (diff <= 0) {
-              calculDiv.innerHTML =
-                "⚠️ La date de fin doit être après la date de début.";
-              calculDiv.style.background = "#fff3e0";
-              calculDiv.style.color = "#e65100";
-            } else if (diff > soldeDisponible) {
-              calculDiv.innerHTML = `❌ ${diff} jours demandés — Seulement ${soldeDisponible} disponibles`;
-              calculDiv.style.background = "#ffebee";
-              calculDiv.style.color = "#c62828";
-            } else {
-              calculDiv.innerHTML = `✅ ${diff} jour(s) demandé(s) — Il vous restera ${soldeDisponible - diff} jour(s)`;
-              calculDiv.style.background = "#e8f5e9";
-              calculDiv.style.color = "#2e7d32";
-            }
+          if (!r.ok) throw new Error("Erreur " + r.status);
+          const d = await r.json();
+          const conges = d.conges || d || [];
+          if (!conges.length) {
+            list.innerHTML =
+              '<div class="empty-state"><svg viewBox="0 0 24 24"><path d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z"/></svg><p>Aucune demande de congé</p></div>';
+            return;
           }
-        };
-
-        document
-          .getElementById("conge-debut")
-          ?.addEventListener("change", calcul);
-        document
-          .getElementById("conge-fin")
-          ?.addEventListener("change", calcul);
-
-        document
-          .getElementById("btn-annuler-conge")
-          ?.addEventListener("click", () => overlay.remove());
-        overlay.addEventListener("click", (e) => {
-          if (e.target === overlay) overlay.remove();
-        });
-
-        document
-          .getElementById("btn-soumettre-conge")
-          ?.addEventListener("click", async () => {
-            const debut = document.getElementById("conge-debut")?.value;
-            const fin = document.getElementById("conge-fin")?.value;
-            const type = document.getElementById("conge-type")?.value;
-            const motif = document.getElementById("conge-motif")?.value;
-            const errorDiv = document.getElementById("conge-error");
-
-            if (!debut || !fin) {
-              errorDiv.textContent = "Dates obligatoires.";
-              errorDiv.style.display = "block";
-              return;
-            }
-
-            const d1 = new Date(debut);
-            const d2 = new Date(fin);
-            const nb_jours = Math.ceil((d2 - d1) / (1000 * 60 * 60 * 24)) + 1;
-
-            if (nb_jours <= 0) {
-              errorDiv.textContent = "Date de fin invalide.";
-              errorDiv.style.display = "block";
-              return;
-            }
-
-            if (nb_jours > soldeDisponible) {
-              errorDiv.textContent = `Solde insuffisant: ${nb_jours} demandés, ${soldeDisponible} disponibles.`;
-              errorDiv.style.display = "block";
-              return;
-            }
-
-            try {
-              const token = getToken();
-              const res = await fetch("/api/agent-portal/conges", {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                  Authorization: `Bearer ${token}`,
-                },
-                body: JSON.stringify({
-                  date_debut: debut,
-                  date_fin: fin,
-                  type,
-                  motif,
-                  nb_jours,
-                }),
-              });
-              const data = await res.json();
-              if (!res.ok) throw new Error(data.message);
-              overlay.remove();
-              await renderBadge(); // Recharger
-            } catch (err) {
-              errorDiv.textContent = err.message || "Erreur soumission.";
-              errorDiv.style.display = "block";
-            }
-          });
-      }
-
-      // ── Rendu Login ───────────────────────────────────────────
-      function renderLogin() {
-        const app = document.getElementById("app-agent");
-        app.innerHTML = `
-        <div class="login-page">
-          <div class="login-logo">
-            <div class="sp-mark">SP</div>
-            <h1>Mon Espace Agent</h1>
-            <p>SmartPointage — Portail personnel</p>
-          </div>
-
-          <div style="margin-bottom:12px;">
-            <label style="font-size:0.8rem;font-weight:600;display:block;margin-bottom:5px;">Matricule ou Téléphone</label>
-            <input id="login-id" type="text" placeholder="SMP-0001 ou 77XXXXXXX" autocomplete="username">
-          </div>
-          <div style="margin-bottom:14px;">
-            <label style="font-size:0.8rem;font-weight:600;display:block;margin-bottom:5px;">Mot de passe</label>
-            <input id="login-pwd" type="password" placeholder="••••••••" autocomplete="current-password">
-          </div>
-          <button class="btn-login" id="btn-login">Se connecter</button>
-          <div class="error-msg" id="login-error"></div>
+          list.innerHTML = conges
+            .map(
+              (c) => `
+      <div class="conge-item">
+        <div class="conge-dot ${c.statut}"></div>
+        <div class="conge-body">
+          <div class="conge-dates">${formatDate(c.date_debut)} → ${formatDate(c.date_fin)}</div>
+          <div class="conge-meta">${c.nb_jours || "?"} jour(s) · ${c.type || "annuel"}${c.motif ? " · " + c.motif : ""}</div>
         </div>
-      `;
-
-        document
-          .getElementById("login-id")
-          ?.addEventListener("keydown", (e) => {
-            if (e.key === "Enter")
-              document.getElementById("login-pwd")?.focus();
-          });
-        document
-          .getElementById("login-pwd")
-          ?.addEventListener("keydown", (e) => {
-            if (e.key === "Enter")
-              document.getElementById("btn-login")?.click();
-          });
-
-        document
-          .getElementById("btn-login")
-          ?.addEventListener("click", async () => {
-            const identifiant = document
-              .getElementById("login-id")
-              ?.value?.trim();
-            const password = document.getElementById("login-pwd")?.value;
-            const errorDiv = document.getElementById("login-error");
-
-            if (!identifiant || !password) {
-              errorDiv.textContent = "Identifiant et mot de passe requis.";
-              errorDiv.style.display = "block";
-              return;
-            }
-
-            try {
-              const res = await fetch("/api/agent-portal/login", {
-                method: "POST",
-                headers: {
-                  Authorization: "Basic " + btoa(identifiant + ":" + password),
-                  "Content-Type": "application/json",
-                },
-              });
-              const data = await res.json();
-              if (!res.ok) throw new Error(data.message);
-
-              localStorage.setItem("agent_token", data.token);
-              localStorage.setItem("agent_data", JSON.stringify(data.agent));
-              await renderBadge();
-            } catch (err) {
-              errorDiv.textContent = err.message || "Erreur connexion.";
-              errorDiv.style.display = "block";
-            }
-          });
+        <span class="conge-badge ${c.statut}">${{ en_attente: "En attente", approuve: "Approuvé", refuse: "Refusé" }[c.statut] || c.statut}</span>
+      </div>`,
+            )
+            .join("");
+        } catch (e) {
+          list.innerHTML =
+            '<div class="empty-state"><p>Erreur de chargement</p></div>';
+        }
       }
 
-      // ── Init ──────────────────────────────────────────────────
-      if (getToken() && getAgent()) {
-        renderBadge();
-      } else {
-        renderLogin();
+      async function loadHistorique() {
+        const list = $("historique-list");
+        list.innerHTML =
+          '<div class="loading"><div class="spinner"></div> Chargement...</div>';
+        try {
+          const r = await fetch("/api/agent-portal/stats", {
+            headers: authHeaders(),
+          });
+          if (!r.ok) throw new Error();
+          const d = await r.json();
+          const pointages = d.pointagesRecents || d.derniersPointages || [];
+          if (!pointages.length) {
+            list.innerHTML =
+              '<div class="empty-state"><p>Aucun pointage récent</p></div>';
+            return;
+          }
+          list.innerHTML = pointages
+            .map((p) => {
+              const s =
+                { present: "#22c55e", retard: "#f4b942", absent: "#c0392b" }[
+                  p.statut
+                ] || "#aaa";
+              return `<div class="conge-item">
+        <div class="conge-dot" style="background:${s}"></div>
+        <div class="conge-body">
+          <div class="conge-dates">${formatDate(p.date)}</div>
+          <div class="conge-meta">${p.heure_arrivee || "—"} ${p.heure_depart ? "→ " + p.heure_depart : ""}</div>
+        </div>
+        <span class="conge-badge ${p.statut}" style="background:${s}18;color:${s}">${p.statut}</span>
+      </div>`;
+            })
+            .join("");
+        } catch {
+          list.innerHTML =
+            '<div class="empty-state"><p>Données non disponibles</p></div>';
+        }
       }
+
+      $("btn-new-conge").addEventListener("click", () => {
+        $("modal-conge").classList.add("open");
+        const today = new Date().toISOString().slice(0, 10);
+        $("conge-debut").value = today;
+        $("conge-fin").value = today;
+      });
+      $("btn-close-modal").addEventListener("click", () =>
+        $("modal-conge").classList.remove("open"),
+      );
+      $("modal-conge").addEventListener("click", (e) => {
+        if (e.target === $("modal-conge"))
+          $("modal-conge").classList.remove("open");
+      });
+
+      $("btn-submit-conge").addEventListener("click", async () => {
+        const debut = $("conge-debut").value;
+        const fin = $("conge-fin").value;
+        const type = $("conge-type").value;
+        const motif = $("conge-motif").value.trim();
+
+        if (!debut || !fin) {
+          showToast("Dates requises", "error");
+          return;
+        }
+        if (fin < debut) {
+          showToast("Date fin avant début", "error");
+          return;
+        }
+
+        const d1 = new Date(debut),
+          d2 = new Date(fin);
+        const nb_jours = Math.round((d2 - d1) / (1000 * 3600 * 24)) + 1;
+
+        const btn = $("btn-submit-conge");
+        btn.textContent = "Envoi...";
+        btn.disabled = true;
+
+        try {
+          const r = await fetch("/api/agent-portal/conges", {
+            method: "POST",
+            headers: authHeaders(),
+            body: JSON.stringify({
+              date_debut: debut,
+              date_fin: fin,
+              nb_jours,
+              type,
+              motif,
+            }),
+          });
+          const data = await r.json();
+          if (!r.ok) throw new Error(data.message || "Erreur");
+          $("modal-conge").classList.remove("open");
+          showToast("Demande soumise avec succès ✓", "success");
+          loadConges();
+          loadStats();
+        } catch (e) {
+          showToast(e.message || "Erreur envoi", "error");
+        } finally {
+          btn.textContent = "Soumettre la demande";
+          btn.disabled = false;
+        }
+      });
+
+      $("btn-login").addEventListener("click", async () => {
+        const id = $("login-id").value.trim();
+        const pwd = $("login-pwd").value;
+        const err = $("login-error");
+        err.style.display = "none";
+
+        if (!id || !pwd) {
+          err.textContent = "Identifiant et mot de passe requis.";
+          err.style.display = "block";
+          return;
+        }
+
+        const btn = $("btn-login");
+        btn.textContent = "Connexion...";
+        btn.disabled = true;
+
+        try {
+          const r = await fetch("/api/agent-portal/login", {
+            method: "POST",
+            headers: {
+              Authorization: "Basic " + btoa(id + ":" + pwd),
+              "Content-Type": "application/json",
+            },
+          });
+          const data = await r.json();
+          if (!r.ok) throw new Error(data.message || "Identifiants incorrects");
+          setAuth(data.token, data.agent);
+          showApp(data.agent);
+        } catch (e) {
+          err.textContent = e.message;
+          err.style.display = "block";
+        } finally {
+          btn.textContent = "Se connecter";
+          btn.disabled = false;
+        }
+      });
+
+      $("login-pwd").addEventListener("keydown", (e) => {
+        if (e.key === "Enter") $("btn-login").click();
+      });
+
+      $("btn-logout").addEventListener("click", () => {
+        clearAuth();
+        clearInterval(totpInterval);
+        $("screen-app").style.display = "none";
+        $("screen-login").style.display = "flex";
+      });
+
+      function showApp(agent) {
+        $("screen-login").style.display = "none";
+        $("screen-app").style.display = "flex";
+
+        $("header-name").textContent = agent.prenom + " " + agent.nom;
+        $("header-agence").textContent =
+          agent.site_id?.nom || agent.agence || "Mon Agence";
+        $("agent-avatar").textContent = initials(agent.prenom, agent.nom);
+        $("agent-name").textContent = agent.prenom + " " + agent.nom;
+        $("agent-matricule").textContent = agent.matricule || "---";
+        $("agent-poste").textContent = agent.poste || "Agent";
+
+        renderQR(agent);
+        loadStats();
+      }
+
+      (function init() {
+        const token = getToken();
+        const agent = getAgent();
+        if (token && agent) {
+          showApp(agent);
+        } else {
+          $("screen-login").style.display = "flex";
+        }
+      })();
     </script>
   </body>
 </html>
