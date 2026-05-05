@@ -2,6 +2,7 @@ const express = require("express");
 const Joi = require("joi");
 const QRCode = require("qrcode");
 const multer = require("multer");
+const bcrypt = require("bcryptjs");
 const { parse: csvParse } = require("csv-parse/sync");
 
 const Agent = require("../models/Agent");
@@ -514,6 +515,7 @@ router.post(
             .trim();
           const telephone = row.telephone || row.tel || "";
           const poste = row.poste || "";
+          const password = row.password || "";
 
           if (!nom || !prenom) {
             results.errors.push(`Ligne ${i}: nom ou prenom manquant`);
@@ -537,7 +539,7 @@ router.post(
             continue;
           }
 
-          const agent = new Agent({
+          const agentData = {
             nom: nom.trim(),
             prenom: prenom.trim(),
             type_contrat,
@@ -545,7 +547,13 @@ router.post(
             poste: poste.trim(),
             site_id,
             statut: "actif",
-          });
+          };
+
+          if (password) {
+            agentData.password_hash = await bcrypt.hash(password, 10);
+          }
+
+          const agent = new Agent(agentData);
 
           await agent.save();
           results.created++;
