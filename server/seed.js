@@ -1,4 +1,4 @@
-\n\n\n\nconst dotenv = require("dotenv");
+const dotenv = require("dotenv");
 dotenv.config();
 const { v4: uuidv4 } = require("uuid");
 const { connectDB, mongoose } = require("./config/db");
@@ -131,8 +131,480 @@ const agences = [
   },
 ];
 
-
-
+const agentsParAgence = {
+  "PAM-DG": [
+    {
+      nom: "Diallo",
+      prenom: "Mamadou",
+      type_contrat: "CDI",
+      poste: "Directeur General",
+    },
+    { nom: "Ndiaye", prenom: "Ibrahima", type_contrat: "CDI", poste: "DRH" },
+    {
+      nom: "Ba",
+      prenom: "Fatou",
+      type_contrat: "CDI",
+      poste: "Directeur Financier",
+    },
+    { nom: "Sow", prenom: "Ousmane", type_contrat: "CDI", poste: "DAF" },
+    {
+      nom: "Fall",
+      prenom: "Cheikh",
+      type_contrat: "CDI",
+      poste: "Directeur Informatique",
+    },
+    {
+      nom: "Gueye",
+      prenom: "Aissatou",
+      type_contrat: "CDI",
+      poste: "Charge Communication",
+    },
+    {
+      nom: "Mbaye",
+      prenom: "Mariama",
+      type_contrat: "CDD",
+      poste: "Assistante DG",
+    },
+    {
+      nom: "Sarr",
+      prenom: "Amadou",
+      type_contrat: "CDI",
+      poste: "Comptable Principal",
+    },
+    { nom: "Diouf", prenom: "Rokhaya", type_contrat: "CDI", poste: "Juriste" },
+    {
+      nom: "Faye",
+      prenom: "Ndeve",
+      type_contrat: "CDD",
+      poste: "Standardiste",
+    },
+  ],
+  "PAM-BENE": [
+    {
+      nom: "Toure",
+      prenom: "Modou",
+      type_contrat: "CDI",
+      poste: "Directeur Agence",
+    },
+    {
+      nom: "Diop",
+      prenom: "Abdoulaye",
+      type_contrat: "CDI",
+      poste: "Responsable Credit",
+    },
+    {
+      nom: "Kane",
+      prenom: "Adja",
+      type_contrat: "CDI",
+      poste: "Caissier Principal",
+    },
+    {
+      nom: "Sy",
+      prenom: "Khady",
+      type_contrat: "CDD",
+      poste: "Conseiller Clientele",
+    },
+    {
+      nom: "Cisse",
+      prenom: "Moussa",
+      type_contrat: "CDD",
+      poste: "Agent de Credit",
+    },
+    {
+      nom: "Thiam",
+      prenom: "Aminata",
+      type_contrat: "CDD",
+      poste: "Charge Recouvrement",
+    },
+    {
+      nom: "Ndoye",
+      prenom: "Alioune",
+      type_contrat: "CDD",
+      poste: "Agent Guichet",
+    },
+    {
+      nom: "Camara",
+      prenom: "Coumba",
+      type_contrat: "CDD",
+      poste: "Secretaire",
+    },
+  ],
+  "PAM-BOURG": [
+    {
+      nom: "Traore",
+      prenom: "Serigne",
+      type_contrat: "CDI",
+      poste: "Directeur Agence",
+    },
+    {
+      nom: "Kouyate",
+      prenom: "Babacar",
+      type_contrat: "CDI",
+      poste: "Responsable Credit",
+    },
+    { nom: "Badji", prenom: "Sokhna", type_contrat: "CDD", poste: "Caissier" },
+    {
+      nom: "Mendy",
+      prenom: "Mame",
+      type_contrat: "CDD",
+      poste: "Conseiller Clientele",
+    },
+    {
+      nom: "Manga",
+      prenom: "Pape",
+      type_contrat: "CDD",
+      poste: "Agent de Credit",
+    },
+    {
+      nom: "Bassene",
+      prenom: "Astou",
+      type_contrat: "CDD",
+      poste: "Charge Recouvrement",
+    },
+    {
+      nom: "Sambou",
+      prenom: "Landing",
+      type_contrat: "CDD",
+      poste: "Agent Guichet",
+    },
+    {
+      nom: "Diatta",
+      prenom: "Lamine",
+      type_contrat: "CDD",
+      poste: "Agent Securite",
+    },
+  ],
+  "PAM-CAST": [
+    {
+      nom: "Tendeng",
+      prenom: "Malick",
+      type_contrat: "CDI",
+      poste: "Directeur Agence",
+    },
+    {
+      nom: "Goudiaby",
+      prenom: "Mamadou",
+      type_contrat: "CDI",
+      poste: "Responsable Credit",
+    },
+    {
+      nom: "Diallo",
+      prenom: "Yacine",
+      type_contrat: "CDI",
+      poste: "Caissier Principal",
+    },
+    {
+      nom: "Ndiaye",
+      prenom: "Binta",
+      type_contrat: "CDD",
+      poste: "Conseiller Clientele",
+    },
+    {
+      nom: "Ba",
+      prenom: "Ibrahima",
+      type_contrat: "CDD",
+      poste: "Agent de Credit",
+    },
+    {
+      nom: "Sow",
+      prenom: "Ndeye",
+      type_contrat: "CDD",
+      poste: "Gestionnaire Compte",
+    },
+    {
+      nom: "Fall",
+      prenom: "Ousmane",
+      type_contrat: "CDD",
+      poste: "Agent Guichet",
+    },
+    {
+      nom: "Gueye",
+      prenom: "Cheikh",
+      type_contrat: "stage",
+      poste: "Stagiaire",
+    },
+  ],
+  "PAM-AVION": [
+    {
+      nom: "Mbaye",
+      prenom: "Amadou",
+      type_contrat: "CDI",
+      poste: "Directeur Agence",
+    },
+    {
+      nom: "Sarr",
+      prenom: "Modou",
+      type_contrat: "CDI",
+      poste: "Responsable Credit",
+    },
+    { nom: "Diouf", prenom: "Fatou", type_contrat: "CDD", poste: "Caissier" },
+    {
+      nom: "Faye",
+      prenom: "Aissatou",
+      type_contrat: "CDD",
+      poste: "Conseiller Clientele",
+    },
+    {
+      nom: "Toure",
+      prenom: "Abdoulaye",
+      type_contrat: "CDD",
+      poste: "Agent de Credit",
+    },
+    {
+      nom: "Diop",
+      prenom: "Mariama",
+      type_contrat: "CDD",
+      poste: "Charge Recouvrement",
+    },
+    {
+      nom: "Kane",
+      prenom: "Moussa",
+      type_contrat: "CDD",
+      poste: "Agent Guichet",
+    },
+    { nom: "Sy", prenom: "Rokhaya", type_contrat: "CDD", poste: "Secretaire" },
+  ],
+  "PAM-GYOFF": [
+    {
+      nom: "Cisse",
+      prenom: "Alioune",
+      type_contrat: "CDI",
+      poste: "Directeur Agence",
+    },
+    {
+      nom: "Thiam",
+      prenom: "Serigne",
+      type_contrat: "CDI",
+      poste: "Responsable Credit",
+    },
+    {
+      nom: "Ndoye",
+      prenom: "Ndeve",
+      type_contrat: "CDI",
+      poste: "Caissier Principal",
+    },
+    {
+      nom: "Camara",
+      prenom: "Adja",
+      type_contrat: "CDD",
+      poste: "Conseiller Clientele",
+    },
+    {
+      nom: "Traore",
+      prenom: "Babacar",
+      type_contrat: "CDD",
+      poste: "Agent de Credit",
+    },
+    {
+      nom: "Kouyate",
+      prenom: "Khady",
+      type_contrat: "CDD",
+      poste: "Charge Recouvrement",
+    },
+    {
+      nom: "Badji",
+      prenom: "Pape",
+      type_contrat: "CDD",
+      poste: "Agent Guichet",
+    },
+    {
+      nom: "Mendy",
+      prenom: "Landing",
+      type_contrat: "CDD",
+      poste: "Agent Securite",
+    },
+  ],
+  "PAM-HLM": [
+    {
+      nom: "Manga",
+      prenom: "Lamine",
+      type_contrat: "CDI",
+      poste: "Directeur Agence",
+    },
+    {
+      nom: "Bassene",
+      prenom: "Malick",
+      type_contrat: "CDI",
+      poste: "Responsable Credit",
+    },
+    {
+      nom: "Sambou",
+      prenom: "Aminata",
+      type_contrat: "CDD",
+      poste: "Caissier",
+    },
+    {
+      nom: "Diatta",
+      prenom: "Coumba",
+      type_contrat: "CDD",
+      poste: "Conseiller Clientele",
+    },
+    {
+      nom: "Tendeng",
+      prenom: "Mamadou",
+      type_contrat: "CDD",
+      poste: "Agent de Credit",
+    },
+    {
+      nom: "Goudiaby",
+      prenom: "Sokhna",
+      type_contrat: "CDD",
+      poste: "Gestionnaire Compte",
+    },
+    {
+      nom: "Diallo",
+      prenom: "Ibrahima",
+      type_contrat: "CDD",
+      poste: "Charge Informatique",
+    },
+    { nom: "Ndiaye", prenom: "Mame", type_contrat: "CDD", poste: "Secretaire" },
+  ],
+  "PAM-OUAK": [
+    {
+      nom: "Ba",
+      prenom: "Ousmane",
+      type_contrat: "CDI",
+      poste: "Directeur Agence",
+    },
+    {
+      nom: "Sow",
+      prenom: "Cheikh",
+      type_contrat: "CDI",
+      poste: "Responsable Credit",
+    },
+    {
+      nom: "Fall",
+      prenom: "Astou",
+      type_contrat: "CDI",
+      poste: "Caissier Principal",
+    },
+    {
+      nom: "Gueye",
+      prenom: "Yacine",
+      type_contrat: "CDD",
+      poste: "Conseiller Clientele",
+    },
+    {
+      nom: "Mbaye",
+      prenom: "Amadou",
+      type_contrat: "CDD",
+      poste: "Agent de Credit",
+    },
+    {
+      nom: "Sarr",
+      prenom: "Binta",
+      type_contrat: "CDD",
+      poste: "Charge Recouvrement",
+    },
+    {
+      nom: "Diouf",
+      prenom: "Modou",
+      type_contrat: "CDD",
+      poste: "Agent Guichet",
+    },
+    {
+      nom: "Faye",
+      prenom: "Ndeye",
+      type_contrat: "stage",
+      poste: "Stagiaire Finance",
+    },
+  ],
+  "PAM-VDN": [
+    {
+      nom: "Toure",
+      prenom: "Abdoulaye",
+      type_contrat: "CDI",
+      poste: "Directeur Agence",
+    },
+    {
+      nom: "Diop",
+      prenom: "Moussa",
+      type_contrat: "CDI",
+      poste: "Responsable Credit",
+    },
+    { nom: "Kane", prenom: "Fatou", type_contrat: "CDD", poste: "Caissier" },
+    {
+      nom: "Sy",
+      prenom: "Aissatou",
+      type_contrat: "CDD",
+      poste: "Conseiller Clientele",
+    },
+    {
+      nom: "Cisse",
+      prenom: "Alioune",
+      type_contrat: "CDD",
+      poste: "Agent de Credit",
+    },
+    {
+      nom: "Thiam",
+      prenom: "Mariama",
+      type_contrat: "CDD",
+      poste: "Charge Recouvrement",
+    },
+    {
+      nom: "Ndoye",
+      prenom: "Serigne",
+      type_contrat: "CDD",
+      poste: "Gestionnaire Compte",
+    },
+    {
+      nom: "Camara",
+      prenom: "Rokhaya",
+      type_contrat: "CDD",
+      poste: "Secretaire",
+    },
+  ],
+  "PAM-YOFF": [
+    {
+      nom: "Traore",
+      prenom: "Babacar",
+      type_contrat: "CDI",
+      poste: "Directeur Agence",
+    },
+    {
+      nom: "Kouyate",
+      prenom: "Pape",
+      type_contrat: "CDI",
+      poste: "Responsable Credit",
+    },
+    {
+      nom: "Badji",
+      prenom: "Ndeve",
+      type_contrat: "CDI",
+      poste: "Caissier Principal",
+    },
+    {
+      nom: "Mendy",
+      prenom: "Adja",
+      type_contrat: "CDD",
+      poste: "Conseiller Clientele",
+    },
+    {
+      nom: "Manga",
+      prenom: "Landing",
+      type_contrat: "CDD",
+      poste: "Agent de Credit",
+    },
+    {
+      nom: "Bassene",
+      prenom: "Khady",
+      type_contrat: "CDD",
+      poste: "Charge Recouvrement",
+    },
+    {
+      nom: "Sambou",
+      prenom: "Lamine",
+      type_contrat: "CDD",
+      poste: "Agent Guichet",
+    },
+    {
+      nom: "Diatta",
+      prenom: "Malick",
+      type_contrat: "CDD",
+      poste: "Agent Securite",
+    },
+  ],
+};
 
 // Users par agence (admin local)
 const usersAgences = [
@@ -164,12 +636,48 @@ const usersAgences = [
     nom_complet: "Admin Agence Grand Yoff",
     agenceCode: "PAM-GYOFF",
   },
-  { username: 'admin.bourg', password: 'pamecas2024!', role: 'admin', nom_complet: 'Admin Agence Bourguiba',   agenceCode: 'PAM-BOURG' },
-  { username: 'admin.avion', password: 'pamecas2024!', role: 'admin', nom_complet: 'Admin Agence Cite Avion',  agenceCode: 'PAM-AVION' },
-  { username: 'admin.hlm',   password: 'pamecas2024!', role: 'admin', nom_complet: 'Admin Agence HLM',         agenceCode: 'PAM-HLM'   },
-  { username: 'admin.ouak',  password: 'pamecas2024!', role: 'admin', nom_complet: 'Admin Agence Ouakam',      agenceCode: 'PAM-OUAK'  },
-  { username: 'admin.vdn',   password: 'pamecas2024!', role: 'admin', nom_complet: 'Admin Agence VDN',         agenceCode: 'PAM-VDN'   },
-  { username: 'admin.yoff',  password: 'pamecas2024!', role: 'admin', nom_complet: 'Admin Agence Yoff',        agenceCode: 'PAM-YOFF'  },
+  {
+    username: "admin.bourg",
+    password: "pamecas2024!",
+    role: "admin",
+    nom_complet: "Admin Agence Bourguiba",
+    agenceCode: "PAM-BOURG",
+  },
+  {
+    username: "admin.avion",
+    password: "pamecas2024!",
+    role: "admin",
+    nom_complet: "Admin Agence Cite Avion",
+    agenceCode: "PAM-AVION",
+  },
+  {
+    username: "admin.hlm",
+    password: "pamecas2024!",
+    role: "admin",
+    nom_complet: "Admin Agence HLM",
+    agenceCode: "PAM-HLM",
+  },
+  {
+    username: "admin.ouak",
+    password: "pamecas2024!",
+    role: "admin",
+    nom_complet: "Admin Agence Ouakam",
+    agenceCode: "PAM-OUAK",
+  },
+  {
+    username: "admin.vdn",
+    password: "pamecas2024!",
+    role: "admin",
+    nom_complet: "Admin Agence VDN",
+    agenceCode: "PAM-VDN",
+  },
+  {
+    username: "admin.yoff",
+    password: "pamecas2024!",
+    role: "admin",
+    nom_complet: "Admin Agence Yoff",
+    agenceCode: "PAM-YOFF",
+  },
   {
     username: "point.dg",
     password: "point2024!",
