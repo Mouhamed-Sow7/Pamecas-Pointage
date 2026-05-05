@@ -1363,9 +1363,31 @@
           return;
         }
 
-        const d1 = new Date(debut),
-          d2 = new Date(fin);
-        const nb_jours = Math.round((d2 - d1) / (1000 * 3600 * 24)) + 1;
+        const form = document.getElementById("modal-conge") || document;
+        const motifInput =
+          form.querySelector('[name="motif"]') ||
+          form.querySelector("#motif") ||
+          document.getElementById("conge-motif");
+
+        if (!motif || motif.trim() === "") {
+          if (motifInput) {
+            motifInput.style.border = "1.5px solid #dc3545";
+            motifInput.focus();
+            motifInput.addEventListener(
+              "input",
+              () => {
+                motifInput.style.border = "";
+              },
+              { once: true },
+            );
+          }
+          showToast("Le motif est obligatoire", "error");
+          return;
+        }
+
+        const nb_jours = Math.round(
+          (new Date(fin) - new Date(debut)) / (1000 * 60 * 60 * 24),
+        );
 
         const btn = $("btn-submit-conge");
         btn.textContent = "Envoi...";
