@@ -1,4 +1,4 @@
-const dotenv = require("dotenv");
+\n\n\n\nconst dotenv = require("dotenv");
 dotenv.config();
 const { v4: uuidv4 } = require("uuid");
 const { connectDB, mongoose } = require("./config/db");
@@ -131,152 +131,8 @@ const agences = [
   },
 ];
 
-// Agents fictifs par agence (noms senegalais realistes)
-const agentsParAgence = {
-  "PAM-DG": [
-    {
-      nom: "Diallo",
-      prenom: "Mamadou",
-      type_contrat: "CDI",
-      poste: "Directeur Administratif",
-    },
-    {
-      nom: "Ndiaye",
-      prenom: "Fatou",
-      type_contrat: "CDI",
-      poste: "Assistante de Direction",
-    },
-    {
-      nom: "Ba",
-      prenom: "Ibrahima",
-      type_contrat: "CDI",
-      poste: "Responsable RH",
-    },
-    {
-      nom: "Sow",
-      prenom: "Aissatou",
-      type_contrat: "CDI",
-      poste: "Comptable Senior",
-    },
-    {
-      nom: "Fall",
-      prenom: "Cheikh",
-      type_contrat: "CDI",
-      poste: "Charge Informatique",
-    },
-    {
-      nom: "Gueye",
-      prenom: "Mariama",
-      type_contrat: "CDD",
-      poste: "Secretaire",
-    },
-    {
-      nom: "Mbaye",
-      prenom: "Ousmane",
-      type_contrat: "CDD",
-      poste: "Agent de Securite",
-    },
-    {
-      nom: "Sarr",
-      prenom: "Rokhaya",
-      type_contrat: "stage",
-      poste: "Stagiaire Finance",
-    },
-  ],
-  "PAM-BENE": [
-    {
-      nom: "Diouf",
-      prenom: "Amadou",
-      type_contrat: "CDI",
-      poste: "Chef Agence",
-    },
-    {
-      nom: "Faye",
-      prenom: "Ndèye",
-      type_contrat: "CDI",
-      poste: "Caissiere Principale",
-    },
-    {
-      nom: "Sy",
-      prenom: "Modou",
-      type_contrat: "CDI",
-      poste: "Agent de Credit",
-    },
-    {
-      nom: "Toure",
-      prenom: "Bineta",
-      type_contrat: "CDD",
-      poste: "Conseillere Clientele",
-    },
-    {
-      nom: "Wade",
-      prenom: "Lamine",
-      type_contrat: "CDD",
-      poste: "Agent Epargne",
-    },
-    {
-      nom: "Cisse",
-      prenom: "Yacine",
-      type_contrat: "stage",
-      poste: "Stagiaire Accueil",
-    },
-  ],
-  "PAM-CAST": [
-    {
-      nom: "Diop",
-      prenom: "Serigne",
-      type_contrat: "CDI",
-      poste: "Chef Agence",
-    },
-    { nom: "Thiam", prenom: "Adja", type_contrat: "CDI", poste: "Caissiere" },
-    {
-      nom: "Kane",
-      prenom: "Babacar",
-      type_contrat: "CDI",
-      poste: "Agent de Credit",
-    },
-    {
-      nom: "Badji",
-      prenom: "Marieme",
-      type_contrat: "CDD",
-      poste: "Conseiller",
-    },
-    {
-      nom: "Mendy",
-      prenom: "Pascal",
-      type_contrat: "CDI",
-      poste: "Agent Securite",
-    },
-    {
-      nom: "Bassene",
-      prenom: "Celestine",
-      type_contrat: "stage",
-      poste: "Stagiaire",
-    },
-  ],
-  "PAM-GYOFF": [
-    { nom: "Niang", prenom: "Pape", type_contrat: "CDI", poste: "Chef Agence" },
-    { nom: "Diatta", prenom: "Marie", type_contrat: "CDI", poste: "Caissiere" },
-    {
-      nom: "Coulibaly",
-      prenom: "Seydou",
-      type_contrat: "CDI",
-      poste: "Agent Credit",
-    },
-    {
-      nom: "Traore",
-      prenom: "Fatoumata",
-      type_contrat: "CDD",
-      poste: "Conseillere",
-    },
-    {
-      nom: "Kouyate",
-      prenom: "Boubacar",
-      type_contrat: "CDI",
-      poste: "Agent Terrain",
-    },
-  ],
-};
+
+
 
 // Users par agence (admin local)
 const usersAgences = [
@@ -308,6 +164,12 @@ const usersAgences = [
     nom_complet: "Admin Agence Grand Yoff",
     agenceCode: "PAM-GYOFF",
   },
+  { username: 'admin.bourg', password: 'pamecas2024!', role: 'admin', nom_complet: 'Admin Agence Bourguiba',   agenceCode: 'PAM-BOURG' },
+  { username: 'admin.avion', password: 'pamecas2024!', role: 'admin', nom_complet: 'Admin Agence Cite Avion',  agenceCode: 'PAM-AVION' },
+  { username: 'admin.hlm',   password: 'pamecas2024!', role: 'admin', nom_complet: 'Admin Agence HLM',         agenceCode: 'PAM-HLM'   },
+  { username: 'admin.ouak',  password: 'pamecas2024!', role: 'admin', nom_complet: 'Admin Agence Ouakam',      agenceCode: 'PAM-OUAK'  },
+  { username: 'admin.vdn',   password: 'pamecas2024!', role: 'admin', nom_complet: 'Admin Agence VDN',         agenceCode: 'PAM-VDN'   },
+  { username: 'admin.yoff',  password: 'pamecas2024!', role: 'admin', nom_complet: 'Admin Agence Yoff',        agenceCode: 'PAM-YOFF'  },
   {
     username: "point.dg",
     password: "point2024!",
