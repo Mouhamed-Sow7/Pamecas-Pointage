@@ -1409,6 +1409,7 @@
           // Load content if needed
           if (tab === "conges") loadConges();
           else if (tab === "historique") loadHistorique();
+          else if (tab === "badge") loadStats();
         });
       });
 
@@ -1576,6 +1577,10 @@
         renderQR(agent);
         loadStats();
       }
+
+      document.addEventListener("visibilitychange", () => {
+        if (!document.hidden && getToken()) loadStats();
+      });
 
       (function init() {
         const token = getToken();
