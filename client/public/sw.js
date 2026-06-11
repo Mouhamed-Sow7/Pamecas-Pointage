@@ -1,38 +1,38 @@
 ﻿// Version du cache â€” incrementer a chaque deploiement majeur
-const CACHE_VERSION = 'smartpointage-v6';
+const CACHE_VERSION = "smartpointage-v7";
 const CACHE_NAME = CACHE_VERSION;
 
 const STATIC_ASSETS = [
-  '/',
-  '/index.html',
-  '/src/app.js',
-  '/src/css/global.css',
-  '/src/api.js',
-  '/src/pages/login.js',
-  '/src/pages/dashboard.js',
-  '/src/pages/pointage.js',
-  '/src/pages/agents.js',
-  '/src/pages/sites.js',
-  '/src/pages/rapports.js',
-  '/src/components/navbar.js',
-  '/src/components/modal.js',
-  '/src/components/toast.js',
-  '/src/store/indexedDB.js',
-  '/src/store/syncManager.js',
-  '/manifest.json'
+  "/",
+  "/index.html",
+  "/src/app.js",
+  "/src/css/global.css",
+  "/src/api.js",
+  "/src/pages/login.js",
+  "/src/pages/dashboard.js",
+  "/src/pages/pointage.js",
+  "/src/pages/agents.js",
+  "/src/pages/sites.js",
+  "/src/pages/rapports.js",
+  "/src/components/navbar.js",
+  "/src/components/modal.js",
+  "/src/components/toast.js",
+  "/src/store/indexedDB.js",
+  "/src/store/syncManager.js",
+  "/manifest.json",
 ];
 
 // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Install : mise en cache des assets statiques Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
-self.addEventListener('install', (event) => {
+self.addEventListener("install", (event) => {
   // Ã¢Å“â€¦ Force l'activation immÃƒÂ©diate sans attendre la fermeture des onglets
   self.skipWaiting();
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS))
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS)),
   );
 });
 
 // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Activate : supprimer les anciens caches Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
-self.addEventListener('activate', (event) => {
+self.addEventListener("activate", (event) => {
   // Ã¢Å“â€¦ Prendre le contrÃƒÂ´le immÃƒÂ©diatement de tous les onglets ouverts
   clients.claim();
   event.waitUntil(
@@ -41,52 +41,75 @@ self.addEventListener('activate', (event) => {
         keys
           .filter((key) => key !== CACHE_NAME)
           .map((key) => {
-            console.log('[SW] Suppression ancien cache:', key);
+            console.log("[SW] Suppression ancien cache:", key);
             return caches.delete(key);
-          })
-      )
-    )
+          }),
+      ),
+    ),
   );
 });
 
 // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Fetch : stratÃƒÂ©gie network-first pour API, cache-first pour static Ã¢â€â‚¬Ã¢â€â‚¬
-self.addEventListener('fetch', (event) => {
+self.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
 
   // Ignorer les requÃƒÂªtes externes (fonts, CDN, etc.)
   if (url.origin !== self.location.origin) return;
 
   // Ã¢Å“â€¦ API : network-first (toujours frais), pas de cache
-  if (url.pathname.startsWith('/api/')) {
+  if (url.pathname.startsWith("/api/")) {
     event.respondWith(
-      fetch(event.request).catch(() =>
-        new Response(JSON.stringify({ message: 'Hors ligne â€” reessayez plus tard.' }), {
-          status: 503,
-          headers: { 'Content-Type': 'application/json' }
-        })
-      )
+      fetch(event.request).catch(
+        () =>
+          new Response(
+            JSON.stringify({ message: "Hors ligne â€” reessayez plus tard." }),
+            {
+              status: 503,
+              headers: { "Content-Type": "application/json" },
+            },
+          ),
+      ),
     );
     return;
   }
 
   // Ã¢Å“â€¦ SW.js lui-mÃƒÂªme : toujours depuis le rÃƒÂ©seau pour dÃƒÂ©tecter les mises ÃƒÂ  jour
-  if (url.pathname === '/sw.js') {
+  if (url.pathname === "/sw.js") {
     event.respondWith(fetch(event.request));
     return;
   }
-
-  // Ã¢Å“â€¦ Fichiers JS/CSS : network-first pour toujours avoir la derniÃƒÂ¨re version
-  if (url.pathname.endsWith('.js') || url.pathname.endsWith('.css')) {
+  // agent.html : toujours network-first
+  if (url.pathname === "/agent" || url.pathname === "/agent.html") {
     event.respondWith(
       fetch(event.request)
         .then((response) => {
           if (response.ok) {
             const clone = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+            caches
+              .open(CACHE_NAME)
+              .then((cache) => cache.put(event.request, clone));
           }
           return response;
         })
-        .catch(() => caches.match(event.request))
+        .catch(() => caches.match(event.request)),
+    );
+    return;
+  }
+
+  // Ã¢Å“â€¦ Fichiers JS/CSS : network-first pour toujours avoir la derniÃƒÂ¨re version
+  if (url.pathname.endsWith(".js") || url.pathname.endsWith(".css")) {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          if (response.ok) {
+            const clone = response.clone();
+            caches
+              .open(CACHE_NAME)
+              .then((cache) => cache.put(event.request, clone));
+          }
+          return response;
+        })
+        .catch(() => caches.match(event.request)),
     );
     return;
   }
@@ -98,11 +121,12 @@ self.addEventListener('fetch', (event) => {
       return fetch(event.request).then((response) => {
         if (response.ok) {
           const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+          caches
+            .open(CACHE_NAME)
+            .then((cache) => cache.put(event.request, clone));
         }
         return response;
       });
-    })
+    }),
   );
 });
-
