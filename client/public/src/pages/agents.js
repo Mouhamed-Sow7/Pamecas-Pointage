@@ -154,14 +154,13 @@ function openAgentModal(mode, agent, sites) {
   const showTotpSection = isEdit;
   const matriculeDisplay = agent?.matricule || agent?.numero_employe || "";
   const photoHtml = agent?.photo
-    ? `<img id="agent-photo-preview" src="${agent.photo}" style="width:160px;height:160px;border-radius:80px;object-fit:cover;display:block;margin:12px auto;" />`
-    : `<div id="agent-photo-preview" style="width:160px;height:160px;border-radius:80px;background:#f0f7f2;color:#0f5132;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:28px;margin:12px auto;">${((agent?.prenom || "?")[0] || "?") + ((agent?.nom || "?")[0] || "?")}</div>`;
+    ? `<img id="agent-photo-preview" src="${agent.photo}" style="width:100px;height:100px;border-radius:50px;object-fit:cover;display:block;margin:10px auto;" />`
+    : `<div id="agent-photo-preview" style="width:100px;height:100px;border-radius:50px;background:#f0f7f2;color:#0f5132;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:20px;margin:10px auto;">${((agent?.prenom || "?")[0] || "?") + ((agent?.nom || "?")[0] || "?")}</div>`;
 
   const content = `
-    <div style="font-family: 'DM Sans', sans-serif; max-height:580px;height:580px;overflow:hidden;display:flex;flex-direction:column;border-radius:12px;">
-      <div style="padding:12px 14px;border-bottom:1px solid #eee;display:flex;flex-direction:column;align-items:center;gap:8px;">
-        <div style="width:100%;display:flex;justify-content:space-between;align-items:center;">
-          <div style="font-size:16px;font-weight:600;color:#0f5132;">Modifier un agent</div>
+    <div style="font-family: 'DM Sans', sans-serif; max-height:560px;height:560px;overflow:hidden;display:flex;flex-direction:column;border-radius:12px;">
+      <div style="padding:8px 14px;border-bottom:1px solid #eee;display:flex;flex-direction:column;align-items:center;gap:6px;">
+        <div style="width:100%;display:flex;justify-content:center;align-items:center;gap:8px;">
           <div style="color:#888;font-size:13px;">${matriculeDisplay}</div>
         </div>
         <div id="modal-page-indicators" style="display:flex;gap:8px;align-items:center;justify-content:center;">
@@ -171,11 +170,11 @@ function openAgentModal(mode, agent, sites) {
         </div>
       </div>
 
-      <div style="position:relative;flex:1;overflow:hidden;">
-        <button id="btn-slide-prev" type="button" style="position:absolute;left:8px;top:50%;transform:translateY(-50%);z-index:5;border:1px solid #0f5132;background:transparent;color:#0f5132;border-radius:999px;width:40px;height:40px;display:flex;align-items:center;justify-content:center;cursor:pointer;">‹</button>
-        <button id="btn-slide-next" type="button" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);z-index:5;border:1px solid #0f5132;background:transparent;color:#0f5132;border-radius:999px;width:40px;height:40px;display:flex;align-items:center;justify-content:center;cursor:pointer;">›</button>
+      <div style="position:relative;flex:1;overflow:visible;">
+        <button id="btn-slide-prev" type="button" style="position:absolute;left:-20px;top:50%;transform:translateY(-50%);z-index:5;border:1.5px solid #0f5132;background:white;color:#0f5132;border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;">‹</button>
+        <button id="btn-slide-next" type="button" style="position:absolute;right:-20px;top:50%;transform:translateY(-50%);z-index:5;border:1.5px solid #0f5132;background:white;color:#0f5132;border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;">›</button>
 
-        <div id="modal-slides" style="height:100%;display:flex;transition:transform 0.35s ease-in-out;">
+        <div id="modal-slides" style="height:100%;display:flex;overflow:hidden;transition:transform 0.35s ease-in-out;">
           <!-- Page 1: Identité -->
           <div id="slide-0" style="min-width:100%;padding:18px;box-sizing:border-box;">
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
@@ -250,7 +249,7 @@ function openAgentModal(mode, agent, sites) {
           <!-- Page 3: QR -->
           <div id="slide-2" style="min-width:100%;padding:18px;box-sizing:border-box;text-align:center;">
             <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;">
-              <div id="qr-container-large" style="width:240px;height:240px;background:white;display:flex;align-items:center;justify-content:center;border-radius:12px;margin:8px auto;">
+              <div id="qr-container-large" style="width:160px;height:160px;background:white;display:flex;align-items:center;justify-content:center;border-radius:12px;margin:8px auto;">
                 <img id="agent-qr-img" alt="QR" style="max-width:100%;max-height:100%;" />
               </div>
               <div id="modal-agent-matricule" style="margin-top:12px;color:#666;">${matriculeDisplay}</div>
