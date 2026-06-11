@@ -1510,6 +1510,7 @@
           const data = await r.json();
           if (!r.ok) throw new Error(data.message || "Identifiants incorrects");
           setAuth(data.token, data.agent);
+          localStorage.setItem("kiosque_pin", data.agent.kiosque_pin || "1234");
           showApp(data.agent);
         } catch (e) {
           err.textContent = e.message;

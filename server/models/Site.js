@@ -1,37 +1,37 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const REGIONS_SENEGAL = [
-  'Dakar',
-  'Diourbel',
-  'Fatick',
-  'Kaffrine',
-  'Kaolack',
-  'Kédougou',
-  'Kolda',
-  'Louga',
-  'Matam',
-  'Saint-Louis',
-  'Sédhiou',
-  'Tambacounda',
-  'Thiès',
-  'Ziguinchor'
+  "Dakar",
+  "Diourbel",
+  "Fatick",
+  "Kaffrine",
+  "Kaolack",
+  "Kédougou",
+  "Kolda",
+  "Louga",
+  "Matam",
+  "Saint-Louis",
+  "Sédhiou",
+  "Tambacounda",
+  "Thiès",
+  "Ziguinchor",
 ];
 
 const CoordonneesSchema = new mongoose.Schema(
   {
     latitude: { type: Number },
-    longitude: { type: Number }
+    longitude: { type: Number },
   },
-  { _id: false }
+  { _id: false },
 );
 
 const ConfigSiteSchema = new mongoose.Schema(
   {
     heure_debut: { type: String }, // ex: "07:30"
     heure_retard: { type: String }, // ex: "08:00"
-    weekend_actif: { type: Boolean, default: false }
+    weekend_actif: { type: Boolean, default: false },
   },
-  { _id: false }
+  { _id: false },
 );
 
 const SiteSchema = new mongoose.Schema(
@@ -41,7 +41,7 @@ const SiteSchema = new mongoose.Schema(
     region: {
       type: String,
       enum: REGIONS_SENEGAL,
-      required: true
+      required: true,
     },
     responsable: { type: String },
     telephone: { type: String },
@@ -51,15 +51,18 @@ const SiteSchema = new mongoose.Schema(
     kiosque_token: {
       type: String,
       default: null,
-      index: true
+      index: true,
     },
     kiosque_token_created_at: {
       type: Date,
-      default: null
-    }
+      default: null,
+    },
+    kiosque_pin: {
+      type: String,
+      default: "1234",
+    },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
-module.exports = mongoose.model('Site', SiteSchema);
-
+module.exports = mongoose.model("Site", SiteSchema);

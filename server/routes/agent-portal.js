@@ -101,6 +101,7 @@ router.post("/login", authenticateAgent, async (req, res) => {
       { expiresIn: "24h" },
     );
 
+    const sitePin = agent.site_id?.kiosque_pin || "1234";
     res.json({
       message: "Connexion réussie",
       agent: {
@@ -110,7 +111,8 @@ router.post("/login", authenticateAgent, async (req, res) => {
         matricule: agent.matricule,
         site: agent.site_id,
         totp_enabled: agent.totp_enabled,
-        totp_secret: agent.totp_secret, // ← ajouter
+        totp_secret: agent.totp_secret,
+        kiosque_pin: sitePin,
       },
       token,
     });
@@ -157,7 +159,10 @@ router.get("/stats", authenticateAgent, async (req, res) => {
       if (dow !== 0 && dow !== 6) joursOuvres++;
       cursor.setDate(cursor.getDate() + 1);
     }
-    const absencesMois = Math.max(0, joursOuvres - presencesMois - retardsMois);
+    const absencesMois =
+      presencesMois === 0 && retardsMois === 0
+        ? 0
+        : Math.max(0, joursOuvres - presencesMois - retardsMois);
 
     const congesApprouves = await Conge.find({
       agent_id: agent._id,
