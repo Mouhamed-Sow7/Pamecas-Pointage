@@ -1450,9 +1450,10 @@
           return;
         }
 
-        const nb_jours = Math.round(
-          (new Date(fin) - new Date(debut)) / (1000 * 60 * 60 * 24),
-        );
+        // Ensure date strings are YYYY-MM-DD (input[type=date] returns that
+        // format, but normalize just in case) and let server compute nb_jours.
+        const debutIso = debut.slice(0, 10);
+        const finIso = fin.slice(0, 10);
 
         const btn = $("btn-submit-conge");
         btn.textContent = "Envoi...";
@@ -1461,11 +1462,13 @@
         try {
           const r = await fetch("/api/agent-portal/conges", {
             method: "POST",
-            headers: authHeaders(),
+            headers: {
+              Authorization: "Bearer " + localStorage.getItem("agent_token"),
+              "Content-Type": "application/json",
+            },
             body: JSON.stringify({
-              date_debut: debut,
-              date_fin: fin,
-              nb_jours,
+              date_debut: debutIso,
+              date_fin: finIso,
               type,
               motif,
             }),

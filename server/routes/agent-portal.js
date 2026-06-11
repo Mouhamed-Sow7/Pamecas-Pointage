@@ -263,11 +263,36 @@ router.post("/conges", authenticateAgent, async (req, res) => {
       return res.status(400).json({ message: "Champs requis manquants" });
     }
 
+    // Parse dates using midnight to avoid timezone shifts and validate
+    const start = new Date(date_debut + "T00:00:00");
+    const end = new Date(date_fin + "T00:00:00");
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+      return res.status(400).json({ message: "Format de date invalide" });
+    }
+    if (end < start) {
+      return res
+        .status(400)
+        .json({ message: "date_fin doit être >= date_debut" });
+    }
+
+    // Compter les jours ouvrés (lundi-vendredi) inclus
+    let nb_jours = 0;
+    const cursor = new Date(start);
+    cursor.setHours(0, 0, 0, 0);
+    const last = new Date(end);
+    last.setHours(0, 0, 0, 0);
+    while (cursor <= last) {
+      const dow = cursor.getDay();
+      if (dow !== 0 && dow !== 6) nb_jours++;
+      cursor.setDate(cursor.getDate() + 1);
+    }
+
     const conge = new Conge({
       agent_id: agent._id,
       site_id: agent.site_id,
-      date_debut: new Date(date_debut),
-      date_fin: new Date(date_fin),
+      date_debut: start,
+      date_fin: end,
+      nb_jours,
       motif,
       commentaire: commentaire || "",
       statut: "en_attente",
