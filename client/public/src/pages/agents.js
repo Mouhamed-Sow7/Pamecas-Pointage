@@ -154,15 +154,13 @@ function openAgentModal(mode, agent, sites) {
   const showTotpSection = isEdit;
   const matriculeDisplay = agent?.matricule || agent?.numero_employe || "";
   const photoHtml = agent?.photo
-    ? `<img id="agent-photo-preview" src="${agent.photo}" style="width:100px;height:100px;border-radius:50px;object-fit:cover;display:block;margin:10px auto;" />`
-    : `<div id="agent-photo-preview" style="width:100px;height:100px;border-radius:50px;background:#f0f7f2;color:#0f5132;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:20px;margin:10px auto;">${((agent?.prenom || "?")[0] || "?") + ((agent?.nom || "?")[0] || "?")}</div>`;
+    ? `<img id="agent-photo-preview" src="${agent.photo}" style="width:80px;height:80px;border-radius:40px;object-fit:cover;display:block;margin:10px auto;" />`
+    : `<div id="agent-photo-preview" style="width:80px;height:80px;border-radius:40px;background:#f0f7f2;color:#0f5132;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px;margin:10px auto;">${((agent?.prenom || "?")[0] || "?") + ((agent?.nom || "?")[0] || "?")}</div>`;
 
   const content = `
     <div style="font-family: 'DM Sans', sans-serif; max-height:560px;height:560px;overflow:hidden;display:flex;flex-direction:column;border-radius:12px;">
-      <div style="padding:8px 14px;border-bottom:1px solid #eee;display:flex;flex-direction:column;align-items:center;gap:6px;">
-        <div style="width:100%;display:flex;justify-content:center;align-items:center;gap:8px;">
-          <div style="color:#888;font-size:13px;">${matriculeDisplay}</div>
-        </div>
+      <div style="padding:8px 14px;border-bottom:1px solid #eee;display:flex;align-items:center;justify-content:center;gap:6px;">
+        <div style="color:#888;font-size:13px;">${matriculeDisplay}</div>
         <div id="modal-page-indicators" style="display:flex;gap:8px;align-items:center;justify-content:center;">
           <span data-idx="0" style="font-size:14px;color:#0f5132;">●</span>
           <span data-idx="1" style="font-size:14px;color:#999;">○</span>
@@ -170,11 +168,92 @@ function openAgentModal(mode, agent, sites) {
         </div>
       </div>
 
-      <div style="position:relative;flex:1;overflow:visible;">
-        <button id="btn-slide-prev" type="button" style="position:absolute;left:-20px;top:50%;transform:translateY(-50%);z-index:5;border:1.5px solid #0f5132;background:white;color:#0f5132;border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;">‹</button>
-        <button id="btn-slide-next" type="button" style="position:absolute;right:-20px;top:50%;transform:translateY(-50%);z-index:5;border:1.5px solid #0f5132;background:white;color:#0f5132;border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;">›</button>
+      <div id="slider-wrapper" style="position:relative;width:100%;flex:1;overflow:hidden;">
+        <div id="slider-parent" style="position:relative;width:100%;height:100%;">
+          <button id="btn-slide-prev" type="button" style="position:absolute;left:8px;top:50%;transform:translateY(-50%);z-index:10;border:1.5px solid #0f5132;background:white;color:#0f5132;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;">‹</button>
+          <button id="btn-slide-next" type="button" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);z-index:10;border:1.5px solid #0f5132;background:white;color:#0f5132;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;">›</button>
 
-        <div id="modal-slides" style="height:100%;display:flex;overflow:hidden;transition:transform 0.35s ease-in-out;">
+          <div id="slider-track" style="display:flex;width:300%;height:100%;transition:transform 0.35s ease-in-out;">
+            <!-- Page 1: Identité -->
+            <div id="slide-0" style="width:33.333%;padding:0 16px;box-sizing:border-box;min-height:calc(100% - 56px);">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding-top:12px;">
+                <div>
+                  <label style="font-size:13px;">Nom</label>
+                  <input id="fld-nom" value="${agent?.nom || ""}" ${disabledAttr} style="width:100%; padding:10px; border-radius:12px; border:1.5px solid #ddd;" />
+                </div>
+                <div>
+                  <label style="font-size:13px;">Prénom</label>
+                  <input id="fld-prenom" value="${agent?.prenom || ""}" ${disabledAttr} style="width:100%; padding:10px; border-radius:12px; border:1.5px solid #ddd;" />
+                </div>
+              </div>
+              <div style="margin-top:12px;">
+                <label style="font-size:13px;">Téléphone</label>
+                <input id="fld-telephone" value="${agent?.telephone || ""}" ${disabledAttr} style="width:100%; padding:10px; border-radius:12px; border:1.5px solid #ddd;" />
+              </div>
+              <div style="margin-top:12px;">
+                <label style="font-size:13px;">Site / Agence</label>
+                <select id="fld-site_id" ${disabledAttr} style="width:100%; padding:10px; border-radius:12px; border:1.5px solid #ddd;">${siteOptions}</select>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px;">
+                <div>
+                  <label style="font-size:13px;">Type de contrat</label>
+                  <select id="fld-type_contrat" ${disabledAttr} style="width:100%; padding:10px; border-radius:12px; border:1.5px solid #ddd;">
+                    <option value="CDI" ${agent?.type_contrat === "CDI" ? "selected" : ""}>CDI</option>
+                    <option value="CDD" ${agent?.type_contrat === "CDD" ? "selected" : ""}>CDD</option>
+                    <option value="stage" ${agent?.type_contrat === "stage" ? "selected" : ""}>Stage</option>
+                    <option value="prestataire" ${agent?.type_contrat === "prestataire" ? "selected" : ""}>Prestataire</option>
+                  </select>
+                </div>
+                <div>
+                  <label style="font-size:13px;">Statut</label>
+                  <select id="fld-statut" ${disabledAttr} style="width:100%; padding:10px; border-radius:12px; border:1.5px solid #ddd;">
+                    <option value="actif" ${!agent || agent.statut === "actif" ? "selected" : ""}>Actif</option>
+                    <option value="inactif" ${agent?.statut === "inactif" ? "selected" : ""}>Inactif</option>
+                    <option value="suspendu" ${agent?.statut === "suspendu" ? "selected" : ""}>Suspendu</option>
+                  </select>
+                </div>
+              </div>
+              <div style="margin-top:12px;">
+                <label style="font-size:13px;">Poste</label>
+                <input id="fld-poste" value="${agent?.poste || ""}" ${disabledAttr} style="width:100%; padding:10px; border-radius:12px; border:1.5px solid #ddd;" />
+              </div>
+            </div>
+
+            <!-- Page 2: Photo & Portail -->
+            <div id="slide-1" style="width:33.333%;padding:0 16px;box-sizing:border-box;min-height:calc(100% - 56px);display:flex;flex-direction:column;align-items:center;">
+              ${photoHtml}
+              <div style="text-align:center;margin-top:8px;">
+                <input id="agent-photo-input" type="file" accept="image/*" ${disabledAttr} style="display:block;margin:6px auto;" />
+              </div>
+
+              ${showTotpSection ? `
+              <div style="background:#f7fff7;border-radius:10px;padding:12px;margin-top:12px;width:100%;box-sizing:border-box;">
+                <div style="font-size:0.9rem;font-weight:600;color:#0f5132;margin-bottom:8px;">Portail Agent</div>
+                <div style="margin-bottom:8px;">
+                  <label style="font-size:13px;">Mot de passe portail</label>
+                  <input id="agent-portal-pwd" type="password" placeholder="Définir ou changer le mot de passe" ${disabledAttr} style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;" />
+                </div>
+                <div style="display:flex;gap:8px;align-items:center;">
+                  <span id="totp-indicator" style="font-size:13px;color:${agent.totp_enabled ? '#2e7d32' : '#888'};">${agent.totp_enabled ? '🔄 QR Dynamique activé' : '⚠️ QR Statique'}</span>
+                  ${!agent.totp_enabled ? `<button id="btn-activer-totp" type="button" style="padding:6px 12px;background:#0f5132;color:white;border:none;border-radius:8px;cursor:pointer;">Activer QR Dynamique</button>` : ''}
+                </div>
+              </div>
+              ` : ''}
+            </div>
+
+            <!-- Page 3: QR -->
+            <div id="slide-2" style="width:33.333%;padding:0 16px;box-sizing:border-box;min-height:calc(100% - 56px);display:flex;flex-direction:column;align-items:center;justify-content:center;">
+              <div id="qr-container-large" style="width:150px;height:150px;background:white;display:flex;align-items:center;justify-content:center;border-radius:12px;margin:8px auto;">
+                <img id="agent-qr-img" alt="QR" style="max-width:100%;max-height:100%;" />
+              </div>
+              <div id="modal-agent-matricule" style="margin-top:12px;color:#666;">${matriculeDisplay}</div>
+              <button id="btn-download-qr" type="button" style="margin-top:12px;padding:8px 14px;border-radius:8px;border:1px solid #0f5132;background:transparent;color:#0f5132;">Télécharger le QR</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
           <!-- Page 1: Identité -->
           <div id="slide-0" style="min-width:100%;padding:18px;box-sizing:border-box;">
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
