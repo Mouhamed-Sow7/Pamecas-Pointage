@@ -150,121 +150,116 @@ function openAgentModal(mode, agent, sites) {
     )
     .join("");
 
-  const content = `
-    <form id="agent-form" style="display:flex; flex-direction:column; gap:8px;">
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
-        <div>
-          <label style="font-size:13px;">Nom</label>
-          <input name="nom" value="${agent?.nom || ""}" ${
-            isView ? "disabled" : ""
-          } style="width:100%; padding:6px 8px; border-radius:6px; border:1px solid #cfd8dc;" />
-        </div>
-        <div>
-          <label style="font-size:13px;">Prénom</label>
-          <input name="prenom" value="${agent?.prenom || ""}" ${
-            isView ? "disabled" : ""
-          } style="width:100%; padding:6px 8px; border-radius:6px; border:1px solid #cfd8dc;" />
-        </div>
-      </div>
-      <div>
-        <label style="font-size:13px;">Téléphone</label>
-        <input name="telephone" value="${agent?.telephone || ""}" ${
-          isView ? "disabled" : ""
-        } style="width:100%; padding:6px 8px; border-radius:6px; border:1px solid #cfd8dc;" />
-      </div>
-      <div>
-        <label style="font-size:13px;">Site / Agence</label>
-        <select name="site_id" ${
-          isView ? "disabled" : ""
-        } style="width:100%; padding:6px 8px; border-radius:6px; border:1px solid #cfd8dc;">
-          ${siteOptions}
-        </select>
-      </div>
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
-        <div>
-          <label style="font-size:13px;">Type de contrat</label>
-          <select name="type_contrat" ${
-            isView ? "disabled" : ""
-          } style="width:100%; padding:6px 8px; border-radius:6px; border:1px solid #cfd8dc;">
-            <option value="CDI" ${agent?.type_contrat === "CDI" ? "selected" : ""}>CDI</option>
-            <option value="CDD" ${agent?.type_contrat === "CDD" ? "selected" : ""}>CDD</option>
-            <option value="stage" ${agent?.type_contrat === "stage" ? "selected" : ""}>Stage</option>
-            <option value="prestataire" ${agent?.type_contrat === "prestataire" ? "selected" : ""}>Prestataire</option>
-          </select>
-        </div>
-        <div>
-          <label style="font-size:13px;">Statut</label>
-          <select name="statut" ${
-            isView ? "disabled" : ""
-          } style="width:100%; padding:6px 8px; border-radius:6px; border:1px solid #cfd8dc;">
-            <option value="actif" ${!agent || agent.statut === "actif" ? "selected" : ""}>Actif</option>
-            <option value="inactif" ${agent?.statut === "inactif" ? "selected" : ""}>Inactif</option>
-            <option value="suspendu" ${agent?.statut === "suspendu" ? "selected" : ""}>Suspendu</option>
-          </select>
-        </div>
-      </div>
-      <div>
-        <label style="font-size:13px;">Poste</label>
-        <input name="poste" value="${agent?.poste || ""}" ${
-          isView ? "disabled" : ""
-        } style="width:100%; padding:6px 8px; border-radius:6px; border:1px solid #cfd8dc;" />
-      </div>
-      <div>
-        <label style="font-size:13px;">Photo</label>
-        <input name="photo" type="file" accept="image/*" ${isView ? "disabled" : ""} />
-        ${
-          agent?.photo
-            ? `<div style="margin-top:6px;"><img src="${agent.photo}" style="width:80px; height:80px; border-radius:8px; object-fit:cover;" /></div>`
-            : ""
-        }
-      </div>
-      ${
-        isEdit
-          ? `
-      <div style="background:#f0f4ff;border-radius:10px;padding:14px;margin-top:12px;">
-        <div style="font-size:0.82rem;font-weight:600;margin-bottom:10px;color:#1565c0;">
-          <i class="fa-solid fa-mobile-screen"></i> Portail Agent (Mon Badge)
-        </div>
+  const disabledAttr = isView ? "disabled" : "";
+  const showTotpSection = isEdit;
+  const matriculeDisplay = agent?.matricule || agent?.numero_employe || "";
+  const photoHtml = agent?.photo
+    ? `<img id="agent-photo-preview" src="${agent.photo}" style="width:160px;height:160px;border-radius:80px;object-fit:cover;display:block;margin:12px auto;" />`
+    : `<div id="agent-photo-preview" style="width:160px;height:160px;border-radius:80px;background:#f0f7f2;color:#0f5132;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:28px;margin:12px auto;">${((agent?.prenom || "?")[0] || "?") + ((agent?.nom || "?")[0] || "?")}</div>`;
 
-        <div style="margin-bottom:10px;">
-          <label style="font-size:0.78rem;font-weight:500;display:block;margin-bottom:5px;">
-            Mot de passe portail
-          </label>
-          <input id="agent-portal-pwd" type="password" placeholder="Définir ou changer le mot de passe"
-            style="width:100%;padding:9px;border:1.5px solid #ddd;border-radius:8px;box-sizing:border-box;font-size:0.85rem;">
-          <div style="font-size:0.72rem;color:#888;margin-top:3px;">
-            L'agent se connectera avec son matricule + ce mot de passe sur /agent
+  const content = `
+    <div style="font-family: 'DM Sans', sans-serif; max-height:580px;height:580px;overflow:hidden;display:flex;flex-direction:column;border-radius:12px;">
+      <div style="padding:12px 14px;border-bottom:1px solid #eee;display:flex;flex-direction:column;align-items:center;gap:8px;">
+        <div style="width:100%;display:flex;justify-content:space-between;align-items:center;">
+          <div style="font-size:16px;font-weight:600;color:#0f5132;">Modifier un agent</div>
+          <div style="color:#888;font-size:13px;">${matriculeDisplay}</div>
+        </div>
+        <div id="modal-page-indicators" style="display:flex;gap:8px;align-items:center;justify-content:center;">
+          <span data-idx="0" style="font-size:14px;color:#0f5132;">●</span>
+          <span data-idx="1" style="font-size:14px;color:#999;">○</span>
+          <span data-idx="2" style="font-size:14px;color:#999;">○</span>
+        </div>
+      </div>
+
+      <div style="position:relative;flex:1;overflow:hidden;">
+        <button id="btn-slide-prev" type="button" style="position:absolute;left:8px;top:50%;transform:translateY(-50%);z-index:5;border:1px solid #0f5132;background:transparent;color:#0f5132;border-radius:999px;width:40px;height:40px;display:flex;align-items:center;justify-content:center;cursor:pointer;">‹</button>
+        <button id="btn-slide-next" type="button" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);z-index:5;border:1px solid #0f5132;background:transparent;color:#0f5132;border-radius:999px;width:40px;height:40px;display:flex;align-items:center;justify-content:center;cursor:pointer;">›</button>
+
+        <div id="modal-slides" style="height:100%;display:flex;transition:transform 0.35s ease-in-out;">
+          <!-- Page 1: Identité -->
+          <div id="slide-0" style="min-width:100%;padding:18px;box-sizing:border-box;">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+              <div>
+                <label style="font-size:13px;">Nom</label>
+                <input id="fld-nom" value="${agent?.nom || ""}" ${disabledAttr} style="width:100%; padding:10px; border-radius:12px; border:1.5px solid #ddd;" />
+              </div>
+              <div>
+                <label style="font-size:13px;">Prénom</label>
+                <input id="fld-prenom" value="${agent?.prenom || ""}" ${disabledAttr} style="width:100%; padding:10px; border-radius:12px; border:1.5px solid #ddd;" />
+              </div>
+            </div>
+            <div style="margin-top:12px;">
+              <label style="font-size:13px;">Téléphone</label>
+              <input id="fld-telephone" value="${agent?.telephone || ""}" ${disabledAttr} style="width:100%; padding:10px; border-radius:12px; border:1.5px solid #ddd;" />
+            </div>
+            <div style="margin-top:12px;">
+              <label style="font-size:13px;">Site / Agence</label>
+              <select id="fld-site_id" ${disabledAttr} style="width:100%; padding:10px; border-radius:12px; border:1.5px solid #ddd;">${siteOptions}</select>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px;">
+              <div>
+                <label style="font-size:13px;">Type de contrat</label>
+                <select id="fld-type_contrat" ${disabledAttr} style="width:100%; padding:10px; border-radius:12px; border:1.5px solid #ddd;">
+                  <option value="CDI" ${agent?.type_contrat === "CDI" ? "selected" : ""}>CDI</option>
+                  <option value="CDD" ${agent?.type_contrat === "CDD" ? "selected" : ""}>CDD</option>
+                  <option value="stage" ${agent?.type_contrat === "stage" ? "selected" : ""}>Stage</option>
+                  <option value="prestataire" ${agent?.type_contrat === "prestataire" ? "selected" : ""}>Prestataire</option>
+                </select>
+              </div>
+              <div>
+                <label style="font-size:13px;">Statut</label>
+                <select id="fld-statut" ${disabledAttr} style="width:100%; padding:10px; border-radius:12px; border:1.5px solid #ddd;">
+                  <option value="actif" ${!agent || agent.statut === "actif" ? "selected" : ""}>Actif</option>
+                  <option value="inactif" ${agent?.statut === "inactif" ? "selected" : ""}>Inactif</option>
+                  <option value="suspendu" ${agent?.statut === "suspendu" ? "selected" : ""}>Suspendu</option>
+                </select>
+              </div>
+            </div>
+            <div style="margin-top:12px;">
+              <label style="font-size:13px;">Poste</label>
+              <input id="fld-poste" value="${agent?.poste || ""}" ${disabledAttr} style="width:100%; padding:10px; border-radius:12px; border:1.5px solid #ddd;" />
+            </div>
+          </div>
+
+          <!-- Page 2: Photo & Portail -->
+          <div id="slide-1" style="min-width:100%;padding:18px;box-sizing:border-box;text-align:center;">
+            ${photoHtml}
+            <div style="text-align:center;margin-top:8px;">
+              <input id="agent-photo-input" type="file" accept="image/*" ${disabledAttr} style="display:block;margin:6px auto;" />
+            </div>
+
+            ${
+              showTotpSection
+                ? `
+            <div style="background:#f7fff7;border-radius:10px;padding:12px;margin-top:14px;text-align:left;">
+              <div style="font-size:0.9rem;font-weight:600;color:#0f5132;margin-bottom:8px;">Portail Agent</div>
+              <div style="margin-bottom:8px;">
+                <label style="font-size:13px;">Mot de passe portail</label>
+                <input id="agent-portal-pwd" type="password" placeholder="Définir ou changer le mot de passe" ${disabledAttr} style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;" />
+              </div>
+              <div style="display:flex;gap:8px;align-items:center;">
+                <span id="totp-indicator" style="font-size:13px;color:${agent.totp_enabled ? "#2e7d32" : "#888"};">${agent.totp_enabled ? "🔄 QR Dynamique activé" : "⚠️ QR Statique"}</span>
+                ${!agent.totp_enabled ? `<button id="btn-activer-totp" type="button" style="padding:6px 12px;background:#0f5132;color:white;border:none;border-radius:8px;cursor:pointer;">Activer QR Dynamique</button>` : ""}
+              </div>
+            </div>
+            `
+                : ""
+            }
+          </div>
+
+          <!-- Page 3: QR -->
+          <div id="slide-2" style="min-width:100%;padding:18px;box-sizing:border-box;text-align:center;">
+            <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;">
+              <div id="qr-container-large" style="width:240px;height:240px;background:white;display:flex;align-items:center;justify-content:center;border-radius:12px;margin:8px auto;">
+                <img id="agent-qr-img" alt="QR" style="max-width:100%;max-height:100%;" />
+              </div>
+              <div id="modal-agent-matricule" style="margin-top:12px;color:#666;">${matriculeDisplay}</div>
+              <button id="btn-download-qr" type="button" style="margin-top:12px;padding:8px 14px;border-radius:8px;border:1px solid #0f5132;background:transparent;color:#0f5132;">Télécharger le QR</button>
+            </div>
           </div>
         </div>
-
-        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-          <span style="font-size:0.78rem;color:${agent.totp_enabled ? "#2e7d32" : "#888"};">
-            ${agent.totp_enabled ? "🔄 QR Dynamique activé" : "⚠️ QR Statique"}
-          </span>
-          ${
-            !agent.totp_enabled
-              ? `
-            <button id="btn-activer-totp" type="button"
-              style="padding:5px 12px;background:#2e7d32;color:white;border:none;border-radius:6px;font-size:0.75rem;cursor:pointer;">
-              Activer QR Dynamique
-            </button>
-          `
-              : ""
-          }
-        </div>
       </div>
-      `
-          : ""
-      }
-      ${
-        agent && (agent.matricule || agent.numero_employe)
-          ? `<div style="margin-top:6px;">
-              <div style="font-size:13px; margin-bottom:4px;">QR Code</div>
-              <img id="agent-qr-img" alt="QR" />
-            </div>`
-          : ""
-      }
-    </form>
+    </div>
   `;
 
   const title =
@@ -274,57 +269,146 @@ function openAgentModal(mode, agent, sites) {
         ? "Modifier un agent"
         : "Détail agent";
 
+  // Show modal and wire interactions via onReady / onConfirm
   showModal({
     title,
     content,
     confirmText: isView ? "Fermer" : "Enregistrer",
     cancelText: "Annuler",
+    onReady: (close) => {
+      let current = 0;
+      const slides = document.getElementById("modal-slides");
+      const prev = document.getElementById("btn-slide-prev");
+      const next = document.getElementById("btn-slide-next");
+      const indicators = document.getElementById("modal-page-indicators");
+
+      function update() {
+        if (!slides) return;
+        slides.style.transform = `translateX(-${current * 100}%)`;
+        Array.from(indicators.querySelectorAll("span")).forEach((s, i) => {
+          s.style.color = i === current ? "#0f5132" : "#999";
+          s.textContent = i === current ? "●" : "○";
+        });
+      }
+
+      prev.addEventListener("click", () => {
+        current = Math.max(0, current - 1);
+        update();
+      });
+      next.addEventListener("click", () => {
+        current = Math.min(2, current + 1);
+        update();
+      });
+
+      // File preview
+      const fileIn = document.getElementById("agent-photo-input");
+      const preview = document.getElementById("agent-photo-preview");
+      if (fileIn) {
+        fileIn.addEventListener("change", (e) => {
+          const f = e.target.files[0];
+          if (!f) return;
+          const r = new FileReader();
+          r.onload = () => {
+            if (preview)
+              preview.outerHTML = `<img id="agent-photo-preview" src="${r.result}" style="width:160px;height:160px;border-radius:80px;object-fit:cover;display:block;margin:12px auto;" />`;
+          };
+          r.readAsDataURL(f);
+        });
+      }
+
+      // TOTP activation
+      const btnTotp = document.getElementById("btn-activer-totp");
+      if (btnTotp) {
+        btnTotp.addEventListener("click", async () => {
+          try {
+            await post(`/api/agents/${agent._id}/totp/activate`, {});
+            showToast("QR dynamique activé.", "success");
+            close();
+            const root =
+              document.getElementById("app").querySelector("main") ||
+              document.getElementById("app");
+            renderAgents(
+              root,
+              JSON.parse(localStorage.getItem("pamecas_user")),
+            );
+          } catch (err) {
+            showToast("Erreur activation TOTP.", "error");
+          }
+        });
+      }
+
+      // Load QR image if agent exists
+      if (agent && agent._id) {
+        const qrImg = document.getElementById("agent-qr-img");
+        if (qrImg) {
+          get(`/api/agents/${agent._id}/qr`)
+            .then((res) => {
+              qrImg.src = `data:image/png;base64,${res.qr_base64}`;
+            })
+            .catch(() => {});
+        }
+      }
+
+      // Download QR
+      const btnDownload = document.getElementById("btn-download-qr");
+      if (btnDownload) {
+        btnDownload.addEventListener("click", () => {
+          const qr = document.getElementById("agent-qr-img");
+          if (!qr || !qr.src) return showToast("QR non disponible", "error");
+          const a = document.createElement("a");
+          a.href = qr.src;
+          a.download = `${matriculeDisplay || "qr"}.png`;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+        });
+      }
+
+      // Initialize
+      update();
+    },
     onConfirm: async (close) => {
       if (isView) {
         close();
         return;
       }
 
-      const form = document.getElementById("agent-form");
-      const formData = new FormData(form);
       const payload = {
-        nom: formData.get("nom"),
-        prenom: formData.get("prenom"),
-        telephone: formData.get("telephone"),
-        site_id: formData.get("site_id"),
-        type_contrat: formData.get("type_contrat"),
-        statut: formData.get("statut"),
-        poste: formData.get("poste"),
+        nom: document.getElementById("fld-nom")?.value || "",
+        prenom: document.getElementById("fld-prenom")?.value || "",
+        telephone: document.getElementById("fld-telephone")?.value || "",
+        site_id: document.getElementById("fld-site_id")?.value || "",
+        type_contrat: document.getElementById("fld-type_contrat")?.value || "",
+        statut: document.getElementById("fld-statut")?.value || "",
+        poste: document.getElementById("fld-poste")?.value || "",
       };
 
-      // Portail agent
       const portalPwd = document.getElementById("agent-portal-pwd")?.value;
-      if (portalPwd) {
-        payload.portal_password = portalPwd;
-      }
+      if (portalPwd) payload.portal_password = portalPwd;
 
-      const file = form.querySelector('input[name="photo"]').files[0];
+      const fileInput = document.getElementById("agent-photo-input");
+      const file = fileInput?.files && fileInput.files[0];
       if (file) {
         const reader = new FileReader();
         reader.onload = async () => {
           payload.photo = reader.result;
-          await save(payload);
+          await save(payload, close);
         };
         reader.readAsDataURL(file);
       } else {
-        await save(payload);
+        await save(payload, close);
       }
 
-      async function save(data) {
+      async function save(data, closeModal) {
         try {
           if (mode === "create") {
             await post("/api/agents", data);
             showToast("Agent crée avec succés.", "success");
           } else if (mode === "edit") {
             await put(`/api/agents/${agent._id}`, data);
-            showToast("Agent mis á  jour avec succés.", "success");
+            showToast("Agent mis à jour avec succés.", "success");
           }
-          close();
+          closeModal();
           const root =
             document.getElementById("app").querySelector("main") ||
             document.getElementById("app");
@@ -338,38 +422,6 @@ function openAgentModal(mode, agent, sites) {
       }
     },
   });
-
-  // Event pour activer TOTP
-  const btnTotp = document.getElementById("btn-activer-totp");
-  if (btnTotp) {
-    btnTotp.addEventListener("click", async () => {
-      try {
-        await post(`/api/agents/${agent._id}/totp/activate`, {});
-        showToast("QR dynamique activé.", "success");
-        close(); // Fermer le modal
-        // Recharger la liste
-        const root =
-          document.getElementById("app").querySelector("main") ||
-          document.getElementById("app");
-        renderAgents(root, JSON.parse(localStorage.getItem("pamecas_user")));
-      } catch (err) {
-        showToast("Erreur activation TOTP.", "error");
-      }
-    });
-  }
-
-  if (agent && agent._id) {
-    setTimeout(() => {
-      const qrImg = document.getElementById("agent-qr-img");
-      if (qrImg) {
-        get(`/api/agents/${agent._id}/qr`)
-          .then((res) => {
-            qrImg.src = `data:image/png;base64,${res.qr_base64}`;
-          })
-          .catch(() => {});
-      }
-    }, 100);
-  }
 }
 
 async function openImportModal(root) {
