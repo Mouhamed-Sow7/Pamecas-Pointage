@@ -129,6 +129,22 @@ const agences = [
       weekend_actif: false,
     },
   },
+  {
+    code: "PAM-STL",
+    nom: "Agence Saint-Louis",
+    region: "Saint-Louis",
+    telephone: "77 777 78 52",
+    adresse: "Avenue Général de Gaulle, Saint-Louis",
+    coordonnees: {
+      latitude: 16.02409,
+      longitude: -16.494215,
+    },
+    config: {
+      heure_debut: "08:00",
+      heure_retard: "08:15",
+      weekend_actif: false,
+    },
+  },
 ];
 
 const agentsParAgence = {
@@ -604,6 +620,56 @@ const agentsParAgence = {
       poste: "Agent Securite",
     },
   ],
+  "PAM-STL": [
+    {
+      nom: "Diallo",
+      prenom: "Ibrahima",
+      type_contrat: "CDI",
+      poste: "Directeur Agence",
+    },
+    {
+      nom: "Ndiaye",
+      prenom: "Fatou",
+      type_contrat: "CDI",
+      poste: "Responsable Credit",
+    },
+    {
+      nom: "Ba",
+      prenom: "Moussa",
+      type_contrat: "CDD",
+      poste: "Caissier Principal",
+    },
+    {
+      nom: "Sow",
+      prenom: "Aminata",
+      type_contrat: "CDD",
+      poste: "Conseiller Clientele",
+    },
+    {
+      nom: "Fall",
+      prenom: "Cheikh",
+      type_contrat: "CDD",
+      poste: "Agent de Credit",
+    },
+    {
+      nom: "Gueye",
+      prenom: "Mariama",
+      type_contrat: "CDD",
+      poste: "Charge Recouvrement",
+    },
+    {
+      nom: "Mbaye",
+      prenom: "Serigne",
+      type_contrat: "CDD",
+      poste: "Agent Guichet",
+    },
+    {
+      nom: "Sarr",
+      prenom: "Rokhaya",
+      type_contrat: "stage",
+      poste: "Stagiaire",
+    },
+  ],
 };
 
 // Users par agence (admin local)
@@ -691,6 +757,20 @@ const usersAgences = [
     role: "pointeur",
     nom_complet: "Pointeur Bene Tally",
     agenceCode: "PAM-BENE",
+  },
+  {
+    username: "admin.stl",
+    password: "pamecas2024!",
+    role: "admin",
+    nom_complet: "Admin Agence Saint-Louis",
+    agenceCode: "PAM-STL",
+  },
+  {
+    username: "point.stl",
+    password: "point2024!",
+    role: "pointeur",
+    nom_complet: "Pointeur Saint-Louis",
+    agenceCode: "PAM-STL",
   },
 ];
 

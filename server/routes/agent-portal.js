@@ -126,38 +126,75 @@ router.post("/login", authenticateAgent, async (req, res) => {
 router.get("/stats", authenticateAgent, async (req, res) => {
   try {
     const agent = req.agent;
-
     const now = new Date();
     const year = now.getFullYear();
     const month = String(now.getMonth() + 1).padStart(2, "0");
     const prefixeMois = `${year}-${month}`;
 
+    // Point de départ : max(1er du mois, date création agent)
+    const debutMois = new Date(year, now.getMonth(), 1);
+    const agentCreatedAt = new Date(agent.createdAt || debutMois);
+    const debutCalcDate =
+      agentCreatedAt > debutMois ? agentCreatedAt : debutMois;
+
+    // Tous les pointages du mois
     const pointagesMois = await Pointage.find({
       agent_id: agent._id,
       date: { $regex: `^${prefixeMois}` },
-    }).sort({ date: -1 });
+    }).lean();
 
-    const presencesMois = pointagesMois.filter(
-      (p) => p.statut === "present",
-    ).length;
-    const retardsMois = pointagesMois.filter(
-      (p) => p.statut === "retard",
-    ).length;
+    // Index par date pour lookup rapide
+    const pointagesParDate = {};
+    for (const p of pointagesMois) {
+      pointagesParDate[p.date] = p;
+    }
 
-    let joursOuvres = 0;
-    const cursor = new Date(now.getFullYear(), now.getMonth(), 1);
-    const today = new Date();
-    today.setHours(23, 59, 59, 999);
-    while (cursor <= today) {
+    // Calculer tous les jours ouvrés depuis debutCalcDate jusqu'à aujourd'hui
+    let presencesMois = 0;
+    let absencesMois = 0;
+    let retardsMois = 0;
+    let partielsMois = 0;
+
+    const cursor = new Date(debutCalcDate);
+    cursor.setHours(0, 0, 0, 0);
+    const todayStr = now.toISOString().slice(0, 10);
+
+    while (cursor <= now) {
       const dow = cursor.getDay();
-      if (dow !== 0 && dow !== 6) joursOuvres++;
+      if (dow !== 0 && dow !== 6) {
+        // lundi-vendredi seulement
+        const dateStr = cursor.toISOString().slice(0, 10);
+        const p = pointagesParDate[dateStr];
+
+        if (!p) {
+          // Pas de pointage ce jour — absent seulement si jour passé
+          if (dateStr < todayStr) absencesMois++;
+        } else if (
+          p.statut === "present" &&
+          p.heure_arrivee &&
+          p.heure_depart
+        ) {
+          presencesMois++;
+        } else if (p.statut === "retard" && p.heure_arrivee && p.heure_depart) {
+          retardsMois++;
+        } else if (
+          p.statut === "partiel" ||
+          (p.heure_arrivee && !p.heure_depart)
+        ) {
+          // Arrivée sans départ = partiel = absence justifiable
+          if (dateStr < todayStr) {
+            partielsMois++;
+            absencesMois++;
+          }
+        } else if (p.statut === "absent") {
+          absencesMois++;
+        }
+        // conge et justifie ne comptent ni présence ni absence
+      }
       cursor.setDate(cursor.getDate() + 1);
     }
-    const absencesMois =
-      presencesMois === 0 && retardsMois === 0
-        ? 0
-        : Math.max(0, joursOuvres - presencesMois - retardsMois);
 
+    // Congés
     const congesApprouves = await Conge.find({
       agent_id: agent._id,
       statut: "approuve",
@@ -178,6 +215,7 @@ router.get("/stats", authenticateAgent, async (req, res) => {
     const joursAcquis = agent.jours_conge_annuels || 30;
     const soldeConge = Math.max(0, joursAcquis - joursPris);
 
+    // 20 derniers pointages pour historique
     const pointagesRecents = await Pointage.find({ agent_id: agent._id })
       .sort({ date: -1 })
       .limit(20)
@@ -187,6 +225,7 @@ router.get("/stats", authenticateAgent, async (req, res) => {
       presencesMois,
       absencesMois,
       retardsMois,
+      partielsMois,
       soldeConge,
       joursAcquis,
       joursPris,

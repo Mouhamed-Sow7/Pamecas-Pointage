@@ -203,6 +203,7 @@ async function enregistrerPointageKiosque(token, agentId, siteId, type) {
     heure_depart:
       type === "depart" ? now.toTimeString().slice(0, 5) : undefined,
     methode: "qr_code",
+    coordonnees_agent: await obtenirPosition(),
     type,
     sync_status: "local",
   };
@@ -226,6 +227,48 @@ async function enregistrerPointageKiosque(token, agentId, siteId, type) {
   const data = await res.json();
   if (!res.ok) throw new Error(data.message || "Erreur pointage");
   return data;
+}
+
+// Récupérer position GPS actuelle
+function obtenirPosition() {
+  return new Promise((resolve) => {
+    if (!navigator.geolocation) return resolve(null);
+    navigator.geolocation.getCurrentPosition(
+      (pos) =>
+        resolve({
+          latitude: pos.coords.latitude,
+          longitude: pos.coords.longitude,
+          precision: pos.coords.accuracy,
+        }),
+      () => resolve(null),
+      { timeout: 5000, maximumAge: 30000, enableHighAccuracy: true },
+    );
+  });
+}
+
+// Enregistrer coordonnées du site au premier lancement kiosque
+async function enregistrerPositionSite(siteId, token) {
+  const alreadySet = localStorage.getItem(`site_coords_${siteId}`);
+  if (alreadySet) return;
+  const pos = await obtenirPosition();
+  if (!pos) return;
+  try {
+    const res = await fetch(`/api/sites/${siteId}/coordonnees`, {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        latitude: pos.latitude,
+        longitude: pos.longitude,
+      }),
+    });
+    if (res.ok) {
+      localStorage.setItem(`site_coords_${siteId}`, "1");
+      console.log("[Kiosque] Position site enregistrée:", pos);
+    }
+  } catch (e) {}
 }
 
 async function rechercherAgentParQR(qrData, token) {
@@ -419,6 +462,7 @@ export async function renderKiosque(root) {
 
   if (navigator.onLine && siteId) {
     chargerAgentsEnCache(siteId, token);
+    enregistrerPositionSite(siteId, token);
   }
 
   root.innerHTML = `
@@ -729,6 +773,19 @@ export async function renderKiosque(root) {
         resumeScanner(root, video, canvas, token, siteId, onQRDetected),
       );
     } catch (err) {
+      if (err.message?.includes("Hors zone")) {
+        playBeep("erreur");
+        setEtat(root, "erreur", {
+          message: err.message,
+          icon: "fa-location-dot",
+          color: "#e65100",
+        });
+        startCountdown(root, 3, () =>
+          resumeScanner(root, video, canvas, token, siteId, onQRDetected),
+        );
+        return;
+      }
+
       if (err.message && err.message.includes("Scan trop rapide")) {
         playBeep("cooldown");
         setEtat(root, "erreur", {
