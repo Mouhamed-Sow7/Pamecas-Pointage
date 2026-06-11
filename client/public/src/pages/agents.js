@@ -226,7 +226,9 @@ function openAgentModal(mode, agent, sites) {
                 <input id="agent-photo-input" type="file" accept="image/*" ${disabledAttr} style="display:block;margin:6px auto;" />
               </div>
 
-              ${showTotpSection ? `
+              ${
+                showTotpSection
+                  ? `
               <div style="background:#f7fff7;border-radius:10px;padding:12px;margin-top:12px;width:100%;box-sizing:border-box;">
                 <div style="font-size:0.9rem;font-weight:600;color:#0f5132;margin-bottom:8px;">Portail Agent</div>
                 <div style="margin-bottom:8px;">
@@ -234,11 +236,13 @@ function openAgentModal(mode, agent, sites) {
                   <input id="agent-portal-pwd" type="password" placeholder="Définir ou changer le mot de passe" ${disabledAttr} style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;" />
                 </div>
                 <div style="display:flex;gap:8px;align-items:center;">
-                  <span id="totp-indicator" style="font-size:13px;color:${agent.totp_enabled ? '#2e7d32' : '#888'};">${agent.totp_enabled ? '🔄 QR Dynamique activé' : '⚠️ QR Statique'}</span>
-                  ${!agent.totp_enabled ? `<button id="btn-activer-totp" type="button" style="padding:6px 12px;background:#0f5132;color:white;border:none;border-radius:8px;cursor:pointer;">Activer QR Dynamique</button>` : ''}
+                  <span id="totp-indicator" style="font-size:13px;color:${agent.totp_enabled ? "#2e7d32" : "#888"};">${agent.totp_enabled ? "🔄 QR Dynamique activé" : "⚠️ QR Statique"}</span>
+                  ${!agent.totp_enabled ? `<button id="btn-activer-totp" type="button" style="padding:6px 12px;background:#0f5132;color:white;border:none;border-radius:8px;cursor:pointer;">Activer QR Dynamique</button>` : ""}
                 </div>
               </div>
-              ` : ''}
+              `
+                  : ""
+              }
             </div>
 
             
@@ -254,91 +258,6 @@ function openAgentModal(mode, agent, sites) {
       </div>
     </div>
     `;
-      // Page 1: Identité
-          <div id="slide-0" style="min-width:100%;padding:18px;box-sizing:border-box;">
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-              <div>
-                <label style="font-size:13px;">Nom</label>
-                <input id="fld-nom" value="${agent?.nom || ""}" ${disabledAttr} style="width:100%; padding:10px; border-radius:12px; border:1.5px solid #ddd;" />
-              </div>
-              <div>
-                <label style="font-size:13px;">Prénom</label>
-                <input id="fld-prenom" value="${agent?.prenom || ""}" ${disabledAttr} style="width:100%; padding:10px; border-radius:12px; border:1.5px solid #ddd;" />
-              </div>
-            </div>
-            <div style="margin-top:12px;">
-              <label style="font-size:13px;">Téléphone</label>
-              <input id="fld-telephone" value="${agent?.telephone || ""}" ${disabledAttr} style="width:100%; padding:10px; border-radius:12px; border:1.5px solid #ddd;" />
-            </div>
-            <div style="margin-top:12px;">
-              <label style="font-size:13px;">Site / Agence</label>
-              <select id="fld-site_id" ${disabledAttr} style="width:100%; padding:10px; border-radius:12px; border:1.5px solid #ddd;">${siteOptions}</select>
-            </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px;">
-              <div>
-                <label style="font-size:13px;">Type de contrat</label>
-                <select id="fld-type_contrat" ${disabledAttr} style="width:100%; padding:10px; border-radius:12px; border:1.5px solid #ddd;">
-                  <option value="CDI" ${agent?.type_contrat === "CDI" ? "selected" : ""}>CDI</option>
-                  <option value="CDD" ${agent?.type_contrat === "CDD" ? "selected" : ""}>CDD</option>
-                  <option value="stage" ${agent?.type_contrat === "stage" ? "selected" : ""}>Stage</option>
-                  <option value="prestataire" ${agent?.type_contrat === "prestataire" ? "selected" : ""}>Prestataire</option>
-                </select>
-              </div>
-              <div>
-                <label style="font-size:13px;">Statut</label>
-                <select id="fld-statut" ${disabledAttr} style="width:100%; padding:10px; border-radius:12px; border:1.5px solid #ddd;">
-                  <option value="actif" ${!agent || agent.statut === "actif" ? "selected" : ""}>Actif</option>
-                  <option value="inactif" ${agent?.statut === "inactif" ? "selected" : ""}>Inactif</option>
-                  <option value="suspendu" ${agent?.statut === "suspendu" ? "selected" : ""}>Suspendu</option>
-                </select>
-              </div>
-            </div>
-            <div style="margin-top:12px;">
-              <label style="font-size:13px;">Poste</label>
-              <input id="fld-poste" value="${agent?.poste || ""}" ${disabledAttr} style="width:100%; padding:10px; border-radius:12px; border:1.5px solid #ddd;" />
-            </div>
-          </div>
-
-          // Page 2: Photo & Portail
-          <div id="slide-1" style="min-width:100%;padding:18px;box-sizing:border-box;text-align:center;">
-            ${photoHtml}
-            <div style="text-align:center;margin-top:8px;">
-              <input id="agent-photo-input" type="file" accept="image/*" ${disabledAttr} style="display:block;margin:6px auto;" />
-            </div>
-
-            ${
-              showTotpSection
-                ? `
-            <div style="background:#f7fff7;border-radius:10px;padding:12px;margin-top:14px;text-align:left;">
-              <div style="font-size:0.9rem;font-weight:600;color:#0f5132;margin-bottom:8px;">Portail Agent</div>
-              <div style="margin-bottom:8px;">
-                <label style="font-size:13px;">Mot de passe portail</label>
-                <input id="agent-portal-pwd" type="password" placeholder="Définir ou changer le mot de passe" ${disabledAttr} style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;" />
-              </div>
-              <div style="display:flex;gap:8px;align-items:center;">
-                <span id="totp-indicator" style="font-size:13px;color:${agent.totp_enabled ? "#2e7d32" : "#888"};">${agent.totp_enabled ? "🔄 QR Dynamique activé" : "⚠️ QR Statique"}</span>
-                ${!agent.totp_enabled ? `<button id="btn-activer-totp" type="button" style="padding:6px 12px;background:#0f5132;color:white;border:none;border-radius:8px;cursor:pointer;">Activer QR Dynamique</button>` : ""}
-              </div>
-            </div>
-            `
-                : ""
-            }
-          </div>
-
-          // Page 3: QR
-          <div id="slide-2" style="min-width:100%;padding:18px;box-sizing:border-box;text-align:center;">
-            <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;">
-              <div id="qr-container-large" style="width:160px;height:160px;background:white;display:flex;align-items:center;justify-content:center;border-radius:12px;margin:8px auto;">
-                <img id="agent-qr-img" alt="QR" style="max-width:100%;max-height:100%;" />
-              </div>
-              <div id="modal-agent-matricule" style="margin-top:12px;color:#666;">${matriculeDisplay}</div>
-              <button id="btn-download-qr" type="button" style="margin-top:12px;padding:8px 14px;border-radius:8px;border:1px solid #0f5132;background:transparent;color:#0f5132;">Télécharger le QR</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  `;
 
   const title =
     mode === "create"
