@@ -128,19 +128,13 @@ router.get("/stats", authenticateAgent, async (req, res) => {
     const agent = req.agent;
 
     const now = new Date();
-    const debutMois = new Date(now.getFullYear(), now.getMonth(), 1);
-    const finMois = new Date(
-      now.getFullYear(),
-      now.getMonth() + 1,
-      0,
-      23,
-      59,
-      59,
-    );
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const prefixeMois = `${year}-${month}`;
 
     const pointagesMois = await Pointage.find({
       agent_id: agent._id,
-      date: { $gte: debutMois, $lte: finMois },
+      date: { $regex: `^${prefixeMois}` },
     }).sort({ date: -1 });
 
     const presencesMois = pointagesMois.filter(
@@ -151,10 +145,10 @@ router.get("/stats", authenticateAgent, async (req, res) => {
     ).length;
 
     let joursOuvres = 0;
-    const cursor = new Date(debutMois);
+    const cursor = new Date(now.getFullYear(), now.getMonth(), 1);
     const today = new Date();
     today.setHours(23, 59, 59, 999);
-    while (cursor <= today && cursor <= finMois) {
+    while (cursor <= today) {
       const dow = cursor.getDay();
       if (dow !== 0 && dow !== 6) joursOuvres++;
       cursor.setDate(cursor.getDate() + 1);
