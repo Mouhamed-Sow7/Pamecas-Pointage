@@ -1,28 +1,32 @@
-import { get } from '../api.js';
-import { showToast } from '../components/toast.js';
+import { get } from "../api.js";
+import { showToast } from "../components/toast.js";
 
 function formatDateFr(date) {
-  return date.toLocaleDateString('fr-FR', {
-    weekday: 'long', day: '2-digit', month: 'long', year: 'numeric'
+  return date.toLocaleDateString("fr-FR", {
+    weekday: "long",
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
   });
 }
 
 export function renderDashboard(root, user) {
-  const roleLabel = {
-    superadmin: 'Toutes les agences',
-    directeur_regional: 'Vos agences',
-    admin: user?.site_nom || 'Votre agence',
-    pointeur: user?.site_nom || 'Votre agence',
-    superviseur: user?.site_nom || 'Votre agence'
-  }[user?.role] || '';
+  const roleLabel =
+    {
+      superadmin: "Toutes les agences",
+      directeur_regional: "Vos agences",
+      admin: user?.site_nom || "Votre agence",
+      pointeur: user?.site_nom || "Votre agence",
+      superviseur: user?.site_nom || "Votre agence",
+    }[user?.role] || "";
 
   root.innerHTML = `
     <div>
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
         <div>
-          <h1 style="font-size:1.3rem;font-weight:700;margin-bottom:4px;">Bonjour ${user?.username || ''}</h1>
+          <h1 style="font-size:1.3rem;font-weight:700;margin-bottom:4px;">Bonjour ${user?.username || ""}</h1>
           <div style="font-size:0.85rem;color:#607d8b;">${formatDateFr(new Date())}</div>
-          ${roleLabel ? `<div style="font-size:0.78rem;color:#aaa;margin-top:2px;"><i class="fa-solid fa-building" style="margin-right:4px;"></i>${roleLabel}</div>` : ''}
+          ${roleLabel ? `<div style="font-size:0.78rem;color:#aaa;margin-top:2px;"><i class="fa-solid fa-building" style="margin-right:4px;"></i>${roleLabel}</div>` : ""}
         </div>
         <div id="dashboard-sync-status" class="badge badge-synced" style="font-size:0.75rem;">
           <i class="fa-solid fa-circle-check"></i> A jour
@@ -32,7 +36,7 @@ export function renderDashboard(root, user) {
       <!-- KPI skeleton -->
       <div id="dashboard-skeleton">
         <div class="kpi-grid" style="margin-bottom:16px;">
-          ${[1,2,3,4].map(() => `<div class="kpi-card" style="opacity:0.3;min-height:80px;"></div>`).join('')}
+          ${[1, 2, 3, 4].map(() => `<div class="kpi-card" style="opacity:0.3;min-height:80px;"></div>`).join("")}
         </div>
         <div class="card" style="opacity:0.3;min-height:120px;"></div>
       </div>
@@ -87,33 +91,34 @@ export function renderDashboard(root, user) {
   `;
 
   async function loadData() {
-    const skeleton = root.querySelector('#dashboard-skeleton');
-    const content = root.querySelector('#dashboard-content');
-    const syncStatus = root.querySelector('#dashboard-sync-status');
+    if (!localStorage.getItem("pamecas_token")) return;
+    const skeleton = root.querySelector("#dashboard-skeleton");
+    const content = root.querySelector("#dashboard-content");
+    const syncStatus = root.querySelector("#dashboard-sync-status");
 
     try {
-      const data = await get('/api/rapports/dashboard-today');
+      const data = await get("/api/rapports/dashboard-today");
 
-      skeleton.style.display = 'none';
-      content.style.display = 'block';
+      skeleton.style.display = "none";
+      content.style.display = "block";
 
       // ─── Lire data.kpis (ce que le backend envoie vraiment) ───
       const kpis = data.kpis || {};
       const presents = kpis.presents ?? data.present ?? 0;
-      const absents  = kpis.absents  ?? data.absent  ?? 0;
-      const retards  = kpis.retards  ?? data.retard  ?? 0;
-      const taux     = kpis.taux     ?? data.taux    ?? 0;
+      const absents = kpis.absents ?? data.absent ?? 0;
+      const retards = kpis.retards ?? data.retard ?? 0;
+      const taux = kpis.taux ?? data.taux ?? 0;
 
-      root.querySelector('#kpi-present').textContent = presents;
-      root.querySelector('#kpi-absent').textContent  = absents;
-      root.querySelector('#kpi-retard').textContent  = retards;
-      root.querySelector('#kpi-taux').textContent    = `${taux}%`;
+      root.querySelector("#kpi-present").textContent = presents;
+      root.querySelector("#kpi-absent").textContent = absents;
+      root.querySelector("#kpi-retard").textContent = retards;
+      root.querySelector("#kpi-taux").textContent = `${taux}%`;
 
       // ─── Tableau par agence ───────────────────────────────────
       // Backend envoie par_site[].site (nom), frontend lisait sites[].nom
       const parSite = data.par_site || data.sites || [];
-      const body = root.querySelector('#table-sites-body');
-      body.innerHTML = '';
+      const body = root.querySelector("#table-sites-body");
+      body.innerHTML = "";
 
       if (parSite.length === 0) {
         body.innerHTML = `
@@ -122,15 +127,16 @@ export function renderDashboard(root, user) {
           </td></tr>
         `;
       } else {
-        parSite.forEach(s => {
-          const nom = s.site || s.nom || 'Agence inconnue';
+        parSite.forEach((s) => {
+          const nom = s.site || s.nom || "Agence inconnue";
           const tauxSite = s.taux ?? 0;
-          const tauxColor = tauxSite >= 80 ? '#2e7d32' : tauxSite >= 50 ? '#e65100' : '#c62828';
+          const tauxColor =
+            tauxSite >= 80 ? "#2e7d32" : tauxSite >= 50 ? "#e65100" : "#c62828";
 
-          const tr = document.createElement('tr');
-          tr.style.cssText = 'transition:background 0.15s;';
-          tr.onmouseenter = () => tr.style.background = '#fafff8';
-          tr.onmouseleave = () => tr.style.background = '';
+          const tr = document.createElement("tr");
+          tr.style.cssText = "transition:background 0.15s;";
+          tr.onmouseenter = () => (tr.style.background = "#fafff8");
+          tr.onmouseleave = () => (tr.style.background = "");
           tr.innerHTML = `
             <td style="padding:10px 14px;border-bottom:1px solid #f5f5f5;font-weight:500;">${nom}</td>
             <td style="padding:10px 14px;border-bottom:1px solid #f5f5f5;text-align:center;">
@@ -151,24 +157,27 @@ export function renderDashboard(root, user) {
       }
 
       // Date recap
-      const recapDate = root.querySelector('#recap-date');
-      if (recapDate) recapDate.textContent = new Date().toLocaleDateString('fr-FR');
+      const recapDate = root.querySelector("#recap-date");
+      if (recapDate)
+        recapDate.textContent = new Date().toLocaleDateString("fr-FR");
 
       // Statut sync
       if (!navigator.onLine) {
-        syncStatus.innerHTML = '<i class="fa-solid fa-wifi-slash"></i> Hors ligne';
-        syncStatus.className = 'badge badge-pending';
+        syncStatus.innerHTML =
+          '<i class="fa-solid fa-wifi-slash"></i> Hors ligne';
+        syncStatus.className = "badge badge-pending";
       } else {
-        syncStatus.innerHTML = '<i class="fa-solid fa-circle-check"></i> A jour';
-        syncStatus.className = 'badge badge-synced';
+        syncStatus.innerHTML =
+          '<i class="fa-solid fa-circle-check"></i> A jour';
+        syncStatus.className = "badge badge-synced";
       }
-
     } catch (err) {
-      skeleton.style.display = 'none';
-      content.style.display = 'block';
-      showToast('Impossible de charger le dashboard.', 'warning');
-      syncStatus.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Erreur';
-      syncStatus.className = 'badge badge-pending';
+      skeleton.style.display = "none";
+      content.style.display = "block";
+      showToast("Impossible de charger le dashboard.", "warning");
+      syncStatus.innerHTML =
+        '<i class="fa-solid fa-triangle-exclamation"></i> Erreur';
+      syncStatus.className = "badge badge-pending";
     }
   }
 
