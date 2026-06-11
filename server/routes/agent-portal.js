@@ -29,10 +29,9 @@ const authenticateAgent = async (req, res, next) => {
           .json({ message: "Matricule et mot de passe requis" });
       }
 
-      const agent = await Agent.findOne({ matricule }).populate(
-        "site_id",
-        "nom code",
-      );
+      const agent = await Agent.findOne({
+        matricule: matricule.toUpperCase(),
+      }).populate("site_id", "nom code");
       if (!agent || !agent.password_hash) {
         return res
           .status(401)
@@ -125,30 +124,75 @@ router.post("/login", authenticateAgent, async (req, res) => {
 router.get("/stats", authenticateAgent, async (req, res) => {
   try {
     const agent = req.agent;
-    const debutMois = new Date();
-    debutMois.setDate(1);
-    debutMois.setHours(0, 0, 0, 0);
+
+    const now = new Date();
+    const debutMois = new Date(now.getFullYear(), now.getMonth(), 1);
+    const finMois = new Date(
+      now.getFullYear(),
+      now.getMonth() + 1,
+      0,
+      23,
+      59,
+      59,
+    );
 
     const pointagesMois = await Pointage.find({
       agent_id: agent._id,
-      date: { $gte: debutMois },
+      date: { $gte: debutMois, $lte: finMois },
     }).sort({ date: -1 });
 
-    const totalPointages = pointagesMois.length;
-    const pointagesAujourdHui = pointagesMois.filter(
-      (p) => p.date.toDateString() === new Date().toDateString(),
+    const presencesMois = pointagesMois.filter(
+      (p) => p.statut === "present",
+    ).length;
+    const retardsMois = pointagesMois.filter(
+      (p) => p.statut === "retard",
     ).length;
 
-    const congesEnAttente = await Conge.countDocuments({
+    let joursOuvres = 0;
+    const cursor = new Date(debutMois);
+    const today = new Date();
+    today.setHours(23, 59, 59, 999);
+    while (cursor <= today && cursor <= finMois) {
+      const dow = cursor.getDay();
+      if (dow !== 0 && dow !== 6) joursOuvres++;
+      cursor.setDate(cursor.getDate() + 1);
+    }
+    const absencesMois = Math.max(0, joursOuvres - presencesMois - retardsMois);
+
+    const congesApprouves = await Conge.find({
+      agent_id: agent._id,
+      statut: "approuve",
+    });
+    const congesEnAttente = await Conge.find({
       agent_id: agent._id,
       statut: "en_attente",
     });
 
+    const joursPris = congesApprouves.reduce(
+      (s, c) => s + (c.nb_jours || 0),
+      0,
+    );
+    const joursPending = congesEnAttente.reduce(
+      (s, c) => s + (c.nb_jours || 0),
+      0,
+    );
+    const joursAcquis = agent.jours_conge_annuels || 30;
+    const soldeConge = Math.max(0, joursAcquis - joursPris);
+
+    const pointagesRecents = await Pointage.find({ agent_id: agent._id })
+      .sort({ date: -1 })
+      .limit(20)
+      .lean();
+
     res.json({
-      totalPointages,
-      pointagesAujourdHui,
-      congesEnAttente,
-      dernierPointage: pointagesMois[0] || null,
+      presencesMois,
+      absencesMois,
+      retardsMois,
+      soldeConge,
+      joursAcquis,
+      joursPris,
+      joursPending,
+      pointagesRecents,
     });
   } catch (error) {
     console.error("Erreur stats:", error);
