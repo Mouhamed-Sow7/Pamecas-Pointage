@@ -718,89 +718,6 @@ function genererStatut(heureArrivee) {
   return "absent";
 }
 
-async function genererPointagesSemaine(agents, siteId, superviseurId) {
-  const pointages = [];
-  // 7 derniers jours (lundi-vendredi seulement)
-  for (let offset = -7; offset <= -1; offset++) {
-    const d = new Date();
-    d.setDate(d.getDate() + offset);
-    const jourSemaine = d.getDay(); // 0=dim, 6=sam
-    if (jourSemaine === 0 || jourSemaine === 6) continue; // skip weekend
-
-    const dateString = d.toISOString().slice(0, 10);
-
-    for (const agent of agents) {
-      // 85% de chance de presence, 10% absence, 5% retard extreme
-      const roll = Math.random();
-      let heureArrivee, heureDepart, statut;
-
-      if (roll < 0.75) {
-        // Present a l'heure
-        heureArrivee = heure(7, rand(55, 60) % 60 === 0 ? 8 : rand(55, 59));
-        heureArrivee = heure(7, rand(50, 59));
-        if (
-          parseInt(heureArrivee.split(":")[0]) === 7 &&
-          parseInt(heureArrivee.split(":")[1]) >= 50
-        ) {
-          heureArrivee = heure(8, rand(0, 10));
-        }
-        statut = "present";
-        heureDepart = heure(17, rand(0, 30));
-      } else if (roll < 0.88) {
-        // Retard leger
-        heureArrivee = heure(8, rand(16, 45));
-        statut = "retard";
-        heureDepart = heure(17, rand(0, 30));
-      } else if (roll < 0.95) {
-        // Absent
-        statut = "absent";
-        heureArrivee = null;
-        heureDepart = null;
-      } else {
-        // Present mais parti tot
-        heureArrivee = heure(8, rand(0, 10));
-        statut = "present";
-        heureDepart = heure(15, rand(0, 30));
-      }
-
-      let duree = null;
-      if (heureArrivee && heureDepart) {
-        const [h1, m1] = heureArrivee.split(":").map(Number);
-        const [h2, m2] = heureDepart.split(":").map(Number);
-        duree = h2 * 60 + m2 - (h1 * 60 + m1);
-      }
-
-      try {
-        await Pointage.findOneAndUpdate(
-          { agent_id: agent._id, site_id: siteId, date: dateString },
-          {
-            agent_id: agent._id,
-            site_id: siteId,
-            date: dateString,
-            heure_arrivee: heureArrivee,
-            heure_depart: heureDepart,
-            duree_minutes: duree,
-            statut,
-            methode: Math.random() > 0.4 ? "qr_code" : "manuel",
-            superviseur_id: superviseurId,
-            note:
-              statut === "absent" && Math.random() > 0.5
-                ? "Absence justifiee"
-                : "",
-            sync_status: "synced",
-            synced_at: new Date(),
-          },
-          { upsert: true, new: true },
-        );
-        pointages.push(`${dateString} - ${agent.nom} ${statut}`);
-      } catch (e) {
-        // Ignore duplicates
-      }
-    }
-  }
-  return pointages;
-}
-
 // ─── Seed principal ──────────────────────────────────────────────
 async function seed() {
   try {
@@ -893,7 +810,6 @@ async function seed() {
 
     // 4. Agents + pointages de demo
     let totalAgents = 0;
-    let totalPointages = 0;
 
     for (const [agenceCode, agentsData] of Object.entries(agentsParAgence)) {
       const site = sitesMap[agenceCode];
@@ -923,16 +839,7 @@ async function seed() {
         }
       }
 
-      // Pointages sur 7 jours
-      const pointages = await genererPointagesSemaine(
-        agentsInseres,
-        site._id,
-        superadmin._id,
-      );
-      totalPointages += pointages.length;
-      console.log(
-        `${agenceCode}: ${agentsInseres.length} agents, ${pointages.length} pointages`,
-      );
+      console.log(`${agenceCode}: ${agentsInseres.length} agents`);
 
       // Activer comptes portail (mot de passe = derniers 4 chiffres matricule)
       const bcrypt = require("bcryptjs");
@@ -955,7 +862,6 @@ async function seed() {
     console.log("=== SEED TERMINE ===");
     console.log(`Agences     : ${agences.length}`);
     console.log(`Agents      : ${totalAgents} nouveaux`);
-    console.log(`Pointages   : ${totalPointages} sur 7 jours`);
     console.log("");
     console.log("=== COMPTES DE CONNEXION ===");
     console.log("Superadmin  : admin / pamecas2024!");
