@@ -158,7 +158,7 @@ function openAgentModal(mode, agent, sites) {
     : `<div id="agent-photo-preview" style="width:80px;height:80px;border-radius:40px;background:#f0f7f2;color:#0f5132;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px;margin:10px auto;">${((agent?.prenom || "?")[0] || "?") + ((agent?.nom || "?")[0] || "?")}</div>`;
 
   const content = `
-    <div style="font-family: 'DM Sans', sans-serif; max-height:560px;height:560px;overflow:hidden;display:flex;flex-direction:column;border-radius:12px;">
+    <div style="font-family: 'DM Sans', sans-serif; overflow:hidden; display:flex; flex-direction:column;">
       <div style="padding:8px 14px;border-bottom:1px solid #eee;display:flex;align-items:center;justify-content:center;gap:6px;">
         <div style="color:#888;font-size:13px;">${matriculeDisplay}</div>
         <div id="modal-page-indicators" style="display:flex;gap:8px;align-items:center;justify-content:center;">
@@ -168,7 +168,7 @@ function openAgentModal(mode, agent, sites) {
         </div>
       </div>
 
-      <div id="slider-wrapper" style="position:relative;width:100%;flex:1;overflow:hidden;">
+      <div id="slider-wrapper" style="position:relative;width:100%;min-height:420px;overflow:hidden;">
         <div id="slider-parent" style="position:relative;width:100%;height:100%;">
           <button id="btn-slide-prev" type="button" style="position:absolute;left:8px;top:50%;transform:translateY(-50%);z-index:10;border:1.5px solid #0f5132;background:white;color:#0f5132;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;">‹</button>
           <button id="btn-slide-next" type="button" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);z-index:10;border:1.5px solid #0f5132;background:white;color:#0f5132;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;">›</button>
@@ -274,14 +274,14 @@ function openAgentModal(mode, agent, sites) {
     cancelText: "Annuler",
     onReady: (close) => {
       let current = 0;
-      const slides = document.getElementById("modal-slides");
+      const slides = document.getElementById("slider-track");
       const prev = document.getElementById("btn-slide-prev");
       const next = document.getElementById("btn-slide-next");
       const indicators = document.getElementById("modal-page-indicators");
 
       function update() {
         if (!slides) return;
-        slides.style.transform = `translateX(-${current * 100}%)`;
+        slides.style.transform = `translateX(-${current * 33.333}%)`;
         Array.from(indicators.querySelectorAll("span")).forEach((s, i) => {
           s.style.color = i === current ? "#0f5132" : "#999";
           s.textContent = i === current ? "●" : "○";
@@ -543,7 +543,7 @@ export async function renderAgents(root, user) {
           }
         </div>
 
-        // Filtres
+        
         <div style="background:white;border-radius:10px;padding:12px;box-shadow:0 1px 4px rgba(0,0,0,0.06);border:1px solid #eee;">
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:10px;align-items:end;">
             <div>
