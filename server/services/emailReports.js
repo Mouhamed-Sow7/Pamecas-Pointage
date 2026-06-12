@@ -52,12 +52,12 @@ async function genererExcelMensuel(annee, mois) {
   wsRecap.getRow(3).height = 6;
 
   wsRecap.columns = [
-    { header: "Agence", key: "agence", width: 24 },
-    { header: "Total", key: "total", width: 10 },
-    { header: "Presents", key: "presents", width: 12 },
-    { header: "Absents", key: "absents", width: 12 },
-    { header: "Retards", key: "retards", width: 12 },
-    { header: "Taux presence", key: "taux", width: 16 },
+    { key: "agence", width: 24 },
+    { key: "total", width: 10 },
+    { key: "presents", width: 12 },
+    { key: "absents", width: 12 },
+    { key: "retards", width: 12 },
+    { key: "taux", width: 16 },
   ];
 
   // Ligne d'entêtes colorée (ligne 4)
@@ -139,18 +139,18 @@ async function genererExcelMensuel(annee, mois) {
   wsDetail.getRow(3).height = 6;
 
   wsDetail.columns = [
-    { header: "Date", key: "date", width: 12 },
-    { header: "Agence", key: "agence", width: 22 },
-    { header: "Matricule", key: "matricule", width: 13 },
-    { header: "Nom", key: "nom", width: 16 },
-    { header: "Prenom", key: "prenom", width: 16 },
-    { header: "Contrat", key: "contrat", width: 11 },
-    { header: "Statut", key: "statut", width: 11 },
-    { header: "Arrivee", key: "arrivee", width: 10 },
-    { header: "Depart", key: "depart", width: 10 },
-    { header: "Duree", key: "duree", width: 10 },
-    { header: "Methode", key: "methode", width: 12 },
-    { header: "Note", key: "note", width: 30 },
+    { key: "date", width: 12 },
+    { key: "agence", width: 22 },
+    { key: "matricule", width: 13 },
+    { key: "nom", width: 16 },
+    { key: "prenom", width: 16 },
+    { key: "contrat", width: 11 },
+    { key: "statut", width: 11 },
+    { key: "arrivee", width: 10 },
+    { key: "depart", width: 10 },
+    { key: "duree", width: 10 },
+    { key: "methode", width: 12 },
+    { key: "note", width: 30 },
   ];
 
   // Ligne d'entêtes colorée (ligne 4)

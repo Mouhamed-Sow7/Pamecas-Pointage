@@ -65,19 +65,24 @@ const authenticateAgent = async (req, res, next) => {
           return res.status(403).json({ message: "Accès non autorisé" });
         }
 
+        // Récupérer uniquement le champ session_token pour la vérification
+        const agentSession = await Agent.findById(decoded.id).select(
+          "session_token",
+        );
+        if (!agentSession) {
+          return res.status(401).json({ message: "Agent non trouvé" });
+        }
+
+        // Si le session_id du token ne correspond pas à celui en DB => session expirée
+        if (decoded.session_id !== agentSession.session_token) {
+          return res.status(401).json({ error: "SESSION_EXPIRED" });
+        }
+
+        // charger l'agent complet pour la suite (profil, site, etc.)
         const agent = await Agent.findById(decoded.id).populate(
           "site_id",
           "nom code",
         );
-        if (!agent) {
-          return res.status(401).json({ message: "Agent non trouvé" });
-        }
-
-        // Vérifier que la session token dans le JWT correspond à la session active de l'agent
-        if (decoded.session_id !== agent.session_token) {
-          return res.status(401).json({ message: 'Session expirée — connexion depuis un autre appareil détectée.' });
-        }
-
         req.agent = agent;
         return next();
       } catch (jwtError) {
@@ -101,17 +106,21 @@ router.post("/login", authenticateAgent, async (req, res) => {
   try {
     const agent = req.agent;
 
-    // Générer une session unique et l'enregistrer sur l'agent
-    const sessionId = require("crypto").randomBytes(16).toString("hex");
-    agent.session_token = sessionId;
-    // Optionnel: session_device peut être renseigné depuis un header si fourni
+    // Générer une session unique et l'enregistrer de manière atomique
+    const sessionId = require("crypto").randomUUID();
+    const update = { session_token: sessionId };
     if (req.headers["x-device-fingerprint"]) {
-      agent.session_device = req.headers["x-device-fingerprint"];
+      update.session_device = req.headers["x-device-fingerprint"];
     }
-    await agent.save();
+    await Agent.findByIdAndUpdate(agent._id, update);
 
     const token = jwt.sign(
-      { id: agent._id, matricule: agent.matricule, role: "agent", session_id: sessionId },
+      {
+        id: agent._id,
+        matricule: agent.matricule,
+        role: "agent",
+        session_id: sessionId,
+      },
       process.env.JWT_SECRET || "secret",
       { expiresIn: "24h" },
     );

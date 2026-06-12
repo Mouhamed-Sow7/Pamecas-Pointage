@@ -3,6 +3,14 @@ import { showToast } from "../components/toast.js";
 import { showModal } from "../components/modal.js";
 
 export async function renderConges(root, user) {
+  function fmtDate(dateStr) {
+    if (!dateStr) return "—";
+    return new Date(dateStr).toLocaleDateString("fr-FR", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+  }
   root.innerHTML = `
     <div>
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
@@ -59,7 +67,7 @@ export async function renderConges(root, user) {
                 <div style="font-size:0.75rem;color:#888;">${agent.matricule || ""} · ${c.site_id?.nom || ""}</div>
                 <div style="font-size:0.82rem;margin-top:6px;color:#444;">
                   <i class="fa-solid fa-calendar-range" style="color:#2e7d32;"></i>
-                  ${c.date_debut} → ${c.date_fin}
+                  ${fmtDate(c.date_debut)} → ${fmtDate(c.date_fin)}
                   <strong>(${c.nb_jours} jours)</strong>
                 </div>
                 ${c.motif ? `<div style="font-size:0.75rem;color:#888;margin-top:3px;">Motif: ${c.motif}</div>` : ""}

@@ -464,6 +464,22 @@ router.delete(
   },
 );
 
+// POST /:id/disconnect - Administrateur : forcer la déconnexion d'un agent
+router.post(
+  "/:id/disconnect",
+  authorizeRoles("admin", "superadmin"),
+  async (req, res) => {
+    try {
+      const { id } = req.params;
+      await Agent.findByIdAndUpdate(id, { session_token: null });
+      return res.json({ success: true });
+    } catch (err) {
+      console.error("Erreur lors de la deconnexion forcée:", err);
+      return res.status(500).json({ message: "Erreur serveur" });
+    }
+  },
+);
+
 // ─── POST /import-csv — Import agents depuis CSV ─────────────────
 router.post(
   "/import-csv",

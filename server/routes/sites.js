@@ -144,14 +144,19 @@ router.patch(
     try {
       const { pin } = req.body;
       if (!pin || String(pin).length < 4)
-        return res.status(400).json({ message: "PIN invalide — minimum 4 chiffres" });
+        return res
+          .status(400)
+          .json({ message: "PIN invalide — minimum 4 chiffres" });
       const site = await Site.findByIdAndUpdate(
         req.params.id,
         { kiosque_pin: pin },
         { new: true },
       );
       if (!site) return res.status(404).json({ message: "Site non trouvé" });
-      res.json({ message: "PIN kiosque mis à jour", site: { _id: site._id, nom: site.nom } });
+      res.json({
+        message: "PIN kiosque mis à jour",
+        site: { _id: site._id, nom: site.nom },
+      });
     } catch (err) {
       res.status(500).json({ message: "Erreur serveur" });
     }

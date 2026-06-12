@@ -10,7 +10,7 @@
     <meta http-equiv="Expires" content="0" />
     <meta
       name="viewport"
-      content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"
+      content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no, viewport-fit=cover"
     />
     <meta name="theme-color" content="#0f5132" />
     <meta name="mobile-web-app-capable" content="yes" />
@@ -218,7 +218,7 @@
       /* HEADER */
       .app-header {
         background: var(--green);
-        padding: 0 20px;
+        padding: calc(0px + env(safe-area-inset-top)) 20px 0 20px;
         height: 64px;
         display: flex;
         align-items: center;
@@ -1153,6 +1153,29 @@
       function clearAuth() {
         localStorage.removeItem("agent_token");
         localStorage.removeItem("agent_data");
+        stopPolling();
+      }
+
+      function stopPolling() {
+        if (pollingInterval) {
+          clearInterval(pollingInterval);
+          pollingInterval = null;
+        }
+      }
+
+      function startPolling() {
+        stopPolling();
+        pollingInterval = setInterval(() => {
+          const activeTab =
+            document.querySelector(".nav-item.active")?.dataset?.tab || "badge";
+          if (activeTab === "badge") {
+            if (typeof loadStats === "function") loadStats();
+          } else if (activeTab === "conges") {
+            if (typeof loadConges === "function") loadConges();
+          } else if (activeTab === "historique") {
+            if (typeof loadHistorique === "function") loadHistorique();
+          }
+        }, 30000);
       }
 
       function authHeaders() {
@@ -1162,12 +1185,49 @@
         };
       }
 
+      function showLogin() {
+        clearAuth();
+        clearInterval(totpInterval);
+        try {
+          $("screen-app").style.display = "none";
+          $("screen-login").style.display = "flex";
+        } catch (e) {
+          // ignore
+        }
+      }
+
+      async function apiFetch(path, opts = {}) {
+        opts.headers = opts.headers || {};
+        // don't override provided Authorization if present
+        if (!opts.headers.Authorization) {
+          const token = getToken();
+          if (token) opts.headers.Authorization = "Bearer " + token;
+        }
+
+        const res = await fetch(path, opts);
+        if (res.status === 401) {
+          // session expired or unauthorized — clear and show login
+          try {
+            const j = await res.json().catch(() => ({}));
+            // If server indicates session expired, pass that through
+            if (j && j.error === "SESSION_EXPIRED") {
+              // optional: show a toast
+              showToast("Session expirée — reconnectez-vous", "error");
+            }
+          } catch (e) {}
+          clearAuth();
+          showLogin();
+          return null;
+        }
+        return res;
+      }
+
       function formatDate(d) {
         if (!d) return "—";
         const dt = new Date(d);
         return dt.toLocaleDateString("fr-FR", {
-          day: "2-digit",
-          month: "short",
+          day: "numeric",
+          month: "long",
           year: "numeric",
         });
       }
@@ -1180,6 +1240,7 @@
 
       const _keyCache = new Map();
       let totpInterval = null;
+      let pollingInterval = null;
       let currentWindow = null;
       let _qrInstance = null;
 
@@ -1283,9 +1344,8 @@
 
       async function loadStats() {
         try {
-          const r = await fetch("/api/agent-portal/stats", {
-            headers: authHeaders(),
-          });
+          const r = await apiFetch("/api/agent-portal/stats");
+          if (!r) return;
           if (!r.ok) return;
           const d = await r.json();
           $("stat-presences").textContent = d.presencesMois ?? "0";
@@ -1308,9 +1368,8 @@
         list.innerHTML =
           '<div class="loading"><div class="spinner"></div> Chargement...</div>';
         try {
-          const r = await fetch("/api/agent-portal/conges", {
-            headers: authHeaders(),
-          });
+          const r = await apiFetch("/api/agent-portal/conges");
+          if (!r) return; // handled by apiFetch
           if (!r.ok) throw new Error("Erreur " + r.status);
           const d = await r.json();
           const conges = d.conges || d.data || [];
@@ -1343,9 +1402,8 @@
         list.innerHTML =
           '<div class="loading"><div class="spinner"></div> Chargement...</div>';
         try {
-          const r = await fetch("/api/agent-portal/stats", {
-            headers: authHeaders(),
-          });
+          const r = await apiFetch("/api/agent-portal/stats");
+          if (!r) return;
           if (!r.ok) throw new Error();
           const d = await r.json();
           const pointages = d.pointagesRecents || d.derniersPointages || [];
@@ -1460,12 +1518,9 @@
         btn.disabled = true;
 
         try {
-          const r = await fetch("/api/agent-portal/conges", {
+          const r = await apiFetch("/api/agent-portal/conges", {
             method: "POST",
-            headers: {
-              Authorization: "Bearer " + localStorage.getItem("agent_token"),
-              "Content-Type": "application/json",
-            },
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               date_debut: debutIso,
               date_fin: finIso,
@@ -1473,6 +1528,7 @@
               motif,
             }),
           });
+          if (!r) return;
           const data = await r.json();
           if (!r.ok) throw new Error(data.message || "Erreur");
           $("modal-conge").classList.remove("open");
@@ -1621,16 +1677,17 @@
 
             // Try refresh profile if we have an id
             if (agent && agent._id) {
-              const r = await fetch(`/api/agents/${agent._id}`, {
-                headers: authHeaders(),
-              });
-              if (r.ok) {
+              const r = await apiFetch(`/api/agents/${agent._id}`);
+              if (r && r.ok) {
                 const fresh = await r.json();
                 // update stored agent_data
                 localStorage.setItem("agent_data", JSON.stringify(fresh));
                 // update displayed profile fields
                 $("header-name").textContent = fresh.prenom + " " + fresh.nom;
-                $("agent-avatar").textContent = initials(fresh.prenom, fresh.nom);
+                $("agent-avatar").textContent = initials(
+                  fresh.prenom,
+                  fresh.nom,
+                );
                 $("agent-name").textContent = fresh.prenom + " " + fresh.nom;
                 $("agent-matricule").textContent = fresh.matricule || "---";
                 $("agent-poste").textContent = fresh.poste || "Agent";
@@ -1641,8 +1698,13 @@
           } catch (e) {
             console.warn("Impossible de rafraîchir le profil agent:", e);
           } finally {
-            // Only after attempting refresh, load stats
-            loadStats();
+            // Only after attempting refresh, load stats then start polling
+            try {
+              await loadStats();
+            } catch (e) {
+              // ignore
+            }
+            startPolling();
           }
         })();
       }
