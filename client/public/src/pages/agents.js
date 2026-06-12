@@ -169,9 +169,9 @@ function openAgentModal(mode, agent, sites) {
       </div>
 
       <div id="slider-wrapper" style="position:relative;width:100%;min-height:420px;overflow:hidden;">
-        <div id="slider-parent" style="position:relative;width:100%;height:100%;">
-          <button id="btn-slide-prev" type="button" style="position:absolute;left:8px;top:50%;transform:translateY(-50%);z-index:10;border:1.5px solid #0f5132;background:white;color:#0f5132;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;">‹</button>
-          <button id="btn-slide-next" type="button" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);z-index:10;border:1.5px solid #0f5132;background:white;color:#0f5132;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;">›</button>
+        <div id="slider-parent" style="position:relative;width:100%;height:100%;overflow:visible;">
+          <button id="btn-slide-prev" type="button" style="position:absolute;left:-16px;top:50%;transform:translateY(-50%);z-index:10;border:1.5px solid #0f5132;background:white;color:#0f5132;border-radius:50%;width:32px;height:32px;font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,0.15);">‹</button>
+          <button id="btn-slide-next" type="button" style="position:absolute;right:-16px;top:50%;transform:translateY(-50%);z-index:10;border:1.5px solid #0f5132;background:white;color:#0f5132;border-radius:50%;width:32px;height:32px;font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,0.15);">›</button>
 
           <div id="slider-track" style="display:flex;width:300%;height:100%;transition:transform 0.35s ease-in-out;">
             
