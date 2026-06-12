@@ -1526,17 +1526,20 @@
           const existingNote = $("logout-pin-note");
           if (!data.agent.kiosque_pin) {
             btnLogout.disabled = true;
-            btnLogout.title = "Déconnexion PIN non configurée — contactez votre administrateur";
+            btnLogout.title =
+              "Déconnexion PIN non configurée — contactez votre administrateur";
             if (!existingNote) {
-              const note = document.createElement('div');
-              note.id = 'logout-pin-note';
-              note.textContent = 'Déconnexion PIN non configurée — contactez votre administrateur';
-              note.style.cssText = 'font-size:0.78rem;color:#c62828;margin-left:12px;';
+              const note = document.createElement("div");
+              note.id = "logout-pin-note";
+              note.textContent =
+                "Déconnexion PIN non configurée — contactez votre administrateur";
+              note.style.cssText =
+                "font-size:0.78rem;color:#c62828;margin-left:12px;";
               btnLogout.parentNode.appendChild(note);
             }
           } else {
             btnLogout.disabled = false;
-            btnLogout.title = 'Déconnexion';
+            btnLogout.title = "Déconnexion";
             if (existingNote) existingNote.remove();
           }
         } catch (e) {
@@ -1573,7 +1576,8 @@
         const storedPin = localStorage.getItem("kiosque_pin");
         if (!storedPin) {
           // PIN non configuré
-          $("logout-pin-error").textContent = "Déconnexion PIN non configurée — contactez votre administrateur";
+          $("logout-pin-error").textContent =
+            "Déconnexion PIN non configurée — contactez votre administrateur";
           $("logout-pin-error").style.display = "block";
           return;
         }
@@ -1594,10 +1598,11 @@
         if (e.key === "Enter") $("btn-confirm-logout").click();
       });
 
-      function showApp(agent) {
+      async function showApp(agent) {
         $("screen-login").style.display = "none";
         $("screen-app").style.display = "flex";
 
+        // Render basic profile immediately
         $("header-name").textContent = agent.prenom + " " + agent.nom;
         $("header-agence").textContent =
           agent.site_id?.nom || agent.agence || "Mon Agence";
@@ -1607,7 +1612,39 @@
         $("agent-poste").textContent = agent.poste || "Agent";
 
         renderQR(agent);
-        loadStats();
+
+        // Fetch fresh agent profile from server and then load stats
+        (async () => {
+          try {
+            const token = getToken();
+            if (!token) return loadStats();
+
+            // Try refresh profile if we have an id
+            if (agent && agent._id) {
+              const r = await fetch(`/api/agents/${agent._id}`, {
+                headers: authHeaders(),
+              });
+              if (r.ok) {
+                const fresh = await r.json();
+                // update stored agent_data
+                localStorage.setItem("agent_data", JSON.stringify(fresh));
+                // update displayed profile fields
+                $("header-name").textContent = fresh.prenom + " " + fresh.nom;
+                $("agent-avatar").textContent = initials(fresh.prenom, fresh.nom);
+                $("agent-name").textContent = fresh.prenom + " " + fresh.nom;
+                $("agent-matricule").textContent = fresh.matricule || "---";
+                $("agent-poste").textContent = fresh.poste || "Agent";
+                // refresh QR if needed
+                renderQR(fresh);
+              }
+            }
+          } catch (e) {
+            console.warn("Impossible de rafraîchir le profil agent:", e);
+          } finally {
+            // Only after attempting refresh, load stats
+            loadStats();
+          }
+        })();
       }
 
       document.addEventListener("visibilitychange", () => {
