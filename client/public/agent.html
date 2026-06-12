@@ -1576,7 +1576,7 @@
           } else {
             localStorage.removeItem("kiosque_pin");
           }
-          showApp(data.agent);
+          await showApp(data.agent);
           // Désactiver la déconnexion par PIN si non configurée
           const btnLogout = $("btn-logout");
           const existingNote = $("logout-pin-note");
@@ -1670,43 +1670,42 @@
         renderQR(agent);
 
         // Fetch fresh agent profile from server and then load stats
-        (async () => {
-          try {
-            const token = getToken();
-            if (!token) return loadStats();
-
-            // Try refresh profile if we have an id
-            if (agent && agent._id) {
-              const r = await apiFetch(`/api/agents/${agent._id}`);
-              if (r && r.ok) {
-                const fresh = await r.json();
-                // update stored agent_data
-                localStorage.setItem("agent_data", JSON.stringify(fresh));
-                // update displayed profile fields
-                $("header-name").textContent = fresh.prenom + " " + fresh.nom;
-                $("agent-avatar").textContent = initials(
-                  fresh.prenom,
-                  fresh.nom,
-                );
-                $("agent-name").textContent = fresh.prenom + " " + fresh.nom;
-                $("agent-matricule").textContent = fresh.matricule || "---";
-                $("agent-poste").textContent = fresh.poste || "Agent";
-                // refresh QR if needed
-                renderQR(fresh);
-              }
-            }
-          } catch (e) {
-            console.warn("Impossible de rafraîchir le profil agent:", e);
-          } finally {
-            // Only after attempting refresh, load stats then start polling
-            try {
-              await loadStats();
-            } catch (e) {
-              // ignore
-            }
+        try {
+          const tokenNow = getToken();
+          if (!tokenNow) {
+            await loadStats();
             startPolling();
+            return;
           }
-        })();
+
+          if (agent && agent._id) {
+            const r = await apiFetch(`/api/agents/${agent._id}`);
+            if (r && r.ok) {
+              const fresh = await r.json();
+              // update stored agent_data
+              localStorage.setItem("agent_data", JSON.stringify(fresh));
+              // update displayed profile fields
+              $("header-name").textContent = fresh.prenom + " " + fresh.nom;
+              $("agent-avatar").textContent = initials(fresh.prenom, fresh.nom);
+              $("agent-name").textContent = fresh.prenom + " " + fresh.nom;
+              $("agent-matricule").textContent = fresh.matricule || "---";
+              $("agent-poste").textContent = fresh.poste || "Agent";
+              // refresh QR if needed
+              renderQR(fresh);
+            }
+          }
+        } catch (e) {
+          console.warn("Impossible de rafraîchir le profil agent:", e);
+        } finally {
+          try {
+            await loadStats();
+          } catch (e) {
+            // ignore
+          }
+          startPolling();
+        }
+        // allow caller to await completion
+        return;
       }
 
       document.addEventListener("visibilitychange", () => {
