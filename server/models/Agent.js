@@ -76,6 +76,16 @@ const AgentSchema = new Schema(
       type: String,
       default: null,
     },
+    // Session unique kiosque/portail
+    session_token: {
+      type: String,
+      default: null,
+      index: true,
+    },
+    session_device: {
+      type: String,
+      default: null,
+    },
     // Congés
     jours_conge_annuels: {
       type: Number,

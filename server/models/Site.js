@@ -59,7 +59,7 @@ const SiteSchema = new mongoose.Schema(
     },
     kiosque_pin: {
       type: String,
-      default: "1234",
+      default: null,
     },
   },
   { timestamps: true },

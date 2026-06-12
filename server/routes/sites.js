@@ -135,4 +135,27 @@ router.patch("/:id/coordonnees", authenticate, async (req, res) => {
   }
 });
 
+// PATCH /:id/pin — Mettre à jour le PIN kiosque pour un site
+router.patch(
+  "/:id/pin",
+  authenticate,
+  authorizeRoles("admin", "superadmin"),
+  async (req, res) => {
+    try {
+      const { pin } = req.body;
+      if (!pin || String(pin).length < 4)
+        return res.status(400).json({ message: "PIN invalide — minimum 4 chiffres" });
+      const site = await Site.findByIdAndUpdate(
+        req.params.id,
+        { kiosque_pin: pin },
+        { new: true },
+      );
+      if (!site) return res.status(404).json({ message: "Site non trouvé" });
+      res.json({ message: "PIN kiosque mis à jour", site: { _id: site._id, nom: site.nom } });
+    } catch (err) {
+      res.status(500).json({ message: "Erreur serveur" });
+    }
+  },
+);
+
 module.exports = router;

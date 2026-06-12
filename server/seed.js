@@ -811,6 +811,9 @@ async function seed() {
 
     console.log("Connexion DB etablie...");
 
+    // Normaliser les PINs kiosque legacy '1234' → null
+    await Site.updateMany({ kiosque_pin: "1234" }, { kiosque_pin: null });
+
     // 1. Agences
     const sitesMap = {};
     for (const agence of agences) {

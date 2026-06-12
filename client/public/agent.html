@@ -1514,8 +1514,31 @@
           const data = await r.json();
           if (!r.ok) throw new Error(data.message || "Identifiants incorrects");
           setAuth(data.token, data.agent);
-          localStorage.setItem("kiosque_pin", data.agent.kiosque_pin || "1234");
+          // Gérer le PIN kiosque: s'il est null côté serveur, ne pas le stocker
+          if (data.agent.kiosque_pin) {
+            localStorage.setItem("kiosque_pin", data.agent.kiosque_pin);
+          } else {
+            localStorage.removeItem("kiosque_pin");
+          }
           showApp(data.agent);
+          // Désactiver la déconnexion par PIN si non configurée
+          const btnLogout = $("btn-logout");
+          const existingNote = $("logout-pin-note");
+          if (!data.agent.kiosque_pin) {
+            btnLogout.disabled = true;
+            btnLogout.title = "Déconnexion PIN non configurée — contactez votre administrateur";
+            if (!existingNote) {
+              const note = document.createElement('div');
+              note.id = 'logout-pin-note';
+              note.textContent = 'Déconnexion PIN non configurée — contactez votre administrateur';
+              note.style.cssText = 'font-size:0.78rem;color:#c62828;margin-left:12px;';
+              btnLogout.parentNode.appendChild(note);
+            }
+          } else {
+            btnLogout.disabled = false;
+            btnLogout.title = 'Déconnexion';
+            if (existingNote) existingNote.remove();
+          }
         } catch (e) {
           err.textContent = e.message;
           err.style.display = "block";
@@ -1547,7 +1570,13 @@
 
       $("btn-confirm-logout").addEventListener("click", () => {
         const entered = $("logout-pin-input").value.trim();
-        const storedPin = localStorage.getItem("kiosque_pin") || "1234";
+        const storedPin = localStorage.getItem("kiosque_pin");
+        if (!storedPin) {
+          // PIN non configuré
+          $("logout-pin-error").textContent = "Déconnexion PIN non configurée — contactez votre administrateur";
+          $("logout-pin-error").style.display = "block";
+          return;
+        }
         if (entered !== storedPin) {
           $("logout-pin-error").style.display = "block";
           $("logout-pin-input").value = "";
