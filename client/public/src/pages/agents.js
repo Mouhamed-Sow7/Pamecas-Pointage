@@ -222,7 +222,11 @@ function openAgentModal(mode, agent, sites) {
             <div id="slide-1" style="width:33.333%;padding:0 16px;box-sizing:border-box;min-height:calc(100% - 56px);display:flex;flex-direction:column;align-items:center;">
               ${photoHtml}
               <div style="text-align:center;margin-top:8px;">
-                <input id="agent-photo-input" type="file" accept="image/*" ${disabledAttr} style="display:block;margin:6px auto;" />
+                <label for="agent-photo-input" style="display:inline-flex;align-items:center;gap:8px;padding:9px 16px;border:1.5px solid #0f5132;border-radius:8px;color:#0f5132;font-size:13px;cursor:pointer;background:white;">
+                  <i class="fa-solid fa-camera" style="font-size:14px;"></i> Changer la photo
+                </label>
+                <input id="agent-photo-input" type="file" accept="image/*" ${disabledAttr} style="display:none;" />
+                <span id="photo-filename" style="font-size:12px;color:#888;margin-left:8px;"></span>
               </div>
 
               ${
@@ -299,10 +303,15 @@ function openAgentModal(mode, agent, sites) {
       // File preview
       const fileIn = document.getElementById("agent-photo-input");
       const preview = document.getElementById("agent-photo-preview");
+      const photoFilename = document.getElementById("photo-filename");
       if (fileIn) {
         fileIn.addEventListener("change", (e) => {
           const f = e.target.files[0];
-          if (!f) return;
+          if (!f) {
+            if (photoFilename) photoFilename.textContent = "";
+            return;
+          }
+          if (photoFilename) photoFilename.textContent = f.name || "";
           const r = new FileReader();
           r.onload = () => {
             if (preview)
@@ -388,27 +397,33 @@ function openAgentModal(mode, agent, sites) {
         const reader = new FileReader();
         reader.onload = async () => {
           payload.photo = reader.result;
-          await save(payload, close);
+          await save(payload);
         };
         reader.readAsDataURL(file);
       } else {
-        await save(payload, close);
+        await save(payload);
       }
 
-      async function save(data, closeModal) {
+      async function save(data) {
         try {
           if (mode === "create") {
             await post("/api/agents", data);
-            showToast("Agent crée avec succés.", "success");
+            showToast("Agent mis à jour.", "success");
           } else if (mode === "edit") {
             await put(`/api/agents/${agent._id}`, data);
-            showToast("Agent mis à jour avec succés.", "success");
+            showToast("Agent mis à jour.", "success");
           }
-          closeModal();
-          const root =
-            document.getElementById("app").querySelector("main") ||
-            document.getElementById("app");
-          renderAgents(root, JSON.parse(localStorage.getItem("pamecas_user")));
+
+          // If a new photo was uploaded as base64, update the preview/avatar in the modal DOM
+          if (data.photo) {
+            const previewEl = document.getElementById("agent-photo-preview");
+            if (previewEl) {
+              // Replace preview element with an img using the new base64 src
+              previewEl.outerHTML = `<img id="agent-photo-preview" src="${data.photo}" style="width:160px;height:160px;border-radius:80px;object-fit:cover;display:block;margin:12px auto;" />`;
+            }
+          }
+
+          // Do NOT close the modal or re-render the agents list here (kept open per request)
         } catch (err) {
           showToast(
             "Erreur lors de l'enregistrement de l'agent. Vérifiez les données.",
