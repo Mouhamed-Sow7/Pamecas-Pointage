@@ -90,6 +90,8 @@ export function renderDashboard(root, user) {
     </div>
   `;
 
+  let intervalId;
+
   async function loadData() {
     if (!localStorage.getItem("pamecas_token")) return;
     const skeleton = root.querySelector("#dashboard-skeleton");
@@ -172,6 +174,14 @@ export function renderDashboard(root, user) {
         syncStatus.className = "badge badge-synced";
       }
     } catch (err) {
+      // Stop polling on auth or server-unavailable errors
+      if (err && (err.status === 401 || err.status === 503)) {
+        if (intervalId) {
+          clearInterval(intervalId);
+        }
+        return;
+      }
+
       skeleton.style.display = "none";
       content.style.display = "block";
       showToast("Impossible de charger le dashboard.", "warning");
@@ -182,6 +192,30 @@ export function renderDashboard(root, user) {
   }
 
   loadData();
-  const intervalId = setInterval(loadData, 30000);
-  root._cleanup = () => clearInterval(intervalId);
+
+  // Start polling only if a token exists
+  const token = localStorage.getItem("pamecas_token");
+  if (token) {
+    intervalId = setInterval(() => {
+      const t = localStorage.getItem("pamecas_token");
+      if (!t) {
+        clearInterval(intervalId);
+        return;
+      }
+      loadData();
+    }, 30000);
+
+    // Cleanup when navigating away via hashchange
+    window.addEventListener(
+      "hashchange",
+      () => {
+        if (intervalId) clearInterval(intervalId);
+      },
+      { once: true },
+    );
+  }
+
+  root._cleanup = () => {
+    if (intervalId) clearInterval(intervalId);
+  };
 }
