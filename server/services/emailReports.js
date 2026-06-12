@@ -1,122 +1,173 @@
 // server/services/emailReports.js
-const sgMail = require('@sendgrid/mail');
-const cron = require('node-cron');
-const ExcelJS = require('exceljs');
+const nodemailer = require("nodemailer");
+const cron = require("node-cron");
+const ExcelJS = require("exceljs");
 
-const Pointage = require('../models/Pointage');
-const Site = require('../models/Site');
+const Pointage = require("../models/Pointage");
+const Site = require("../models/Site");
 
 // ─── Générer Excel mensuel toutes agences ───────────────────────
 async function genererExcelMensuel(annee, mois) {
-  const dateDebut = `${annee}-${String(mois).padStart(2,'0')}-01`;
-  const dateFin = new Date(annee, mois, 0).toISOString().slice(0,10);
+  const dateDebut = `${annee}-${String(mois).padStart(2, "0")}-01`;
+  const dateFin = new Date(annee, mois, 0).toISOString().slice(0, 10);
 
   const pointages = await Pointage.find({
-    date: { $gte: dateDebut, $lte: dateFin }
+    date: { $gte: dateDebut, $lte: dateFin },
   })
-    .populate('agent_id', 'nom prenom matricule type_contrat')
-    .populate('site_id', 'nom code')
+    .populate("agent_id", "nom prenom matricule type_contrat")
+    .populate("site_id", "nom code")
     .sort({ site_id: 1, date: 1 });
 
   const workbook = new ExcelJS.Workbook();
-  workbook.creator = 'SmartPointage';
+  workbook.creator = "SmartPointage";
 
   // Feuille 1 : Recap par agence
-  const wsRecap = workbook.addWorksheet('Recap par agence');
+  const wsRecap = workbook.addWorksheet("Recap par agence");
   wsRecap.columns = [
-    { header: 'Agence', key: 'agence', width: 24 },
-    { header: 'Total', key: 'total', width: 10 },
-    { header: 'Presents', key: 'presents', width: 12 },
-    { header: 'Absents', key: 'absents', width: 12 },
-    { header: 'Retards', key: 'retards', width: 12 },
-    { header: 'Taux presence', key: 'taux', width: 16 },
+    { header: "Agence", key: "agence", width: 24 },
+    { header: "Total", key: "total", width: 10 },
+    { header: "Presents", key: "presents", width: 12 },
+    { header: "Absents", key: "absents", width: 12 },
+    { header: "Retards", key: "retards", width: 12 },
+    { header: "Taux presence", key: "taux", width: 16 },
   ];
-  wsRecap.getRow(1).eachCell(cell => {
-    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF2E7D32' } };
-    cell.font = { color: { argb: 'FFFFFFFF' }, bold: true };
-    cell.alignment = { horizontal: 'center' };
+  wsRecap.getRow(1).eachCell((cell) => {
+    cell.fill = {
+      type: "pattern",
+      pattern: "solid",
+      fgColor: { argb: "FF2E7D32" },
+    };
+    cell.font = { color: { argb: "FFFFFFFF" }, bold: true };
+    cell.alignment = { horizontal: "center" };
   });
 
   const parAgence = {};
-  pointages.forEach(p => {
-    const key = p.site_id?._id?.toString() || 'inconnu';
-    if (!parAgence[key]) parAgence[key] = { nom: p.site_id?.nom || 'Inconnu', presents: 0, absents: 0, retards: 0 };
-    if (p.statut === 'present') parAgence[key].presents++;
-    else if (p.statut === 'absent') parAgence[key].absents++;
-    else if (p.statut === 'retard') parAgence[key].retards++;
+  pointages.forEach((p) => {
+    const key = p.site_id?._id?.toString() || "inconnu";
+    if (!parAgence[key])
+      parAgence[key] = {
+        nom: p.site_id?.nom || "Inconnu",
+        presents: 0,
+        absents: 0,
+        retards: 0,
+      };
+    if (p.statut === "present") parAgence[key].presents++;
+    else if (p.statut === "absent") parAgence[key].absents++;
+    else if (p.statut === "retard") parAgence[key].retards++;
   });
 
-  Object.values(parAgence).forEach(ag => {
+  Object.values(parAgence).forEach((ag) => {
     const total = ag.presents + ag.absents + ag.retards;
     const taux = total > 0 ? Math.round((ag.presents / total) * 100) : 0;
-    wsRecap.addRow({ agence: ag.nom, total, presents: ag.presents, absents: ag.absents, retards: ag.retards, taux: `${taux}%` });
+    wsRecap.addRow({
+      agence: ag.nom,
+      total,
+      presents: ag.presents,
+      absents: ag.absents,
+      retards: ag.retards,
+      taux: `${taux}%`,
+    });
   });
 
   // Feuille 2 : Detail
-  const wsDetail = workbook.addWorksheet('Detail pointages');
+  const wsDetail = workbook.addWorksheet("Detail pointages");
   wsDetail.columns = [
-    { header: 'Date', key: 'date', width: 12 },
-    { header: 'Agence', key: 'agence', width: 22 },
-    { header: 'Matricule', key: 'matricule', width: 13 },
-    { header: 'Nom', key: 'nom', width: 16 },
-    { header: 'Prenom', key: 'prenom', width: 16 },
-    { header: 'Contrat', key: 'contrat', width: 11 },
-    { header: 'Statut', key: 'statut', width: 11 },
-    { header: 'Arrivee', key: 'arrivee', width: 10 },
-    { header: 'Depart', key: 'depart', width: 10 },
-    { header: 'Duree', key: 'duree', width: 10 },
-    { header: 'Methode', key: 'methode', width: 12 },
-    { header: 'Note', key: 'note', width: 30 },
+    { header: "Date", key: "date", width: 12 },
+    { header: "Agence", key: "agence", width: 22 },
+    { header: "Matricule", key: "matricule", width: 13 },
+    { header: "Nom", key: "nom", width: 16 },
+    { header: "Prenom", key: "prenom", width: 16 },
+    { header: "Contrat", key: "contrat", width: 11 },
+    { header: "Statut", key: "statut", width: 11 },
+    { header: "Arrivee", key: "arrivee", width: 10 },
+    { header: "Depart", key: "depart", width: 10 },
+    { header: "Duree", key: "duree", width: 10 },
+    { header: "Methode", key: "methode", width: 12 },
+    { header: "Note", key: "note", width: 30 },
   ];
-  wsDetail.getRow(1).eachCell(cell => {
-    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1B5E20' } };
-    cell.font = { color: { argb: 'FFFFFFFF' }, bold: true };
+  wsDetail.getRow(1).eachCell((cell) => {
+    cell.fill = {
+      type: "pattern",
+      pattern: "solid",
+      fgColor: { argb: "FF1B5E20" },
+    };
+    cell.font = { color: { argb: "FFFFFFFF" }, bold: true };
   });
 
-  pointages.forEach(p => {
-    let dureeStr = '';
+  pointages.forEach((p) => {
+    let dureeStr = "";
     if (p.duree_minutes) {
       const h = Math.floor(p.duree_minutes / 60);
       const m = p.duree_minutes % 60;
-      dureeStr = h > 0 ? `${h}h${String(m).padStart(2,'0')}` : `${m}min`;
+      dureeStr = h > 0 ? `${h}h${String(m).padStart(2, "0")}` : `${m}min`;
     }
     const row = wsDetail.addRow({
       date: p.date,
-      agence: p.site_id?.nom || '',
-      matricule: p.agent_id?.matricule || '',
-      nom: p.agent_id?.nom || '',
-      prenom: p.agent_id?.prenom || '',
-      contrat: p.agent_id?.type_contrat || '',
+      agence: p.site_id?.nom || "",
+      matricule: p.agent_id?.matricule || "",
+      nom: p.agent_id?.nom || "",
+      prenom: p.agent_id?.prenom || "",
+      contrat: p.agent_id?.type_contrat || "",
       statut: p.statut,
-      arrivee: p.heure_arrivee || '',
-      depart: p.heure_depart || '',
+      arrivee: p.heure_arrivee || "",
+      depart: p.heure_depart || "",
       duree: dureeStr,
       methode: p.methode,
-      note: p.note || ''
+      note: p.note || "",
     });
-    const statutCell = row.getCell('statut');
-    if (p.statut === 'present') {
-      statutCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE8F5E9' } };
-      statutCell.font = { color: { argb: 'FF2E7D32' }, bold: true };
-    } else if (p.statut === 'absent') {
-      statutCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFEBEE' } };
-      statutCell.font = { color: { argb: 'FFC62828' }, bold: true };
-    } else if (p.statut === 'retard') {
-      statutCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFF3E0' } };
-      statutCell.font = { color: { argb: 'FFE65100' }, bold: true };
+    const statutCell = row.getCell("statut");
+    if (p.statut === "present") {
+      statutCell.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FFE8F5E9" },
+      };
+      statutCell.font = { color: { argb: "FF2E7D32" }, bold: true };
+    } else if (p.statut === "absent") {
+      statutCell.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FFFFEBEE" },
+      };
+      statutCell.font = { color: { argb: "FFC62828" }, bold: true };
+    } else if (p.statut === "retard") {
+      statutCell.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FFFFF3E0" },
+      };
+      statutCell.font = { color: { argb: "FFE65100" }, bold: true };
     }
   });
 
   const buffer = await workbook.xlsx.writeBuffer();
-  return { buffer, dateDebut, dateFin, stats: parAgence, totalPointages: pointages.length };
+  return {
+    buffer,
+    dateDebut,
+    dateFin,
+    stats: parAgence,
+    totalPointages: pointages.length,
+  };
 }
 
 // ─── Template email HTML ─────────────────────────────────────────
-function genererEmailHTML(annee, mois, stats, totalPointages, dateDebut, dateFin) {
-  const nomMois = new Date(annee, mois - 1, 1).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+function genererEmailHTML(
+  annee,
+  mois,
+  stats,
+  totalPointages,
+  dateDebut,
+  dateFin,
+) {
+  const nomMois = new Date(annee, mois - 1, 1).toLocaleDateString("fr-FR", {
+    month: "long",
+    year: "numeric",
+  });
 
-  let totalPresents = 0, totalAbsents = 0, totalRetards = 0;
-  Object.values(stats).forEach(s => {
+  let totalPresents = 0,
+    totalAbsents = 0,
+    totalRetards = 0;
+  Object.values(stats).forEach((s) => {
     totalPresents += s.presents;
     totalAbsents += s.absents;
     totalRetards += s.retards;
@@ -124,11 +175,13 @@ function genererEmailHTML(annee, mois, stats, totalPointages, dateDebut, dateFin
   const total = totalPresents + totalAbsents + totalRetards;
   const tauxGlobal = total > 0 ? Math.round((totalPresents / total) * 100) : 0;
 
-  const lignesAgences = Object.values(stats).map(ag => {
-    const t = ag.presents + ag.absents + ag.retards;
-    const taux = t > 0 ? Math.round((ag.presents / t) * 100) : 0;
-    const couleur = taux >= 80 ? '#2e7d32' : taux >= 60 ? '#e65100' : '#c62828';
-    return `
+  const lignesAgences = Object.values(stats)
+    .map((ag) => {
+      const t = ag.presents + ag.absents + ag.retards;
+      const taux = t > 0 ? Math.round((ag.presents / t) * 100) : 0;
+      const couleur =
+        taux >= 80 ? "#2e7d32" : taux >= 60 ? "#e65100" : "#c62828";
+      return `
       <tr>
         <td style="padding:10px 14px;border-bottom:1px solid #f0f0f0;font-weight:500;">${ag.nom}</td>
         <td style="padding:10px 14px;border-bottom:1px solid #f0f0f0;text-align:center;color:#2e7d32;font-weight:600;">${ag.presents}</td>
@@ -137,7 +190,8 @@ function genererEmailHTML(annee, mois, stats, totalPointages, dateDebut, dateFin
         <td style="padding:10px 14px;border-bottom:1px solid #f0f0f0;text-align:center;font-weight:700;color:${couleur};">${taux}%</td>
       </tr>
     `;
-  }).join('');
+    })
+    .join("");
 
   return `<!DOCTYPE html>
 <html lang="fr">
@@ -202,53 +256,82 @@ function genererEmailHTML(annee, mois, stats, totalPointages, dateDebut, dateFin
 // ─── Envoyer le rapport mensuel via SendGrid ─────────────────────
 async function envoyerRapportMensuel(annee, mois) {
   try {
-    if (!process.env.SENDGRID_API_KEY || !process.env.REPORT_EMAIL_TO || !process.env.GMAIL_USER) {
-      console.log('Email non configure — definir SENDGRID_API_KEY, GMAIL_USER, REPORT_EMAIL_TO');
+    if (
+      !process.env.GMAIL_USER ||
+      !process.env.GMAIL_APP_PASSWORD ||
+      !process.env.REPORT_EMAIL_TO
+    ) {
+      console.log(
+        "Email non configure — definir GMAIL_USER, GMAIL_APP_PASSWORD, REPORT_EMAIL_TO",
+      );
       return;
     }
 
     console.log(`Envoi rapport mensuel ${mois}/${annee}...`);
 
-    sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+    const { buffer, dateDebut, dateFin, stats, totalPointages } =
+      await genererExcelMensuel(annee, mois);
+    const html = genererEmailHTML(
+      annee,
+      mois,
+      stats,
+      totalPointages,
+      dateDebut,
+      dateFin,
+    );
 
-    const { buffer, dateDebut, dateFin, stats, totalPointages } = await genererExcelMensuel(annee, mois);
-    const html = genererEmailHTML(annee, mois, stats, totalPointages, dateDebut, dateFin);
+    const nomMois = new Date(annee, mois - 1, 1).toLocaleDateString("fr-FR", {
+      month: "long",
+      year: "numeric",
+    });
+    const nomFichier = `rapport-smartpointage-${annee}-${String(mois).padStart(2, "0")}.xlsx`;
 
-    const nomMois = new Date(annee, mois - 1, 1).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
-    const nomFichier = `rapport-smartpointage-${annee}-${String(mois).padStart(2,'0')}.xlsx`;
-
-    await sgMail.send({
-      to: process.env.REPORT_EMAIL_TO,
-      from: {
-        email: process.env.GMAIL_USER,
-        name: 'SmartPointage'
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: process.env.GMAIL_USER,
+        pass: process.env.GMAIL_APP_PASSWORD,
       },
+    });
+
+    await transporter.sendMail({
+      from: `"SmartPointage" <${process.env.GMAIL_USER}>`,
+      to: process.env.REPORT_EMAIL_TO,
       subject: `SmartPointage — Rapport mensuel ${nomMois} (PAMECAS)`,
       html,
-      attachments: [{
-        filename: nomFichier,
-        content: Buffer.from(buffer).toString('base64'),
-        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        disposition: 'attachment'
-      }]
+      attachments: [
+        {
+          filename: nomFichier,
+          content: Buffer.from(buffer),
+          contentType:
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        },
+      ],
     });
 
     console.log(`Rapport mensuel envoye a ${process.env.REPORT_EMAIL_TO}`);
   } catch (err) {
-    console.error('Erreur envoi rapport mensuel:', err.response?.body || err.message);
+    console.error("Erreur envoi rapport mensuel:", err.message || err);
   }
 }
 
 // ─── Cron : 1er de chaque mois à 07h00 Dakar ────────────────────
 function initEmailCron() {
-  cron.schedule('0 7 1 * *', async () => {
-    const now = new Date();
-    const moisPrecedent = now.getMonth() === 0 ? 12 : now.getMonth();
-    const anneePrecedente = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
-    await envoyerRapportMensuel(anneePrecedente, moisPrecedent);
-  }, { timezone: 'Africa/Dakar' });
+  cron.schedule(
+    "0 7 1 * *",
+    async () => {
+      const now = new Date();
+      const moisPrecedent = now.getMonth() === 0 ? 12 : now.getMonth();
+      const anneePrecedente =
+        now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
+      await envoyerRapportMensuel(anneePrecedente, moisPrecedent);
+    },
+    { timezone: "Africa/Dakar" },
+  );
 
-  console.log('Cron rapport mensuel initialise (1er de chaque mois a 07h00 Dakar)');
+  console.log(
+    "Cron rapport mensuel initialise (1er de chaque mois a 07h00 Dakar)",
+  );
 }
 
 module.exports = { initEmailCron, envoyerRapportMensuel };
