@@ -1,5 +1,5 @@
 // server/services/emailReports.js
-const SibApiV3Sdk = require("sib-api-v3-sdk");
+const Brevo = require("@getbrevo/brevo");
 const cron = require("node-cron");
 const ExcelJS = require("exceljs");
 
@@ -286,10 +286,10 @@ async function envoyerRapportMensuel(annee, mois) {
     });
     const nomFichier = `rapport-smartpointage-${annee}-${String(mois).padStart(2, "0")}.xlsx`;
 
-    const defaultClient = SibApiV3Sdk.ApiClient.instance;
+    const defaultClient = Brevo.ApiClient.instance;
     defaultClient.authentications["api-key"].apiKey = process.env.BREVO_API_KEY;
 
-    const apiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
+    const apiInstance = new Brevo.TransactionalEmailsApi();
     await apiInstance.sendTransacEmail({
       sender: { email: process.env.GMAIL_USER, name: "SmartPointage" },
       to: [{ email: process.env.REPORT_EMAIL_TO }],

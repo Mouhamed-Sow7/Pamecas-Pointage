@@ -40,7 +40,7 @@
     "multer": "^2.1.1",
     "node-cron": "^4.2.1",
     "nodemailer": "^8.0.2",
-    "sib-api-v3-sdk": "^3.3.4",
+    "@getbrevo/brevo": "^1.0.1",
     "qrcode": "^1.5.4",
     "socket.io": "^4.8.1",
     "uuid": "^11.0.3"
