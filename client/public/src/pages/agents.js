@@ -229,12 +229,12 @@ function openAgentModal(mode, agent, sites) {
             
             <div id="slide-1" style="width:33.333%;padding:0 16px;box-sizing:border-box;min-height:calc(100% - 56px);display:flex;flex-direction:column;align-items:center;">
               ${photoHtml}
-              <div style="text-align:center;margin-top:8px;">
+              <div style="display:flex;flex-direction:column;align-items:center;gap:6px;margin-top:10px;">
                 <label for="agent-photo-input" style="display:inline-flex;align-items:center;gap:8px;padding:9px 16px;border:1.5px solid #0f5132;border-radius:8px;color:#0f5132;font-size:13px;cursor:pointer;background:white;">
                   <i class="fa-solid fa-camera" style="font-size:14px;"></i> Changer la photo
                 </label>
+                <span id="photo-filename" style="font-size:11px;color:#999;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
                 <input id="agent-photo-input" type="file" accept="image/*" ${disabledAttr} style="display:none;" />
-                <span id="photo-filename" style="font-size:12px;color:#888;margin-left:8px;"></span>
               </div>
 
               ${
@@ -310,7 +310,6 @@ function openAgentModal(mode, agent, sites) {
 
       // File preview
       const fileIn = document.getElementById("agent-photo-input");
-      const preview = document.getElementById("agent-photo-preview");
       const photoFilename = document.getElementById("photo-filename");
       if (fileIn) {
         fileIn.addEventListener("change", (e) => {
@@ -319,11 +318,24 @@ function openAgentModal(mode, agent, sites) {
             if (photoFilename) photoFilename.textContent = "";
             return;
           }
-          if (photoFilename) photoFilename.textContent = f.name || "";
           const r = new FileReader();
           r.onload = () => {
-            if (preview)
-              preview.outerHTML = `<img id="agent-photo-preview" src="${r.result}" style="width:160px;height:160px;border-radius:80px;object-fit:cover;display:block;margin:12px auto;" />`;
+            const existing = document.getElementById("agent-photo-preview");
+            if (existing) {
+              if (existing.tagName === "IMG") {
+                existing.src = r.result;
+              } else {
+                const img = document.createElement("img");
+                img.id = "agent-photo-preview";
+                img.src = r.result;
+                img.style =
+                  "width:100px;height:100px;border-radius:50%;object-fit:cover;display:block;margin:10px auto;";
+                existing.replaceWith(img);
+              }
+            }
+            if (photoFilename)
+              photoFilename.textContent =
+                f.name.length > 20 ? f.name.substring(0, 17) + "..." : f.name;
           };
           r.readAsDataURL(f);
         });
