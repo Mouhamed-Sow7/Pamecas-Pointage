@@ -1,4 +1,4 @@
-﻿import { getPendingPointages, clearSynced } from './indexedDB.js';
+﻿import { getPendingPointages, clearSynced } from "./indexedDB.js";
 
 const syncCallbacks = [];
 let autoSyncStarted = false;
@@ -11,20 +11,24 @@ export async function syncPending() {
     }
 
     const body = {
-      pointages: pending
+      pointages: pending,
     };
 
-    const response = await fetch('/api/pointages/sync', {
-      method: 'POST',
+    const response = await fetch("/api/pointages/sync", {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + (localStorage.getItem('pamecas_token') || localStorage.getItem('kiosque_mode') || '')
+        "Content-Type": "application/json",
+        Authorization:
+          "Bearer " +
+          (localStorage.getItem("pamecas_token") ||
+            localStorage.getItem("kiosque_mode") ||
+            ""),
       },
-      body: JSON.stringify(body)
+      body: JSON.stringify(body),
     });
 
     if (!response.ok) {
-      throw new Error('Sync Ã©chouÃ©e');
+      throw new Error("Sync Ã©chouÃ©e");
     }
 
     const localIds = pending.map((p) => p.local_id);
@@ -40,7 +44,7 @@ export async function syncPending() {
 
     return localIds.length;
   } catch (err) {
-    console.error('Erreur lors de la synchronisation des pointages:', err);
+    console.error("Erreur lors de la synchronisation des pointages:", err);
     return 0;
   }
 }
@@ -50,7 +54,7 @@ export function startAutoSync() {
   autoSyncStarted = true;
 
   // Sync au retour connexion (dÃ©lai: Ã©vite faux positifs iOS/Android)
-  window.addEventListener('online', () => {
+  window.addEventListener("online", () => {
     setTimeout(() => syncPending(), 1000);
   });
 
@@ -76,12 +80,12 @@ export function startAutoSync() {
     }
   }, 3000);
 
-  if ('serviceWorker' in navigator && 'SyncManager' in window) {
+  if ("serviceWorker" in navigator && "SyncManager" in window) {
     navigator.serviceWorker.ready
       .then((registration) => {
         return getPendingPointages().then((pending) => {
           if (pending.length) {
-            return registration.sync.register('sync-pointages');
+            return registration.sync.register("sync-pointages");
           }
           return null;
         });
@@ -90,8 +94,8 @@ export function startAutoSync() {
         // ignore
       });
 
-    navigator.serviceWorker.addEventListener('message', (event) => {
-      if (event.data && event.data.type === 'SYNC_COMPLETED') {
+    navigator.serviceWorker.addEventListener("message", (event) => {
+      if (event.data && event.data.type === "SYNC_COMPLETED") {
         syncPending();
       }
     });
@@ -104,10 +108,7 @@ export async function getBadgeCount() {
 }
 
 export function onSyncComplete(callback) {
-  if (typeof callback === 'function') {
+  if (typeof callback === "function") {
     syncCallbacks.push(callback);
   }
 }
-
-
-

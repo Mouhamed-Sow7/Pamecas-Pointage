@@ -99,6 +99,11 @@ app.get("/agent", (req, res) => {
   res.sendFile(path.join(publicPath, "agent.html"));
 });
 
+// Servir kiosk.html sur /kiosk (PWA kiosque indépendant)
+app.get("/kiosk", (req, res) => {
+  res.sendFile(path.join(publicPath, "kiosk.html"));
+});
+
 // ✅ SPA catch-all — uniquement pour les routes non-API et non-fichiers statiques
 app.get("*", (req, res, next) => {
   // Ne pas intercepter les appels API ni les fichiers avec extension

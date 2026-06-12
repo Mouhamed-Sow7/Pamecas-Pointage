@@ -1,7 +1,7 @@
 {
   "name": "gds-pointage",
   "version": "1.0.0",
-  "description": "SystÃ¨me de pointage QR code offline-first pour Grands Domaines du SÃ©nÃ©gal (GDS).",
+  "description": "Systéme de pointage QR code offline-first pour Grands Domaines du Sénégal (GDS).",
   "main": "server/app.js",
   "scripts": {
     "start": "node server/app.js",

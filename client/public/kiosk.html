@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#1a472a" />
+    <link rel="manifest" href="/manifest-kiosk.json" />
+    <title>SmartPointage — Kiosque</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="/vendor/fontawesome-free-7.2.0-web/css/all.min.css"
+    />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <style>
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+        font-family:
+          DM Sans,
+          sans-serif;
+        background: #0a1a0f;
+        color: #fff;
+      }
+      #kiosk-root {
+        min-height: 100vh;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="kiosk-root"></div>
+
+    <script type="module">
+      // Bootstrap kiosk app: ensure we prefer `kiosk_token` storage key but keep compatibility
+      // Expose legacy alias for compatibility
+      (function () {
+        const root = document.getElementById("kiosk-root");
+        import("/src/pages/kiosque.js").then((mod) => {
+          try {
+            // If page was opened with ?site=.. or ?ktoken=.., leave handling to the module
+            // Provide a small adapter: if a modern `kiosk_token` exists, mirror it to legacy key
+            const modern = localStorage.getItem("kiosk_token");
+            if (modern && !localStorage.getItem("kiosque_mode")) {
+              localStorage.setItem("kiosque_mode", modern);
+            }
+          } catch (e) {}
+          // Render the kiosque into root
+          if (mod && typeof mod.renderKiosque === "function")
+            mod.renderKiosque(root);
+        });
+      })();
+    </script>
+  </body>
+</html>

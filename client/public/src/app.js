@@ -53,6 +53,7 @@ function updateOfflineBanner() {
 
 function clearKiosqueStorage() {
   localStorage.removeItem("kiosque_mode");
+  localStorage.removeItem("kiosk_token");
   localStorage.removeItem("kiosque_nom");
   localStorage.removeItem("kiosque_site");
   localStorage.removeItem("kiosque_pin");
@@ -154,50 +155,6 @@ function mountLayout(route, user) {
 
 async function router() {
   updateOfflineBanner();
-
-  // Mode kiosque permanent sur tablette
-  const kiosqueToken = localStorage.getItem("kiosque_mode");
-  if (kiosqueToken) {
-    // Vérifier la validité du token avant de basculer
-    try {
-      const res = await fetch(`/api/auth/kiosque/${kiosqueToken}`);
-      if (!res.ok) {
-        console.warn("Token kiosque invalide — nettoyage automatique");
-        clearKiosqueStorage();
-        window.location.hash = "#/login";
-        showKiosqueExpiredBanner();
-        return;
-      }
-      const data = await res.json();
-      window._kiosqueToken = kiosqueToken;
-      window._kiosqueSiteNom =
-        data.site?.nom || localStorage.getItem("kiosque_nom") || "Agence";
-    } catch (err) {
-      // Hors ligne: continuer avec les infos locales
-      if (!navigator.onLine) {
-        window._kiosqueToken = kiosqueToken;
-        window._kiosqueSiteNom =
-          localStorage.getItem("kiosque_nom") || "Agence";
-      } else {
-        clearKiosqueStorage();
-        window.location.hash = "#/login";
-        return;
-      }
-    }
-
-    const app = document.getElementById("app");
-    if (!app) return;
-    if (
-      document.documentElement.requestFullscreen &&
-      !document.fullscreenElement
-    ) {
-      document.documentElement.requestFullscreen().catch(() => {});
-    }
-    app.className = "";
-    app.innerHTML = "";
-    renderKiosque(app);
-    return;
-  }
 
   const hash = window.location.hash || "#/dashboard";
   const route = hash.replace("#", "").split("?")[0] || "/dashboard";

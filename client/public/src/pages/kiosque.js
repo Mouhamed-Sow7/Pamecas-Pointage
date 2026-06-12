@@ -2,6 +2,30 @@
 import { showModal } from "../components/modal.js";
 import { showToast } from "../components/toast.js";
 
+// Storage helpers: prefer modern `kiosk_token` but remain compatible with legacy `kiosque_mode`
+function getKioskTokenStorage() {
+  return (
+    localStorage.getItem("kiosk_token") || localStorage.getItem("kiosque_mode")
+  );
+}
+
+function setKioskTokenStorage(token) {
+  try {
+    localStorage.setItem("kiosk_token", token);
+    localStorage.setItem("kiosque_mode", token);
+  } catch (e) {}
+}
+
+function clearKioskStorageAll() {
+  try {
+    localStorage.removeItem("kiosk_token");
+    localStorage.removeItem("kiosque_mode");
+    localStorage.removeItem("kiosque_nom");
+    localStorage.removeItem("kiosque_site");
+    localStorage.removeItem("kiosque_pin");
+  } catch (e) {}
+}
+
 let animationId = null;
 let isProcessing = false;
 let scanFrame = null;
@@ -385,7 +409,10 @@ export async function renderKiosque(root) {
   const params = new URLSearchParams(queryStr);
 
   let token =
-    window._kiosqueToken || params.get("ktoken") || params.get("token");
+    window._kiosqueToken ||
+    params.get("ktoken") ||
+    params.get("token") ||
+    getKioskTokenStorage();
   let siteId = params.get("site");
   let siteNom =
     window._kiosqueSiteNom ||
@@ -534,14 +561,15 @@ export async function renderKiosque(root) {
         background: linear-gradient(90deg, transparent, #4CAF50, transparent);
         animation: scanAnim 2s linear infinite;
         border-radius: 1px;
-      }
-      @keyframes scanAnim {
-        0% { top: 0; opacity: 1; }
-        50% { opacity: 0.6; }
-        100% { top: 100%; opacity: 1; }
-      }
-      .kiosque-spinner {
-        width: 56px; height: 56px;
+          <button onclick="
+            localStorage.removeItem('kiosk_token');
+            localStorage.removeItem('kiosque_mode');
+            localStorage.removeItem('kiosque_nom');
+            localStorage.removeItem('kiosque_site');
+            localStorage.removeItem('kiosque_pin');
+            window.location.hash='#/login';
+            window.location.reload();
+          " style="padding:12px 24px;background:#2e7d32;color:white;border:none;border-radius:10px;font-size:0.95rem;font-weight:600;cursor:pointer;margin-top:8px;">
         border: 4px solid rgba(255,255,255,0.2);
         border-top-color: #4CAF50;
         border-radius: 50%;
@@ -615,7 +643,7 @@ export async function renderKiosque(root) {
       onConfirm: (close) => {
         const pin = document.getElementById("exit-pin")?.value;
         const storedHash = localStorage.getItem("kiosque_pin");
-        const kiosqueToken = localStorage.getItem("kiosque_mode");
+        const kiosqueToken = getKioskTokenStorage();
 
         if (!pin || !storedHash || !kiosqueToken) {
           showToast("PIN invalide.", "error");
@@ -630,10 +658,7 @@ export async function renderKiosque(root) {
           return;
         }
 
-        localStorage.removeItem("kiosque_mode");
-        localStorage.removeItem("kiosque_nom");
-        localStorage.removeItem("kiosque_site");
-        localStorage.removeItem("kiosque_pin");
+        clearKioskStorageAll();
         stopCamera();
         close();
         showToast("Mode kiosque desactive.", "success");
