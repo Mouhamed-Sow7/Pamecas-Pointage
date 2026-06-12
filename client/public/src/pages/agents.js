@@ -158,7 +158,7 @@ function openAgentModal(mode, agent, sites) {
     : `<div id="agent-photo-preview" style="width:80px;height:80px;border-radius:40px;background:#f0f7f2;color:#0f5132;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px;margin:10px auto;">${((agent?.prenom || "?")[0] || "?") + ((agent?.nom || "?")[0] || "?")}</div>`;
 
   const content = `
-    <div style="font-family: 'DM Sans', sans-serif; overflow:hidden; display:flex; flex-direction:column;">
+    <div style="position:relative; overflow:visible; font-family: 'DM Sans', sans-serif; display:flex; flex-direction:column;">
       <div style="padding:8px 14px;border-bottom:1px solid #eee;display:flex;align-items:center;justify-content:center;gap:6px;">
         <div style="color:#888;font-size:13px;">${matriculeDisplay}</div>
         <div id="modal-page-indicators" style="display:flex;gap:8px;align-items:center;justify-content:center;">
@@ -167,12 +167,11 @@ function openAgentModal(mode, agent, sites) {
           <span data-idx="2" style="font-size:14px;color:#999;">○</span>
         </div>
       </div>
+      <button id="btn-slide-prev" type="button" style="position:absolute;top:50%;left:-18px;transform:translateY(-50%);z-index:20;border:1.5px solid #0f5132;background:white;color:#0f5132;border-radius:50%;width:32px;height:32px;font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,0.15);">‹</button>
+      <button id="btn-slide-next" type="button" style="position:absolute;top:50%;right:-18px;transform:translateY(-50%);z-index:20;border:1.5px solid #0f5132;background:white;color:#0f5132;border-radius:50%;width:32px;height:32px;font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,0.15);">›</button>
 
       <div id="slider-wrapper" style="position:relative;width:100%;min-height:420px;overflow:hidden;">
         <div id="slider-parent" style="position:relative;width:100%;height:100%;overflow:visible;">
-          <button id="btn-slide-prev" type="button" style="position:absolute;left:-16px;top:50%;transform:translateY(-50%);z-index:10;border:1.5px solid #0f5132;background:white;color:#0f5132;border-radius:50%;width:32px;height:32px;font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,0.15);">‹</button>
-          <button id="btn-slide-next" type="button" style="position:absolute;right:-16px;top:50%;transform:translateY(-50%);z-index:10;border:1.5px solid #0f5132;background:white;color:#0f5132;border-radius:50%;width:32px;height:32px;font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,0.15);">›</button>
-
           <div id="slider-track" style="display:flex;width:300%;height:100%;transition:transform 0.35s ease-in-out;">
             
             <div id="slide-0" style="width:33.333%;padding:0 16px;box-sizing:border-box;min-height:calc(100% - 56px);">
