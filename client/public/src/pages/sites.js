@@ -10,19 +10,7 @@ const REGIONS_SENEGAL = [
 
 // ─── Rendu du tableau ────────────────────────────────────────────
 function renderTable(root, sites) {
-  import { get, post, put } from '../api.js';
-  import { showModal } from '../components/modal.js';
-  import { showToast } from '../components/toast.js';
-
-  const REGIONS_SENEGAL = [
-    'Dakar','Diourbel','Fatick','Kaffrine','Kaolack',
-    'Kedougou','Kolda','Louga','Matam','Saint-Louis',
-    'Sedhiou','Tambacounda','Thies','Ziguinchor'
-  ];
-
-  // ─── Rendu du tableau ────────────────────────────────────────────
-  function renderTable(root, sites) {
-    const tbody = root.querySelector('#sites-tbody');
+  const tbody = root.querySelector('#sites-tbody');
     if (!tbody) return;
     tbody.innerHTML = '';
 
