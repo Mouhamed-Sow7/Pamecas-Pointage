@@ -146,6 +146,17 @@ router.post("/login", authenticateAgent, async (req, res) => {
   }
 });
 
+// GET /me - Retourne le profil agent (utilisé par le portail agent pour rafraîchir)
+router.get("/me", authenticateAgent, async (req, res) => {
+  try {
+    // req.agent a été peuplé par authenticateAgent
+    return res.json(req.agent);
+  } catch (err) {
+    console.error("Erreur /me agent-portal:", err);
+    return res.status(500).json({ message: "Erreur serveur" });
+  }
+});
+
 // GET /stats - Statistiques de l'agent
 router.get("/stats", authenticateAgent, async (req, res) => {
   try {

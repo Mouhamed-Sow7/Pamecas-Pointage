@@ -1679,7 +1679,8 @@
           }
 
           if (agent && agent._id) {
-            const r = await apiFetch(`/api/agents/${agent._id}`);
+            // Use agent-portal authenticated endpoint to refresh own profile
+            const r = await apiFetch("/api/agent-portal/me");
             if (r && r.ok) {
               const fresh = await r.json();
               // update stored agent_data
