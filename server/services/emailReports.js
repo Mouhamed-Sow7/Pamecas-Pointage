@@ -1,5 +1,5 @@
 // server/services/emailReports.js
-const nodemailer = require("nodemailer");
+const SibApiV3Sdk = require("sib-api-v3-sdk");
 const cron = require("node-cron");
 const ExcelJS = require("exceljs");
 
@@ -257,12 +257,12 @@ function genererEmailHTML(
 async function envoyerRapportMensuel(annee, mois) {
   try {
     if (
-      !process.env.GMAIL_USER ||
-      !process.env.GMAIL_APP_PASSWORD ||
-      !process.env.REPORT_EMAIL_TO
+      !process.env.BREVO_API_KEY ||
+      !process.env.REPORT_EMAIL_TO ||
+      !process.env.GMAIL_USER
     ) {
       console.log(
-        "Email non configure — definir GMAIL_USER, GMAIL_APP_PASSWORD, REPORT_EMAIL_TO",
+        "Email non configure — definir BREVO_API_KEY, GMAIL_USER, REPORT_EMAIL_TO",
       );
       return;
     }
@@ -286,32 +286,29 @@ async function envoyerRapportMensuel(annee, mois) {
     });
     const nomFichier = `rapport-smartpointage-${annee}-${String(mois).padStart(2, "0")}.xlsx`;
 
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: process.env.GMAIL_USER,
-        pass: process.env.GMAIL_APP_PASSWORD,
-      },
-    });
+    const defaultClient = SibApiV3Sdk.ApiClient.instance;
+    defaultClient.authentications["api-key"].apiKey = process.env.BREVO_API_KEY;
 
-    await transporter.sendMail({
-      from: `"SmartPointage" <${process.env.GMAIL_USER}>`,
-      to: process.env.REPORT_EMAIL_TO,
+    const apiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
+    await apiInstance.sendTransacEmail({
+      sender: { email: process.env.GMAIL_USER, name: "SmartPointage" },
+      to: [{ email: process.env.REPORT_EMAIL_TO }],
       subject: `SmartPointage — Rapport mensuel ${nomMois} (PAMECAS)`,
-      html,
-      attachments: [
+      htmlContent: html,
+      attachment: [
         {
-          filename: nomFichier,
-          content: Buffer.from(buffer),
-          contentType:
-            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          name: nomFichier,
+          content: Buffer.from(buffer).toString("base64"),
         },
       ],
     });
 
     console.log(`Rapport mensuel envoye a ${process.env.REPORT_EMAIL_TO}`);
   } catch (err) {
-    console.error("Erreur envoi rapport mensuel:", err.message || err);
+    console.error(
+      "Erreur envoi rapport mensuel:",
+      err.response?.body || err.message || err,
+    );
   }
 }
 
