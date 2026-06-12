@@ -23,6 +23,34 @@ async function genererExcelMensuel(annee, mois) {
 
   // Feuille 1 : Recap par agence
   const wsRecap = workbook.addWorksheet("Recap par agence");
+
+  // Header brandé (3 lignes)
+  wsRecap.mergeCells("A1:F1");
+  const titleCell = wsRecap.getCell("A1");
+  titleCell.value = "Smart● Pointage — Instance PAMECAS";
+  titleCell.fill = {
+    type: "pattern",
+    pattern: "solid",
+    fgColor: { argb: "FF0F5132" },
+  };
+  titleCell.font = { color: { argb: "FFFFFFFF" }, bold: true, size: 14 };
+  titleCell.alignment = { horizontal: "center", vertical: "middle" };
+  wsRecap.getRow(1).height = 28;
+
+  wsRecap.mergeCells("A2:F2");
+  const periodeCell = wsRecap.getCell("A2");
+  periodeCell.value = `Rapport mensuel · Période : ${dateDebut} au ${dateFin}`;
+  periodeCell.fill = {
+    type: "pattern",
+    pattern: "solid",
+    fgColor: { argb: "FFE8F5E9" },
+  };
+  periodeCell.font = { color: { argb: "FF2E7D32" }, italic: true, size: 10 };
+  periodeCell.alignment = { horizontal: "center", vertical: "middle" };
+  wsRecap.getRow(2).height = 18;
+
+  wsRecap.getRow(3).height = 6;
+
   wsRecap.columns = [
     { header: "Agence", key: "agence", width: 24 },
     { header: "Total", key: "total", width: 10 },
@@ -31,7 +59,18 @@ async function genererExcelMensuel(annee, mois) {
     { header: "Retards", key: "retards", width: 12 },
     { header: "Taux presence", key: "taux", width: 16 },
   ];
-  wsRecap.getRow(1).eachCell((cell) => {
+
+  // Ligne d'entêtes colorée (ligne 4)
+  wsRecap.addRow([
+    "Agence",
+    "Total",
+    "Présents",
+    "Absents",
+    "Retards",
+    "Taux présence",
+  ]);
+  const headerRow = wsRecap.lastRow;
+  headerRow.eachCell((cell) => {
     cell.fill = {
       type: "pattern",
       pattern: "solid",
@@ -71,6 +110,34 @@ async function genererExcelMensuel(annee, mois) {
 
   // Feuille 2 : Detail
   const wsDetail = workbook.addWorksheet("Detail pointages");
+
+  // Header brandé (3 lignes) for detail (A1:L1)
+  wsDetail.mergeCells("A1:L1");
+  const titleCellD = wsDetail.getCell("A1");
+  titleCellD.value = "Smart● Pointage — Instance PAMECAS";
+  titleCellD.fill = {
+    type: "pattern",
+    pattern: "solid",
+    fgColor: { argb: "FF0F5132" },
+  };
+  titleCellD.font = { color: { argb: "FFFFFFFF" }, bold: true, size: 14 };
+  titleCellD.alignment = { horizontal: "center", vertical: "middle" };
+  wsDetail.getRow(1).height = 28;
+
+  wsDetail.mergeCells("A2:L2");
+  const periodeCellD = wsDetail.getCell("A2");
+  periodeCellD.value = `Rapport mensuel · Période : ${dateDebut} au ${dateFin}`;
+  periodeCellD.fill = {
+    type: "pattern",
+    pattern: "solid",
+    fgColor: { argb: "FFE8F5E9" },
+  };
+  periodeCellD.font = { color: { argb: "FF2E7D32" }, italic: true, size: 10 };
+  periodeCellD.alignment = { horizontal: "center", vertical: "middle" };
+  wsDetail.getRow(2).height = 18;
+
+  wsDetail.getRow(3).height = 6;
+
   wsDetail.columns = [
     { header: "Date", key: "date", width: 12 },
     { header: "Agence", key: "agence", width: 22 },
@@ -85,13 +152,31 @@ async function genererExcelMensuel(annee, mois) {
     { header: "Methode", key: "methode", width: 12 },
     { header: "Note", key: "note", width: 30 },
   ];
-  wsDetail.getRow(1).eachCell((cell) => {
+
+  // Ligne d'entêtes colorée (ligne 4)
+  wsDetail.addRow([
+    "Date",
+    "Agence",
+    "Matricule",
+    "Nom",
+    "Prenom",
+    "Contrat",
+    "Statut",
+    "Arrivee",
+    "Depart",
+    "Duree",
+    "Methode",
+    "Note",
+  ]);
+  const headerRowD = wsDetail.lastRow;
+  headerRowD.eachCell((cell) => {
     cell.fill = {
       type: "pattern",
       pattern: "solid",
       fgColor: { argb: "FF1B5E20" },
     };
     cell.font = { color: { argb: "FFFFFFFF" }, bold: true };
+    cell.alignment = { horizontal: "center" };
   });
 
   pointages.forEach((p) => {
@@ -198,13 +283,14 @@ function genererEmailHTML(
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
 <body style="margin:0;padding:0;background:#f4f6f4;font-family:'Segoe UI',Arial,sans-serif;">
   <div style="max-width:640px;margin:32px auto;background:white;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
-    <div style="background:linear-gradient(135deg,#1b5e20,#2e7d32);padding:32px 32px 24px;">
-      <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;">
-        <div style="width:48px;height:48px;background:white;border-radius:12px;display:flex;align-items:center;justify-content:center;font-weight:800;color:#2e7d32;font-size:1rem;">SP</div>
-        <div>
-          <div style="color:white;font-size:1.2rem;font-weight:700;">SmartPointage</div>
-          <div style="color:rgba(255,255,255,0.7);font-size:0.8rem;">Instance PAMECAS</div>
+    <div style="background:linear-gradient(135deg,#1b5e20,#2e7d32);padding:20px 28px 18px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
+        <div style="font-size:1.5rem;font-weight:800;color:white;letter-spacing:-0.5px;">
+          Smart<span style="color:#a5d6a7;">●</span>Pointage
         </div>
+      </div>
+      <div style="display:inline-block;background:rgba(255,255,255,0.15);border-radius:20px;padding:3px 12px;margin-bottom:16px;">
+        <span style="color:rgba(255,255,255,0.9);font-size:0.75rem;font-weight:600;letter-spacing:0.05em;">● INSTANCE PAMECAS · SÉNÉGAL</span>
       </div>
       <h1 style="color:white;margin:0;font-size:1.4rem;font-weight:700;">Rapport mensuel — ${nomMois}</h1>
       <p style="color:rgba(255,255,255,0.8);margin:6px 0 0;font-size:0.85rem;">Periode : ${dateDebut} au ${dateFin}</p>
