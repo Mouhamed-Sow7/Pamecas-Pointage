@@ -65,7 +65,15 @@ function renderAgentsList(root, agents) {
           const res = await get("/api/sites");
           sites = res.data || res || [];
         } catch (err) {}
-        openAgentModal(action, agent, sites);
+
+        // Re-fetch agent complet (incluant `photo`) avant d'ouvrir le modal
+        let fullAgent = agent;
+        try {
+          const res = await get(`/api/agents/${agentId}`);
+          fullAgent = res || agent;
+        } catch (err) {}
+
+        openAgentModal(action, fullAgent, sites);
       } else if (action === "delete") {
         showModal({
           title: "Supprimer l'agent",
