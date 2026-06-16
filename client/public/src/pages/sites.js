@@ -110,12 +110,12 @@ function renderTable(root, sites) {
               const expiresStr = expiresIn !== null ? (h > 0 ? h+"h"+(m>0?m+"m":"") : m+"min") : "";
               return `<div style="display:flex;align-items:center;gap:6px;">
                 <span style="font-family:'DM Mono',monospace;font-size:1rem;font-weight:700;letter-spacing:0.15em;color:#0f5132;background:#e8f5e9;padding:4px 10px;border-radius:8px;">${pin}</span>
-                <button class="btn-rotate-pin" data-id="${site._id}" title="Regénérer PIN" style="background:none;border:none;cursor:pointer;font-size:1rem;padding:4px;">🔄</button>
-              </div>${expiresIn !== null ? "<div style=\"font-size:11px;color:"+(expiresIn<60?"#c62828":"#888")+";margin-top:3px;\">⏱ Expire dans "+expiresStr+"</div>" : ""}`;
+                <button class="btn-rotate-pin" data-id="${site._id}" title="Regénérer PIN" style="background:none;border:none;cursor:pointer;padding:4px;color:#0f5132;"><i class=\"fa-solid fa-rotate-right\"></i></button>
+              </div>${expiresIn !== null ? "<div style=\"font-size:11px;color:"+(expiresIn<60?"#c62828":"#888")+";margin-top:3px;\"><i class=\"fa-regular fa-clock\"></i> Expire dans "+expiresStr+"</div>" : ""}`;
             }
             return `<button class="btn-rotate-pin" data-id="${site._id}"
               style="display:flex;align-items:center;gap:5px;padding:5px 10px;border-radius:8px;border:1.5px solid #0f5132;background:white;color:#0f5132;cursor:pointer;font-size:0.75rem;font-weight:500;">
-              🔐 Générer PIN
+              <i class="fa-solid fa-key"></i> Générer PIN
             </button>`;
           })()}
         </td>
@@ -317,7 +317,7 @@ export async function renderSites(root, user) {
       const nom = site?.nom || "ce site";
       try {
         const token = localStorage.getItem("pamecas_token");
-        btnRotatePin.textContent = "⏳";
+        btnRotatePin.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
         btnRotatePin.disabled = true;
         const res = await fetch(`/api/sites/${siteId}/rotate-pin`, {
           method: "POST",
@@ -329,7 +329,7 @@ export async function renderSites(root, user) {
         fetchSites(root);
       } catch {
         showToast("Erreur génération PIN.", "error");
-        btnRotatePin.textContent = "🔄";
+        btnRotatePin.innerHTML = '<i class="fa-solid fa-rotate-right"></i>';
         btnRotatePin.disabled = false;
       }
       return;
