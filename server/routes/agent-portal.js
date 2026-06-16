@@ -31,7 +31,7 @@ const authenticateAgent = async (req, res, next) => {
 
       const agent = await Agent.findOne({
         matricule: matricule.toUpperCase(),
-      }).populate("site_id", "nom code");
+      }).populate("site_id", "nom code kiosque_pin kiosque_pin_expires_at");
       if (!agent || !agent.password_hash) {
         return res
           .status(401)
@@ -133,7 +133,7 @@ router.post("/login", authenticateAgent, async (req, res) => {
         nom: agent.nom,
         prenom: agent.prenom,
         matricule: agent.matricule,
-        site: agent.site_id,
+        site_id: agent.site_id,
         totp_enabled: agent.totp_enabled,
         totp_secret: agent.totp_secret,
         kiosque_pin: sitePin,
