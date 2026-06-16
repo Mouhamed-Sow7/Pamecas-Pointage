@@ -135,7 +135,15 @@ router.patch("/:id/coordonnees", authenticate, async (req, res) => {
   }
 });
 
-// PATCH /:id/pin — Mettre à jour le PIN kiosque pour un site
+// ── Helper PIN rotation ────────────────────────────────────────────
+function genererPin() {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
+function expiresIn8h() {
+  return new Date(Date.now() + 8 * 60 * 60 * 1000);
+}
+
+// PATCH /:id/pin — Définir PIN fixe manuellement (legacy)
 router.patch(
   "/:id/pin",
   authenticate,
@@ -144,23 +152,54 @@ router.patch(
     try {
       const { pin } = req.body;
       if (!pin || String(pin).length < 4)
-        return res
-          .status(400)
-          .json({ message: "PIN invalide — minimum 4 chiffres" });
+        return res.status(400).json({ message: "PIN invalide — minimum 4 chiffres" });
       const site = await Site.findByIdAndUpdate(
         req.params.id,
-        { kiosque_pin: pin },
+        { kiosque_pin: pin, kiosque_pin_expires_at: null, kiosque_pin_rotated_at: new Date() },
+        { new: true },
+      );
+      if (!site) return res.status(404).json({ message: "Site non trouvé" });
+      res.json({ message: "PIN kiosque mis à jour", site: { _id: site._id, nom: site.nom, kiosque_pin: site.kiosque_pin } });
+    } catch (err) {
+      res.status(500).json({ message: "Erreur serveur" });
+    }
+  },
+);
+
+// POST /:id/rotate-pin — Générer un nouveau PIN aléatoire (rotatif)
+router.post(
+  "/:id/rotate-pin",
+  authenticate,
+  authorizeRoles("admin", "superadmin"),
+  async (req, res) => {
+    try {
+      const pin = genererPin();
+      const site = await Site.findByIdAndUpdate(
+        req.params.id,
+        {
+          kiosque_pin: pin,
+          kiosque_pin_expires_at: expiresIn8h(),
+          kiosque_pin_rotated_at: new Date(),
+        },
         { new: true },
       );
       if (!site) return res.status(404).json({ message: "Site non trouvé" });
       res.json({
-        message: "PIN kiosque mis à jour",
-        site: { _id: site._id, nom: site.nom },
+        message: "PIN kiosque rotatif généré",
+        site: {
+          _id: site._id,
+          nom: site.nom,
+          kiosque_pin: site.kiosque_pin,
+          kiosque_pin_expires_at: site.kiosque_pin_expires_at,
+        },
       });
     } catch (err) {
       res.status(500).json({ message: "Erreur serveur" });
     }
   },
 );
+
+// GET / — inclut le PIN dans la réponse pour les admins
+// (déjà géré dans le GET existant — le champ kiosque_pin est dans le modèle)
 
 module.exports = router;

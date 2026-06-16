@@ -61,6 +61,14 @@ const SiteSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+    kiosque_pin_expires_at: {
+      type: Date,
+      default: null,
+    },
+    kiosque_pin_rotated_at: {
+      type: Date,
+      default: null,
+    },
   },
   { timestamps: true },
 );

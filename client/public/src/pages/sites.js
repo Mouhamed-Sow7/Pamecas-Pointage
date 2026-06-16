@@ -97,6 +97,28 @@ function renderTable(root, sites) {
           `
           }
         </td>
+        <td style="padding:10px 12px;border-bottom:1px solid #f0f0f0;min-width:160px;" class="pin-col">
+          ${(() => {
+            const pin = site.kiosque_pin;
+            const expires = site.kiosque_pin_expires_at ? new Date(site.kiosque_pin_expires_at) : null;
+            const now = new Date();
+            const isExpired = expires && expires < now;
+            const expiresIn = expires && !isExpired ? Math.max(0, Math.round((expires - now) / 60000)) : null;
+            if (pin && !isExpired) {
+              const h = expiresIn !== null ? Math.floor(expiresIn/60) : null;
+              const m = expiresIn !== null ? expiresIn % 60 : null;
+              const expiresStr = expiresIn !== null ? (h > 0 ? h+"h"+(m>0?m+"m":"") : m+"min") : "";
+              return `<div style="display:flex;align-items:center;gap:6px;">
+                <span style="font-family:'DM Mono',monospace;font-size:1rem;font-weight:700;letter-spacing:0.15em;color:#0f5132;background:#e8f5e9;padding:4px 10px;border-radius:8px;">${pin}</span>
+                <button class="btn-rotate-pin" data-id="${site._id}" title="Regénérer PIN" style="background:none;border:none;cursor:pointer;font-size:1rem;padding:4px;">🔄</button>
+              </div>${expiresIn !== null ? "<div style=\"font-size:11px;color:"+(expiresIn<60?"#c62828":"#888")+";margin-top:3px;\">⏱ Expire dans "+expiresStr+"</div>" : ""}`;
+            }
+            return `<button class="btn-rotate-pin" data-id="${site._id}"
+              style="display:flex;align-items:center;gap:5px;padding:5px 10px;border-radius:8px;border:1.5px solid #0f5132;background:white;color:#0f5132;cursor:pointer;font-size:0.75rem;font-weight:500;">
+              🔐 Générer PIN
+            </button>`;
+          })()}
+        </td>
       `;
     tbody.appendChild(tr);
   });
@@ -260,7 +282,7 @@ export async function renderSites(root, user) {
                 <th style="padding:12px;text-align:left;font-weight:600;">Region</th>
                 <th style="padding:12px;text-align:left;font-weight:600;">Responsable</th>
                 <th style="padding:12px;text-align:left;font-weight:600;">Statut</th>
-                ${canEdit ? '<th style="padding:12px;text-align:left;font-weight:600;">Actions</th><th style="padding:12px;text-align:left;font-weight:600;">Kiosque</th>' : ""}
+                ${canEdit ? '<th style="padding:12px;text-align:left;font-weight:600;">Actions</th><th style="padding:12px;text-align:left;font-weight:600;">Kiosque</th><th style=\"padding:12px;text-align:left;font-weight:600;\">PIN kiosque</th>' : ""}
               </tr>
             </thead>
             <tbody id="sites-tbody">
@@ -287,6 +309,31 @@ export async function renderSites(root, user) {
     const btnEdit = e.target.closest(".btn-edit-site");
     const btnToggle = e.target.closest(".btn-toggle-site");
     const btnDeploy = e.target.closest(".btn-deploy-kiosque");
+    const btnRotatePin = e.target.closest(".btn-rotate-pin");
+
+    if (btnRotatePin) {
+      const siteId = btnRotatePin.dataset.id;
+      const site = sitesCache.find((s) => s._id === siteId);
+      const nom = site?.nom || "ce site";
+      try {
+        const token = localStorage.getItem("pamecas_token");
+        btnRotatePin.textContent = "⏳";
+        btnRotatePin.disabled = true;
+        const res = await fetch(`/api/sites/${siteId}/rotate-pin`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) throw new Error();
+        const data = await res.json();
+        showToast(`PIN kiosque ${nom} : ${data.site.kiosque_pin} (valide 8h)`, "success");
+        fetchSites(root);
+      } catch {
+        showToast("Erreur génération PIN.", "error");
+        btnRotatePin.textContent = "🔄";
+        btnRotatePin.disabled = false;
+      }
+      return;
+    }
 
     if (btnCopy) {
       await navigator.clipboard.writeText(btnCopy.dataset.url);

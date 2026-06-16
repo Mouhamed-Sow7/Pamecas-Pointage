@@ -37,6 +37,36 @@ io.on("connection", (socket) => {
 connectDB();
 initEmailCron();
 
+// ── Cron rotation PIN kiosque — toutes les 30min, rotate les PINs expirés ──
+(async function initPinRotationCron() {
+  const Site = require("./models/Site");
+  async function rotateExpiredPins() {
+    try {
+      const now = new Date();
+      const expired = await Site.find({
+        kiosque_pin: { $ne: null },
+        kiosque_pin_expires_at: { $lt: now },
+      });
+      for (const site of expired) {
+        const pin = Math.floor(100000 + Math.random() * 900000).toString();
+        await Site.findByIdAndUpdate(site._id, {
+          kiosque_pin: pin,
+          kiosque_pin_expires_at: new Date(now.getTime() + 8 * 60 * 60 * 1000),
+          kiosque_pin_rotated_at: now,
+        });
+        console.log(`[PIN] Rotation automatique → ${site.nom} : ${pin}`);
+      }
+    } catch (e) {
+      console.error("[PIN] Erreur rotation:", e.message);
+    }
+  }
+  // Lancer après 5s (DB connectée) puis toutes les 30min
+  setTimeout(() => {
+    rotateExpiredPins();
+    setInterval(rotateExpiredPins, 30 * 60 * 1000);
+  }, 5000);
+})();
+
 app.use(cors({ origin: CLIENT_URL, credentials: true }));
 app.use(
   helmet({
