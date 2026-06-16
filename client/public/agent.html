@@ -1569,35 +1569,16 @@
           });
           const data = await r.json();
           if (!r.ok) throw new Error(data.message || "Identifiants incorrects");
+          // 1. Stocker le token EN PREMIER
           setAuth(data.token, data.agent);
-          // Gérer le PIN kiosque: s'il est null côté serveur, ne pas le stocker
+          // 2. Stocker le PIN kiosque si configuré (jamais hardcodé)
           if (data.agent.kiosque_pin) {
             localStorage.setItem("kiosque_pin", data.agent.kiosque_pin);
           } else {
             localStorage.removeItem("kiosque_pin");
           }
-          await showApp(data.agent);
-          // Désactiver la déconnexion par PIN si non configurée
-          const btnLogout = $("btn-logout");
-          const existingNote = $("logout-pin-note");
-          if (!data.agent.kiosque_pin) {
-            btnLogout.disabled = true;
-            btnLogout.title =
-              "Déconnexion PIN non configurée — contactez votre administrateur";
-            if (!existingNote) {
-              const note = document.createElement("div");
-              note.id = "logout-pin-note";
-              note.textContent =
-                "Déconnexion PIN non configurée — contactez votre administrateur";
-              note.style.cssText =
-                "font-size:0.78rem;color:#c62828;margin-left:12px;";
-              btnLogout.parentNode.appendChild(note);
-            }
-          } else {
-            btnLogout.disabled = false;
-            btnLogout.title = "Déconnexion";
-            if (existingNote) existingNote.remove();
-          }
+          // 3. Afficher l'app — fromLogin=true évite le fetch /me inutile
+          await showApp(data.agent, true);
         } catch (e) {
           err.textContent = e.message;
           err.style.display = "block";
@@ -1654,11 +1635,11 @@
         if (e.key === "Enter") $("btn-confirm-logout").click();
       });
 
-      async function showApp(agent) {
+      async function showApp(agent, fromLogin = false) {
         $("screen-login").style.display = "none";
         $("screen-app").style.display = "flex";
 
-        // Render basic profile immediately
+        // Affichage immédiat du profil (données locales ou fraîches du login)
         $("header-name").textContent = agent.prenom + " " + agent.nom;
         $("header-agence").textContent =
           agent.site_id?.nom || agent.agence || "Mon Agence";
@@ -1669,44 +1650,29 @@
 
         renderQR(agent);
 
-        // Fetch fresh agent profile from server and then load stats
-        try {
-          const tokenNow = getToken();
-          if (!tokenNow) {
-            await loadStats();
-            startPolling();
-            return;
-          }
-
-          if (agent && agent._id) {
-            // Use agent-portal authenticated endpoint to refresh own profile
+        // Refresh profil depuis serveur UNIQUEMENT au reload (pas au login)
+        // Au login, data.agent est déjà frais — un 2e appel /me causerait un 401
+        // car le nouveau session_token vient juste d'être écrit en DB
+        if (!fromLogin) {
+          try {
             const r = await apiFetch("/api/agent-portal/me");
             if (r && r.ok) {
               const fresh = await r.json();
-              // update stored agent_data
               localStorage.setItem("agent_data", JSON.stringify(fresh));
-              // update displayed profile fields
               $("header-name").textContent = fresh.prenom + " " + fresh.nom;
               $("agent-avatar").textContent = initials(fresh.prenom, fresh.nom);
               $("agent-name").textContent = fresh.prenom + " " + fresh.nom;
               $("agent-matricule").textContent = fresh.matricule || "---";
               $("agent-poste").textContent = fresh.poste || "Agent";
-              // refresh QR if needed
               renderQR(fresh);
             }
-          }
-        } catch (e) {
-          console.warn("Impossible de rafraîchir le profil agent:", e);
-        } finally {
-          try {
-            await loadStats();
           } catch (e) {
-            // ignore
+            console.warn("Impossible de rafraîchir le profil agent:", e);
           }
-          startPolling();
         }
-        // allow caller to await completion
-        return;
+
+        try { await loadStats(); } catch (e) { /* ignore */ }
+        startPolling();
       }
 
       document.addEventListener("visibilitychange", () => {
