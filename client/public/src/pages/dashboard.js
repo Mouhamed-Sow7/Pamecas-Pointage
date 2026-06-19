@@ -224,10 +224,16 @@ export function renderDashboard(root, user) {
             <span style="font-weight:600;font-size:0.82rem;">${a.prenom} ${a.nom}</span>
             <span style="color:#888;font-size:0.78rem;">${a.matricule}</span>
             <span style="font-size:0.78rem;color:#555;">— ${{telephone_vole:"Téléphone volé",telephone_perdu:"Téléphone perdu",telephone_detruit:"Téléphone détruit",autre:"Autre"}[a.demande_deconnexion?.motif] || "—"}</span>
-            <button class="btn-approuver" data-id="${a._id}"
-              style="margin-left:auto;padding:4px 10px;border-radius:7px;border:none;background:#2e7d32;color:white;font-size:0.75rem;cursor:pointer;">
-              <i class="fa-solid fa-check"></i> Approuver
-            </button>
+            <div style="margin-left:auto;display:flex;gap:6px;">
+              <button class="btn-approuver" data-id="${a._id}"
+                style="padding:4px 10px;border-radius:7px;border:none;background:#2e7d32;color:white;font-size:0.75rem;cursor:pointer;">
+                <i class="fa-solid fa-check"></i> Approuver
+              </button>
+              <button class="btn-rejeter" data-id="${a._id}"
+                style="padding:4px 10px;border-radius:7px;border:1.5px solid #c62828;background:white;color:#c62828;font-size:0.75rem;cursor:pointer;">
+                <i class="fa-solid fa-xmark"></i> Rejeter
+              </button>
+            </div>
           </div>
         `).join("");
         list.querySelectorAll(".btn-approuver").forEach(btn => {
@@ -236,6 +242,17 @@ export function renderDashboard(root, user) {
             btn.disabled = true;
             const t = localStorage.getItem("pamecas_token");
             await fetch("/api/agents/" + btn.dataset.id + "/approuver-deconnexion", {
+              method: "POST", headers: { Authorization: "Bearer " + t },
+            });
+            loadDemandesDashboard();
+          });
+        });
+        list.querySelectorAll(".btn-rejeter").forEach(btn => {
+          btn.addEventListener("click", async () => {
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+            btn.disabled = true;
+            const t = localStorage.getItem("pamecas_token");
+            await fetch("/api/agents/" + btn.dataset.id + "/refuser-deconnexion", {
               method: "POST", headers: { Authorization: "Bearer " + t },
             });
             loadDemandesDashboard();

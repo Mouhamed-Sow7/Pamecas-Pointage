@@ -328,6 +328,16 @@ router.post("/conges", authenticateAgent, async (req, res) => {
         .status(400)
         .json({ message: "date_fin doit être >= date_debut" });
     }
+    // L'agent doit être présent le jour de la demande — le congé ne peut
+    // donc pas commencer avant demain (date_debut >= aujourd'hui + 1 jour)
+    const demain = new Date();
+    demain.setHours(0, 0, 0, 0);
+    demain.setDate(demain.getDate() + 1);
+    if (start < demain) {
+      return res.status(400).json({
+        message: "La date de début doit être au minimum demain — vous êtes censé pointer aujourd'hui.",
+      });
+    }
 
     // Compter les jours ouvrés (lundi-vendredi) inclus
     let nb_jours = 0;

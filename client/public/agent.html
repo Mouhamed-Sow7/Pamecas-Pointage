@@ -874,6 +874,9 @@
         <div id="demande-en-attente-block" style="display:none;background:#e8f5e9;border-radius:12px;padding:14px;margin-bottom:20px;text-align:center;">
           <i class="fa-solid fa-clock" style="color:#2e7d32;margin-bottom:6px;"></i>
           <p style="font-size:0.82rem;color:#2e7d32;margin:0;font-weight:500;">Demande de déconnexion en cours — attendez l'approbation de votre administrateur.</p>
+          <p style="font-size:0.72rem;color:#558b6e;margin:8px 0 0;">
+            <i class="fa-solid fa-rotate fa-spin"></i> Vérification automatique toutes les 5s — vous serez connecté dès l'approbation.
+          </p>
         </div>
 
         <!-- Formulaire demande -->
@@ -1488,9 +1491,14 @@
 
       $("btn-new-conge").addEventListener("click", () => {
         $("modal-conge").classList.add("open");
-        const today = new Date().toISOString().slice(0, 10);
-        $("conge-debut").value = today;
-        $("conge-fin").value = today;
+        // Date minimum sélectionnable = demain (l'agent doit pointer aujourd'hui)
+        const demain = new Date();
+        demain.setDate(demain.getDate() + 1);
+        const demainStr = demain.toISOString().slice(0, 10);
+        $("conge-debut").min = demainStr;
+        $("conge-fin").min = demainStr;
+        $("conge-debut").value = demainStr;
+        $("conge-fin").value = demainStr;
       });
       $("btn-close-modal").addEventListener("click", () =>
         $("modal-conge").classList.remove("open"),
@@ -1595,6 +1603,79 @@
         }
       });
 
+      // Credentials gardés en mémoire JS uniquement (jamais localStorage)
+      // pour permettre le retry automatique après approbation admin
+      let _pendingCreds = null;
+      let _retryLoginInterval = null;
+
+      function stopRetryLogin() {
+        if (_retryLoginInterval) {
+          clearInterval(_retryLoginInterval);
+          _retryLoginInterval = null;
+        }
+        _pendingCreds = null;
+      }
+
+      // attemptLogin(id, pwd, silent) — silent=true n'affiche pas d'erreur (utilisé par le polling)
+      async function attemptLogin(id, pwd, silent = false) {
+        const err = $("login-error");
+        if (!silent) err.style.display = "none";
+
+        try {
+          const r = await fetch("/api/agent-portal/login", {
+            method: "POST",
+            headers: {
+              Authorization: "Basic " + btoa(id + ":" + pwd),
+              "Content-Type": "application/json",
+            },
+          });
+          const data = await r.json();
+
+          // ── Session active sur un autre appareil → écran bloquant ──
+          if (r.status === 409 && data.error === "SESSION_ACTIVE") {
+            if (!silent) {
+              $("screen-login").style.display = "none";
+              $("screen-session-active").style.display = "flex";
+              $("session-active-msg").textContent =
+                "Votre compte est connecté sur un autre appareil" +
+                (data.device ? " (" + data.device + ")" : "") + ".";
+              $("screen-session-active").dataset.matricule = id;
+              if (data.has_demande) {
+                $("demande-form-block").style.display = "none";
+                $("demande-en-attente-block").style.display = "block";
+              } else {
+                $("demande-form-block").style.display = "block";
+                $("demande-en-attente-block").style.display = "none";
+              }
+            }
+            return { blocked: true };
+          }
+
+          if (!r.ok) {
+            if (!silent) throw new Error(data.message || "Identifiants incorrects");
+            return { error: true };
+          }
+
+          // Succès — connexion
+          stopRetryLogin();
+          setAuth(data.token, data.agent);
+          if (data.agent.kiosque_pin) {
+            localStorage.setItem("kiosque_pin", data.agent.kiosque_pin);
+          } else {
+            localStorage.removeItem("kiosque_pin");
+          }
+          $("screen-session-active").style.display = "none";
+          await showApp(data.agent, true);
+          return { success: true };
+        } catch (e) {
+          if (!silent) {
+            err.textContent = e.message;
+            err.style.display = "block";
+          }
+          return { error: true };
+        }
+      }
+
       $("btn-login").addEventListener("click", async () => {
         const id = $("login-id").value.trim().toUpperCase();
         const pwd = $("login-pwd").value;
@@ -1611,54 +1692,24 @@
         btn.textContent = "Connexion...";
         btn.disabled = true;
 
-        try {
-          const r = await fetch("/api/agent-portal/login", {
-            method: "POST",
-            headers: {
-              Authorization: "Basic " + btoa(id + ":" + pwd),
-              "Content-Type": "application/json",
-            },
-          });
-          const data = await r.json();
+        const result = await attemptLogin(id, pwd, false);
 
-          // ── Session active sur un autre appareil → écran bloquant ──
-          if (r.status === 409 && data.error === "SESSION_ACTIVE") {
-            $("screen-login").style.display = "none";
-            $("screen-session-active").style.display = "flex";
-            $("session-active-msg").textContent =
-              "Votre compte est connecté sur un autre appareil" +
-              (data.device ? " (" + data.device + ")" : "") + ".";
-            // Stocker matricule pour la demande
-            $("screen-session-active").dataset.matricule = id;
-            // Demande déjà en attente ?
-            if (data.has_demande) {
-              $("demande-form-block").style.display = "none";
-              $("demande-en-attente-block").style.display = "block";
-            } else {
-              $("demande-form-block").style.display = "block";
-              $("demande-en-attente-block").style.display = "none";
+        // Si bloqué par session active, garder credentials en mémoire pour retry auto
+        if (result?.blocked) {
+          _pendingCreds = { id, pwd };
+          stopRetryLogin();
+          // Vérifie toutes les 5s si la session a été libérée (approbation admin)
+          _retryLoginInterval = setInterval(async () => {
+            if (!_pendingCreds) return stopRetryLogin();
+            const res = await attemptLogin(_pendingCreds.id, _pendingCreds.pwd, true);
+            if (res?.success) {
+              stopRetryLogin();
             }
-            return;
-          }
-
-          if (!r.ok) throw new Error(data.message || "Identifiants incorrects");
-          // 1. Stocker le token EN PREMIER
-          setAuth(data.token, data.agent);
-          // 2. Stocker le PIN kiosque si configuré (jamais hardcodé)
-          if (data.agent.kiosque_pin) {
-            localStorage.setItem("kiosque_pin", data.agent.kiosque_pin);
-          } else {
-            localStorage.removeItem("kiosque_pin");
-          }
-          // 3. Afficher l'app — fromLogin=true évite le fetch /me inutile
-          await showApp(data.agent, true);
-        } catch (e) {
-          err.textContent = e.message;
-          err.style.display = "block";
-        } finally {
-          btn.textContent = "Se connecter";
-          btn.disabled = false;
+          }, 5000);
         }
+
+        btn.textContent = "Se connecter";
+        btn.disabled = false;
       });
 
       $("login-pwd").addEventListener("keydown", (e) => {
@@ -1667,6 +1718,7 @@
 
       // ── Écran session active — bouton retour ──────────────────────
       $("btn-retour-login").addEventListener("click", () => {
+        stopRetryLogin();
         $("screen-session-active").style.display = "none";
         $("screen-login").style.display = "flex";
       });
