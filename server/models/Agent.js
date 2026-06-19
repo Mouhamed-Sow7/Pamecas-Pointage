@@ -86,6 +86,12 @@ const AgentSchema = new Schema(
       type: String,
       default: null,
     },
+    // Demande de déconnexion forcée (soumise par l'agent, approuvée par admin)
+    demande_deconnexion: {
+      statut: { type: String, enum: ["en_attente", "approuvee", null], default: null },
+      motif: { type: String, default: null },
+      date_demande: { type: Date, default: null },
+    },
     // Congés
     jours_conge_annuels: {
       type: Number,

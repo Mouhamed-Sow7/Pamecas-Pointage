@@ -218,8 +218,10 @@
       /* HEADER */
       .app-header {
         background: var(--green);
-        padding: calc(0px + env(safe-area-inset-top)) 20px 0 20px;
-        height: 64px;
+        /* safe-area-inset-top pour iPhone avec notch/Dynamic Island */
+        padding: calc(12px + env(safe-area-inset-top)) 20px 12px 20px;
+        min-height: 64px;
+        height: auto;
         display: flex;
         align-items: center;
         justify-content: space-between;
@@ -257,8 +259,8 @@
         font-weight: 300;
       }
       .btn-logout {
-        width: 36px;
-        height: 36px;
+        width: 44px;
+        height: 44px;
         border-radius: 50%;
         border: none;
         background: rgba(255, 255, 255, 0.12);
@@ -268,6 +270,10 @@
         align-items: center;
         justify-content: center;
         transition: background 0.15s;
+        /* Zone de touch minimum recommandée Apple/Google : 44x44px */
+        min-width: 44px;
+        min-height: 44px;
+        flex-shrink: 0;
       }
       .btn-logout:active {
         background: rgba(255, 255, 255, 0.2);
@@ -848,6 +854,49 @@
         </div>
         <button class="btn-primary" id="btn-login">Se connecter</button>
         <div class="login-error" id="login-error"></div>
+      </div>
+    </div>
+
+    <!-- ─── SESSION ACTIVE ─────────────────────────────── -->
+    <div id="screen-session-active" style="display:none;min-height:100vh;background:linear-gradient(160deg,#0f5132 0%,#1a7a4a 100%);align-items:center;justify-content:center;padding:24px;">
+      <div style="background:white;border-radius:20px;padding:32px 24px;max-width:380px;width:100%;box-shadow:0 8px 40px rgba(0,0,0,0.18);">
+        <div style="text-align:center;margin-bottom:24px;">
+          <div style="width:64px;height:64px;border-radius:50%;background:#fff3e0;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+            <i class="fa-solid fa-triangle-exclamation" style="font-size:28px;color:#e65100;"></i>
+          </div>
+          <h2 style="font-size:1.15rem;font-weight:700;color:#1a1a2e;margin:0 0 8px;">Session déjà active</h2>
+          <p style="font-size:0.875rem;color:#555;line-height:1.5;margin:0;" id="session-active-msg">
+            Votre compte est connecté sur un autre appareil.
+          </p>
+        </div>
+
+        <!-- Demande déjà envoyée -->
+        <div id="demande-en-attente-block" style="display:none;background:#e8f5e9;border-radius:12px;padding:14px;margin-bottom:20px;text-align:center;">
+          <i class="fa-solid fa-clock" style="color:#2e7d32;margin-bottom:6px;"></i>
+          <p style="font-size:0.82rem;color:#2e7d32;margin:0;font-weight:500;">Demande de déconnexion en cours — attendez l'approbation de votre administrateur.</p>
+        </div>
+
+        <!-- Formulaire demande -->
+        <div id="demande-form-block">
+          <p style="font-size:0.82rem;color:#444;margin:0 0 12px;font-weight:500;">
+            Pour déconnecter l'ancien appareil, soumettez une demande à votre administrateur :
+          </p>
+          <select id="motif-deconnexion" style="width:100%;padding:10px 12px;border-radius:10px;border:1.5px solid #ddd;font-size:0.875rem;margin-bottom:12px;outline:none;color:#333;">
+            <option value="">— Choisir un motif —</option>
+            <option value="telephone_vole">Téléphone volé</option>
+            <option value="telephone_perdu">Téléphone perdu</option>
+            <option value="telephone_detruit">Téléphone détruit / HS</option>
+            <option value="autre">Autre raison</option>
+          </select>
+          <div id="session-active-error" style="font-size:0.8rem;color:#c62828;margin-bottom:10px;display:none;"></div>
+          <button id="btn-envoyer-demande" class="btn-primary" style="width:100%;margin-bottom:10px;">
+            <i class="fa-solid fa-paper-plane"></i> Envoyer la demande
+          </button>
+        </div>
+
+        <button id="btn-retour-login" style="width:100%;padding:10px;border-radius:10px;border:1.5px solid #ddd;background:white;color:#666;font-size:0.875rem;cursor:pointer;">
+          <i class="fa-solid fa-arrow-left"></i> Retour
+        </button>
       </div>
     </div>
 
@@ -1568,6 +1617,27 @@
             },
           });
           const data = await r.json();
+
+          // ── Session active sur un autre appareil → écran bloquant ──
+          if (r.status === 409 && data.error === "SESSION_ACTIVE") {
+            $("screen-login").style.display = "none";
+            $("screen-session-active").style.display = "flex";
+            $("session-active-msg").textContent =
+              "Votre compte est connecté sur un autre appareil" +
+              (data.device ? " (" + data.device + ")" : "") + ".";
+            // Stocker matricule pour la demande
+            $("screen-session-active").dataset.matricule = id;
+            // Demande déjà en attente ?
+            if (data.has_demande) {
+              $("demande-form-block").style.display = "none";
+              $("demande-en-attente-block").style.display = "block";
+            } else {
+              $("demande-form-block").style.display = "block";
+              $("demande-en-attente-block").style.display = "none";
+            }
+            return;
+          }
+
           if (!r.ok) throw new Error(data.message || "Identifiants incorrects");
           // 1. Stocker le token EN PREMIER
           setAuth(data.token, data.agent);
@@ -1590,6 +1660,48 @@
 
       $("login-pwd").addEventListener("keydown", (e) => {
         if (e.key === "Enter") $("btn-login").click();
+      });
+
+      // ── Écran session active — bouton retour ──────────────────────
+      $("btn-retour-login").addEventListener("click", () => {
+        $("screen-session-active").style.display = "none";
+        $("screen-login").style.display = "flex";
+      });
+
+      // ── Écran session active — envoyer demande de déconnexion ────
+      $("btn-envoyer-demande").addEventListener("click", async () => {
+        const matricule = $("screen-session-active").dataset.matricule;
+        const motif = $("motif-deconnexion").value;
+        const errEl = $("session-active-error");
+        errEl.style.display = "none";
+
+        if (!motif) {
+          errEl.textContent = "Veuillez choisir un motif.";
+          errEl.style.display = "block";
+          return;
+        }
+
+        const btn = $("btn-envoyer-demande");
+        btn.textContent = "Envoi...";
+        btn.disabled = true;
+
+        try {
+          const r = await fetch("/api/agent-portal/demande-deconnexion", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ matricule, motif }),
+          });
+          const data = await r.json();
+          if (!r.ok) throw new Error(data.message || "Erreur");
+          // Afficher confirmation
+          $("demande-form-block").style.display = "none";
+          $("demande-en-attente-block").style.display = "block";
+        } catch (e) {
+          errEl.textContent = e.message;
+          errEl.style.display = "block";
+          btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Envoyer la demande';
+          btn.disabled = false;
+        }
       });
 
       $("btn-logout").addEventListener("click", () => {

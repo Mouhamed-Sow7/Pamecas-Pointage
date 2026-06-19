@@ -773,4 +773,62 @@ router.post(
   },
 );
 
+// ─── GET /demandes-deconnexion — Lister les demandes en attente (admin) ──
+router.get(
+  "/demandes-deconnexion",
+  authorizeRoles("admin", "superadmin"),
+  async (req, res) => {
+    try {
+      const agents = await Agent.find({
+        "demande_deconnexion.statut": "en_attente",
+      }).select("matricule nom prenom session_device demande_deconnexion site_id").populate("site_id", "nom");
+      res.json({ data: agents });
+    } catch (err) {
+      res.status(500).json({ message: "Erreur serveur." });
+    }
+  },
+);
+
+// ─── POST /:id/approuver-deconnexion — Admin approuve → session révoquée ──
+router.post(
+  "/:id/approuver-deconnexion",
+  authorizeRoles("admin", "superadmin"),
+  async (req, res) => {
+    try {
+      const agent = await Agent.findByIdAndUpdate(
+        req.params.id,
+        {
+          session_token: null,
+          session_device: null,
+          demande_deconnexion: { statut: "approuvee", motif: null, date_demande: null },
+        },
+        { new: true },
+      );
+      if (!agent) return res.status(404).json({ message: "Agent non trouvé." });
+      res.json({ message: `Session de ${agent.prenom} ${agent.nom} révoquée. L'agent peut se reconnecter.` });
+    } catch (err) {
+      res.status(500).json({ message: "Erreur serveur." });
+    }
+  },
+);
+
+// ─── POST /:id/refuser-deconnexion — Admin refuse la demande ──────────────
+router.post(
+  "/:id/refuser-deconnexion",
+  authorizeRoles("admin", "superadmin"),
+  async (req, res) => {
+    try {
+      const agent = await Agent.findByIdAndUpdate(
+        req.params.id,
+        { demande_deconnexion: { statut: null, motif: null, date_demande: null } },
+        { new: true },
+      );
+      if (!agent) return res.status(404).json({ message: "Agent non trouvé." });
+      res.json({ message: "Demande refusée." });
+    } catch (err) {
+      res.status(500).json({ message: "Erreur serveur." });
+    }
+  },
+);
+
 module.exports = router;

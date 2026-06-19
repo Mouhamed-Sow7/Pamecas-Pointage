@@ -106,6 +106,25 @@ router.post("/login", authenticateAgent, async (req, res) => {
   try {
     const agent = req.agent;
 
+    // ── Session active détectée → bloquer le login ─────────────────
+    if (agent.session_token) {
+      // Vérifier si une demande de déconnexion est en attente (approuvée par admin)
+      const demandeApprouvee = agent.demande_deconnexion?.statut === "approuvee";
+      if (!demandeApprouvee) {
+        return res.status(409).json({
+          error: "SESSION_ACTIVE",
+          message: "Une session est déjà active sur un autre appareil.",
+          device: agent.session_device || null,
+          matricule: agent.matricule,
+          has_demande: agent.demande_deconnexion?.statut === "en_attente",
+        });
+      }
+      // Demande approuvée → réinitialiser le champ avant de continuer
+      await Agent.findByIdAndUpdate(agent._id, {
+        demande_deconnexion: { statut: null, motif: null, date_demande: null },
+      });
+    }
+
     // Générer une session unique et l'enregistrer de manière atomique
     const sessionId = require("crypto").randomUUID();
     const update = { session_token: sessionId };
@@ -338,6 +357,40 @@ router.post("/conges", authenticateAgent, async (req, res) => {
   } catch (error) {
     console.error("Erreur création congé:", error);
     res.status(500).json({ message: "Erreur serveur" });
+  }
+});
+
+// POST /demande-deconnexion — Agent soumet une demande (sans être connecté)
+// Route publique (pas de middleware auth) — identifié par matricule
+router.post("/demande-deconnexion", async (req, res) => {
+  try {
+    const { matricule, motif } = req.body;
+    const MOTIFS_VALIDES = ["telephone_vole", "telephone_perdu", "telephone_detruit", "autre"];
+    if (!matricule || !motif || !MOTIFS_VALIDES.includes(motif)) {
+      return res.status(400).json({ message: "Matricule et motif valide requis." });
+    }
+    const agent = await Agent.findOne({ matricule: matricule.toUpperCase() });
+    if (!agent) return res.status(404).json({ message: "Agent non trouvé." });
+    if (!agent.session_token) {
+      return res.status(400).json({ message: "Aucune session active pour cet agent." });
+    }
+    if (agent.demande_deconnexion?.statut === "en_attente") {
+      return res.status(409).json({ message: "Une demande est déjà en cours de traitement." });
+    }
+    await Agent.findByIdAndUpdate(agent._id, {
+      demande_deconnexion: {
+        statut: "en_attente",
+        motif,
+        date_demande: new Date(),
+      },
+    });
+    res.json({
+      message: "Demande envoyée — un administrateur va traiter votre demande.",
+      matricule: agent.matricule,
+    });
+  } catch (err) {
+    console.error("Erreur demande-deconnexion:", err);
+    res.status(500).json({ message: "Erreur serveur." });
   }
 });
 

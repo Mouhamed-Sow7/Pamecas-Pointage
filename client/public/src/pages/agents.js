@@ -557,6 +557,13 @@ export async function renderAgents(root, user) {
 
   root.innerHTML = `
     <div style="display:flex; flex-direction:column; gap:12px;">
+      ${canEdit ? `<div id="demandes-deconnexion-banner" style="display:none;background:#fff3e0;border:1.5px solid #ffb74d;border-radius:12px;padding:14px 18px;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+          <i class="fa-solid fa-triangle-exclamation" style="color:#e65100;font-size:1.1rem;"></i>
+          <span style="font-weight:600;color:#e65100;font-size:0.9rem;">Demandes de déconnexion en attente</span>
+        </div>
+        <div id="demandes-list"></div>
+      </div>` : ""}
       <div class="card">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
           <h2 style="font-size:1.1rem;font-weight:700;">
@@ -744,4 +751,80 @@ export async function renderAgents(root, user) {
   }
 
   fetchAgents(root, 1);
+
+  // ── Charger les demandes de déconnexion en attente (admin only) ──
+  if (canEdit) {
+    async function loadDemandesDeconnexion() {
+      try {
+        const res = await get("/api/agents/demandes-deconnexion");
+        const demandes = res.data || [];
+        const banner = root.querySelector("#demandes-deconnexion-banner");
+        const list = root.querySelector("#demandes-list");
+        if (!banner || !list) return;
+
+        if (!demandes.length) { banner.style.display = "none"; return; }
+        banner.style.display = "block";
+        list.innerHTML = demandes.map(a => `
+          <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid #ffe0b2;flex-wrap:wrap;" data-agent-id="${a._id}">
+            <div style="flex:1;min-width:180px;">
+              <span style="font-weight:600;font-size:0.875rem;">${a.prenom} ${a.nom}</span>
+              <span style="color:#888;font-size:0.78rem;margin-left:6px;">${a.matricule}</span>
+              <div style="font-size:0.78rem;color:#666;margin-top:2px;">
+                <i class="fa-solid fa-building" style="color:#0f5132;"></i> ${a.site_id?.nom || "—"}
+                &nbsp;·&nbsp;
+                <i class="fa-solid fa-mobile-screen" style="color:#888;"></i> ${a.session_device || "appareil inconnu"}
+                &nbsp;·&nbsp;
+                Motif : <strong>${{
+                  telephone_vole: "Téléphone volé",
+                  telephone_perdu: "Téléphone perdu",
+                  telephone_detruit: "Téléphone détruit/HS",
+                  autre: "Autre"
+                }[a.demande_deconnexion?.motif] || a.demande_deconnexion?.motif}</strong>
+              </div>
+            </div>
+            <div style="display:flex;gap:6px;">
+              <button class="btn-approuver-deconnexion btn-primary" data-id="${a._id}"
+                style="font-size:0.78rem;padding:5px 10px;background:#2e7d32;">
+                <i class="fa-solid fa-check"></i> Approuver
+              </button>
+              <button class="btn-refuser-deconnexion" data-id="${a._id}"
+                style="font-size:0.78rem;padding:5px 10px;border-radius:8px;border:1.5px solid #c62828;background:white;color:#c62828;cursor:pointer;">
+                <i class="fa-solid fa-xmark"></i> Refuser
+              </button>
+            </div>
+          </div>
+        `).join("");
+
+        // Handlers approuver / refuser
+        list.querySelectorAll(".btn-approuver-deconnexion").forEach(btn => {
+          btn.addEventListener("click", async () => {
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+            btn.disabled = true;
+            try {
+              const res = await post(`/api/agents/${btn.dataset.id}/approuver-deconnexion`, {});
+              showToast(res.message || "Session révoquée — agent peut se reconnecter", "success");
+              loadDemandesDeconnexion();
+            } catch { showToast("Erreur", "error"); }
+          });
+        });
+        list.querySelectorAll(".btn-refuser-deconnexion").forEach(btn => {
+          btn.addEventListener("click", async () => {
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+            btn.disabled = true;
+            try {
+              await post(`/api/agents/${btn.dataset.id}/refuser-deconnexion`, {});
+              showToast("Demande refusée", "info");
+              loadDemandesDeconnexion();
+            } catch { showToast("Erreur", "error"); }
+          });
+        });
+      } catch (e) {
+        console.warn("Erreur chargement demandes déconnexion:", e);
+      }
+    }
+    loadDemandesDeconnexion();
+    // Rafraîchir toutes les 60s
+    const demandesInterval = setInterval(loadDemandesDeconnexion, 60000);
+    window.addEventListener("hashchange", () => clearInterval(demandesInterval), { once: true });
+  }
 }
