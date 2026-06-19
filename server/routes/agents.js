@@ -279,6 +279,22 @@ router.get("/search", async (req, res) => {
   }
 });
 
+// ─── GET /demandes-deconnexion — Doit être AVANT /:id pour éviter conflit ──
+router.get(
+  "/demandes-deconnexion",
+  authorizeRoles("admin", "superadmin"),
+  async (req, res) => {
+    try {
+      const agents = await Agent.find({
+        "demande_deconnexion.statut": "en_attente",
+      }).select("matricule nom prenom session_device demande_deconnexion site_id").populate("site_id", "nom");
+      res.json({ data: agents });
+    } catch (err) {
+      res.status(500).json({ message: "Erreur serveur." });
+    }
+  },
+);
+
 router.get("/:id", async (req, res) => {
   try {
     const { id } = req.params;
@@ -774,21 +790,6 @@ router.post(
 );
 
 // ─── GET /demandes-deconnexion — Lister les demandes en attente (admin) ──
-router.get(
-  "/demandes-deconnexion",
-  authorizeRoles("admin", "superadmin"),
-  async (req, res) => {
-    try {
-      const agents = await Agent.find({
-        "demande_deconnexion.statut": "en_attente",
-      }).select("matricule nom prenom session_device demande_deconnexion site_id").populate("site_id", "nom");
-      res.json({ data: agents });
-    } catch (err) {
-      res.status(500).json({ message: "Erreur serveur." });
-    }
-  },
-);
-
 // ─── POST /:id/approuver-deconnexion — Admin approuve → session révoquée ──
 router.post(
   "/:id/approuver-deconnexion",

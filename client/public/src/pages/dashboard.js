@@ -33,6 +33,16 @@ export function renderDashboard(root, user) {
         </div>
       </div>
 
+      <!-- Bannière demandes de déconnexion — admin/superadmin only -->
+      ${(user?.role === "admin" || user?.role === "superadmin") ? `
+      <div id="demandes-deconnexion-banner" style="display:none;background:#fff3e0;border:1.5px solid #ffb74d;border-radius:12px;padding:12px 16px;margin-bottom:16px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+          <i class="fa-solid fa-triangle-exclamation" style="color:#e65100;"></i>
+          <span style="font-weight:600;color:#e65100;font-size:0.875rem;">Demandes de déconnexion en attente</span>
+        </div>
+        <div id="demandes-list-dashboard"></div>
+      </div>` : ""}
+
       <!-- KPI skeleton -->
       <div id="dashboard-skeleton">
         <div class="kpi-grid" style="margin-bottom:16px;">
@@ -192,6 +202,50 @@ export function renderDashboard(root, user) {
   }
 
   loadData();
+
+  // ── Demandes de déconnexion (admin/superadmin) ────────────────────
+  if (user?.role === "admin" || user?.role === "superadmin") {
+    async function loadDemandesDashboard() {
+      try {
+        const token = localStorage.getItem("pamecas_token");
+        const r = await fetch("/api/agents/demandes-deconnexion", {
+          headers: { Authorization: "Bearer " + token },
+        });
+        if (!r.ok) return;
+        const data = await r.json();
+        const demandes = data.data || [];
+        const banner = root.querySelector("#demandes-deconnexion-banner");
+        const list = root.querySelector("#demandes-list-dashboard");
+        if (!banner || !list) return;
+        if (!demandes.length) { banner.style.display = "none"; return; }
+        banner.style.display = "block";
+        list.innerHTML = demandes.map(a => `
+          <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-top:1px solid #ffe0b2;flex-wrap:wrap;" data-id="${a._id}">
+            <span style="font-weight:600;font-size:0.82rem;">${a.prenom} ${a.nom}</span>
+            <span style="color:#888;font-size:0.78rem;">${a.matricule}</span>
+            <span style="font-size:0.78rem;color:#555;">— ${{telephone_vole:"Téléphone volé",telephone_perdu:"Téléphone perdu",telephone_detruit:"Téléphone détruit",autre:"Autre"}[a.demande_deconnexion?.motif] || "—"}</span>
+            <button class="btn-approuver" data-id="${a._id}"
+              style="margin-left:auto;padding:4px 10px;border-radius:7px;border:none;background:#2e7d32;color:white;font-size:0.75rem;cursor:pointer;">
+              <i class="fa-solid fa-check"></i> Approuver
+            </button>
+          </div>
+        `).join("");
+        list.querySelectorAll(".btn-approuver").forEach(btn => {
+          btn.addEventListener("click", async () => {
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+            btn.disabled = true;
+            const t = localStorage.getItem("pamecas_token");
+            await fetch("/api/agents/" + btn.dataset.id + "/approuver-deconnexion", {
+              method: "POST", headers: { Authorization: "Bearer " + t },
+            });
+            loadDemandesDashboard();
+          });
+        });
+      } catch (e) { /* silencieux */ }
+    }
+    loadDemandesDashboard();
+    setInterval(loadDemandesDashboard, 60000);
+  }
 
   // Start polling only if a token exists
   const token = localStorage.getItem("pamecas_token");
