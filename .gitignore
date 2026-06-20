@@ -1,1 +1,5 @@
 refacto/
+.env
+.env.local
+.env.*.local
+
