@@ -427,8 +427,29 @@ function openAgentModal(mode, agent, sites) {
       async function save(data) {
         try {
           if (mode === "create") {
-            await post("/api/agents", data);
-            showToast("Agent mis à jour.", "success");
+            const res = await post("/api/agents", data);
+            const matricule = res?.matricule;
+            const pwd = res?.default_password_info;
+            if (matricule && pwd) {
+              showToast(`Agent ${matricule} créé avec succès.`, "success");
+              // Modal persistante — le mot de passe ne doit pas disparaître après 3.5s
+              const overlay = document.createElement("div");
+              overlay.style.cssText =
+                "position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:999;display:flex;align-items:center;justify-content:center;padding:20px;";
+              overlay.innerHTML = `
+                <div style="background:white;border-radius:16px;padding:28px;max-width:380px;width:100%;text-align:center;">
+                  <i class="fa-solid fa-circle-check" style="font-size:2rem;color:#2e7d32;margin-bottom:12px;"></i>
+                  <h3 style="margin:0 0 6px;font-size:1.1rem;">Agent créé : ${matricule}</h3>
+                  <p style="color:#666;font-size:0.85rem;margin-bottom:16px;">Communiquez ce mot de passe à l'agent pour son premier accès au portail :</p>
+                  <div style="background:#e8f5e9;border-radius:10px;padding:14px;font-family:'DM Mono',monospace;font-size:1.4rem;font-weight:700;letter-spacing:0.2em;color:#0f5132;margin-bottom:16px;">${pwd}</div>
+                  <button id="btn-close-pwd-modal" style="width:100%;padding:10px;background:#0f5132;color:white;border:none;border-radius:10px;cursor:pointer;font-weight:600;">J'ai noté le mot de passe</button>
+                </div>
+              `;
+              document.body.appendChild(overlay);
+              overlay.querySelector("#btn-close-pwd-modal").addEventListener("click", () => overlay.remove());
+            } else {
+              showToast("Agent créé.", "success");
+            }
           } else if (mode === "edit") {
             await put(`/api/agents/${agent._id}`, data);
             showToast("Agent mis à jour.", "success");

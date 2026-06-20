@@ -365,10 +365,23 @@ router.post("/", authorizeRoles("admin", "superadmin"), async (req, res) => {
       date_embauche: value.date_embauche,
     });
 
+    // 1er save : nécessaire pour que le pre("save") génère le matricule
+    await agent.save();
+
+    // Activer le compte portail automatiquement (comme dans seed.js) :
+    // mot de passe par défaut = 4 derniers chiffres du matricule + QR dynamique TOTP
+    const bcrypt = require("bcryptjs");
+    const defaultPwd = agent.matricule.slice(-4);
+    agent.password_hash = await bcrypt.hash(defaultPwd, 10);
+    agent.genererTOTPSecret(); // génère totp_secret + totp_enabled = true
     await agent.save();
 
     const agentSansPhoto = agent.toObject();
     delete agentSansPhoto.photo;
+    delete agentSansPhoto.password_hash;
+    delete agentSansPhoto.totp_secret;
+    // Indiquer le mot de passe par défaut à l'admin (une seule fois, à la création)
+    agentSansPhoto.default_password_info = defaultPwd;
 
     return res.status(201).json(agentSansPhoto);
   } catch (err) {
