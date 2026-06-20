@@ -399,8 +399,14 @@ export async function renderSites(root, user) {
 
     if (btnDeploy) {
       const siteId = btnDeploy.dataset.site;
-      // Open kiosk in a new window/tab scoped to /kiosk to avoid modifying admin storage
-      window.open("/kiosk?site=" + encodeURIComponent(siteId), "_blank");
+      const site = sitesCache.find((s) => s._id === siteId);
+      if (!site?.kiosque_url) {
+        showToast("Token kiosque manquant — clique d'abord sur 'Générer' pour ce site.", "error");
+        return;
+      }
+      // Utilise l'URL kiosque déjà générée côté serveur (#/kiosque?ktoken=...)
+      // Le format /kiosk?site=... n'est pas compatible avec renderKiosque() qui lit le hash
+      window.open(site.kiosque_url, "_blank");
       return;
     }
   });

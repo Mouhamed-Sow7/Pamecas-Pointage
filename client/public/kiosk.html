@@ -39,20 +39,27 @@
     <div id="kiosk-root"></div>
 
     <script type="module">
-      // Bootstrap kiosk app: ensure we prefer `kiosk_token` storage key but keep compatibility
-      // Expose legacy alias for compatibility
+      // Bootstrap kiosk app — renderKiosque() lit uniquement window.location.hash,
+      // donc on convertit les query params du path (?site=... ou ?ktoken=...)
+      // vers le format hash attendu (#/kiosque?...) AVANT de monter le module.
       (function () {
         const root = document.getElementById("kiosk-root");
+        const search = window.location.search; // ex: "?site=abc123" ou "?ktoken=uuid"
+        const hasHashParams = window.location.hash.includes("?");
+
+        if (search && !hasHashParams) {
+          // Reconstruit l'URL au format hash que renderKiosque() sait lire
+          const params = new URLSearchParams(search);
+          window.location.hash = "#/kiosque?" + params.toString();
+        }
+
         import("/src/pages/kiosque.js").then((mod) => {
           try {
-            // If page was opened with ?site=.. or ?ktoken=.., leave handling to the module
-            // Provide a small adapter: if a modern `kiosk_token` exists, mirror it to legacy key
             const modern = localStorage.getItem("kiosk_token");
             if (modern && !localStorage.getItem("kiosque_mode")) {
               localStorage.setItem("kiosque_mode", modern);
             }
           } catch (e) {}
-          // Render the kiosque into root
           if (mod && typeof mod.renderKiosque === "function")
             mod.renderKiosque(root);
         });
