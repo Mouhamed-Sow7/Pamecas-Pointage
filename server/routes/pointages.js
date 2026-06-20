@@ -3,6 +3,8 @@ const express = require("express");
 const mongoose = require("mongoose");
 
 const Pointage = require("../models/Pointage");
+const Agent = require("../models/Agent");
+const { validateQRData } = require("../utils/totp");
 const {
   authenticate,
   authorizeRoles,
@@ -68,6 +70,47 @@ router.post("/", async (req, res) => {
       return res
         .status(400)
         .json({ message: "agent_id et site_id sont obligatoires." });
+    }
+
+    // ── Vérification TOTP/QR dynamique ──────────────────────────────
+    // Un pointage via scan kiosque (methode=qr_code) DOIT fournir qr_data
+    // signé cryptographiquement. Sans ça, n'importe qui connaissant un
+    // agent_id pourrait pointer pour un autre agent sans jamais scanner.
+    // Le pointage manuel (admin/pointeur via dashboard) reste autorisé
+    // sans qr_data — c'est un acte volontaire d'un rôle de confiance.
+    const isManualByStaff =
+      methode === "manuel" &&
+      !req.user.is_kiosque &&
+      ["admin", "superadmin", "pointeur", "directeur_regional"].includes(
+        req.user.role,
+      );
+
+    if (!isManualByStaff) {
+      const agentForTotp = await Agent.findById(agent_id).select(
+        "matricule totp_enabled totp_secret",
+      );
+      if (!agentForTotp) {
+        return res.status(404).json({ message: "Agent introuvable." });
+      }
+      if (agentForTotp.totp_enabled && agentForTotp.totp_secret) {
+        const { qr_data } = req.body || {};
+        if (!qr_data) {
+          return res.status(401).json({
+            message: "Code QR requis pour ce pointage (TOTP activé pour cet agent).",
+          });
+        }
+        const result = validateQRData(
+          qr_data,
+          agentForTotp.matricule,
+          agentForTotp.totp_secret,
+        );
+        if (!result.valid) {
+          return res.status(401).json({
+            message: `QR invalide ou expiré : ${result.reason}`,
+          });
+        }
+      }
+      // Si TOTP non activé pour cet agent → rétro-compatibilité QR statique
     }
 
     // Multi-tenant : un pointeur/admin ne peut pointer que pour son agence

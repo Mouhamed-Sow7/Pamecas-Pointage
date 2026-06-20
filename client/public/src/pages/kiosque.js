@@ -215,7 +215,7 @@ function startCountdown(root, secondes, onDone) {
 }
 
 // ─── Appel API pointage kiosque ──────────────────────────────────
-async function enregistrerPointageKiosque(token, agentId, siteId, type) {
+async function enregistrerPointageKiosque(token, agentId, siteId, type, qrDataBrut) {
   const now = new Date();
   const payload = {
     local_id: crypto.randomUUID(),
@@ -227,6 +227,7 @@ async function enregistrerPointageKiosque(token, agentId, siteId, type) {
     heure_depart:
       type === "depart" ? now.toTimeString().slice(0, 5) : undefined,
     methode: "qr_code",
+    qr_data: qrDataBrut && qrDataBrut.startsWith("SP:") ? qrDataBrut : undefined,
     coordonnees_agent: await obtenirPosition(),
     type,
     sync_status: "local",
@@ -778,6 +779,7 @@ export async function renderKiosque(root) {
         agentId,
         siteId,
         type,
+        matricule, // QR brut scanné (format SP:MAT:HASH:WIN si dynamique)
       );
 
       // Enregistrer cooldown local après succès
