@@ -1,6 +1,127 @@
-﻿import { post } from '../api.js';
+import { post } from '../api.js';
 import { saveAuth } from '../store/indexedDB.js';
 import { showToast } from '../components/toast.js';
+
+// ─── Branding par défaut (PAMECAS) ────────────────────────────────
+const DEFAULT_BRANDING = {
+  slug: 'pamecas',
+  instance_label: 'Instance PAMECAS',
+  couleur_primaire: '#2e7d32',
+  couleur_secondaire: '#1b5e20',
+  couleur_accent: '#4caf50',
+  bg_dark: '#0f2417',
+  mark_text: 'SP',
+  mark_color: '#2e7d32',
+  mark_text_color: '#ffffff',
+  btn_gradient: 'linear-gradient(135deg, #2e7d32, #43a047)',
+  btn_shadow: 'rgba(46,125,50,0.3)',
+  btn_shadow_hover: 'rgba(46,125,50,0.4)',
+  input_focus_color: '#2e7d32',
+  input_focus_shadow: 'rgba(46,125,50,0.1)',
+  label_icon_color: '#2e7d32',
+  feature_icon_color: '#a5d6a7',
+  panel_bg: 'linear-gradient(160deg, #1b5e20 0%, #2e7d32 50%, #388e3c 100%)',
+  circle_color: '#4CAF50',
+};
+
+// ─── Extraire le slug depuis le username ──────────────────────────
+// "admin.dg@cms" → "cms"   |   "admin.dg" → "pamecas"
+function extractSlug(username) {
+  const match = username.match(/@([a-zA-Z0-9_-]+)$/);
+  return match ? match[1].toLowerCase() : 'pamecas';
+}
+
+// ─── Fetch branding depuis l'API ──────────────────────────────────
+let brandingCache = {};
+async function fetchBranding(slug) {
+  if (brandingCache[slug]) return brandingCache[slug];
+  try {
+    const res = await fetch(`/api/auth/branding/${slug}`);
+    if (!res.ok) return DEFAULT_BRANDING;
+    const data = await res.json();
+    brandingCache[slug] = data;
+    return data;
+  } catch {
+    return DEFAULT_BRANDING;
+  }
+}
+
+// ─── Appliquer le branding sur la page login ──────────────────────
+function applyBranding(root, b) {
+  // Fond page
+  const page = root.querySelector('.sp-login-page');
+  if (page) page.style.background = b.bg_dark;
+
+  // Cercles de fond
+  root.querySelectorAll('.sp-bg-circle').forEach(el => {
+    el.style.background = b.circle_color;
+  });
+
+  // Panneau branding gauche
+  const panel = root.querySelector('.sp-brand-panel');
+  if (panel) panel.style.background = b.panel_bg;
+
+  // Mark logo (carré SP / CMS)
+  root.querySelectorAll('.sp-brand-mark').forEach(el => {
+    el.textContent = b.mark_text;
+    el.style.color = b.mark_color;
+    el.style.background = b.mark_text_color;
+  });
+
+  // Badge instance
+  root.querySelectorAll('.sp-client-badge, .sp-mobile-sub').forEach(el => {
+    el.textContent = b.instance_label;
+  });
+
+  // Icônes features
+  root.querySelectorAll('.sp-feature i').forEach(el => {
+    el.style.color = b.feature_icon_color;
+  });
+
+  // Icônes labels formulaire
+  root.querySelectorAll('.sp-label i').forEach(el => {
+    el.style.color = b.label_icon_color;
+  });
+
+  // Mark mobile sm
+  const markSm = root.querySelector('.sp-brand-mark-sm');
+  if (markSm) {
+    markSm.style.background = b.couleur_primaire;
+    markSm.style.color = b.mark_text_color;
+    markSm.textContent = b.mark_text;
+  }
+
+  // Bouton login
+  const btn = root.querySelector('.sp-btn-login');
+  if (btn) {
+    btn.style.background = b.btn_gradient;
+    btn.style.boxShadow = `0 4px 14px ${b.btn_shadow}`;
+  }
+
+  // Stocker en localStorage pour l'app entière
+  localStorage.setItem('sp_branding', JSON.stringify(b));
+}
+
+// ─── Appliquer le focus dynamique via style injecté ───────────────
+function injectFocusStyle(root, b) {
+  const styleId = 'sp-branding-style';
+  let style = root.querySelector(`#${styleId}`) || document.getElementById(styleId);
+  if (!style) {
+    style = document.createElement('style');
+    style.id = styleId;
+    document.head.appendChild(style);
+  }
+  style.textContent = `
+    .sp-input:focus {
+      border-color: ${b.input_focus_color} !important;
+      box-shadow: 0 0 0 3px ${b.input_focus_shadow} !important;
+    }
+    .sp-pwd-toggle:hover { color: ${b.input_focus_color} !important; }
+    .sp-btn-login:hover {
+      box-shadow: 0 6px 20px ${b.btn_shadow_hover} !important;
+    }
+  `;
+}
 
 export function renderLogin(root) {
   root.innerHTML = `
@@ -50,7 +171,7 @@ export function renderLogin(root) {
               <p class="sp-form-subtitle">Entrez vos identifiants pour acceder</p>
             </div>
 
-            <form id="login-form" autocomplete="on">
+            <div id="login-form" autocomplete="on">
               <div class="sp-field">
                 <label class="sp-label" for="username">
                   <i class="fa-solid fa-user"></i> Identifiant
@@ -88,11 +209,11 @@ export function renderLogin(root) {
 
               <div id="login-error" class="sp-error" style="display:none;"></div>
 
-              <button id="btn-login" type="submit" class="sp-btn-login">
+              <button id="btn-login" type="button" class="sp-btn-login">
                 <span id="btn-text"><i class="fa-solid fa-right-to-bracket"></i> Se connecter</span>
                 <span id="btn-loader" style="display:none;"><i class="fa-solid fa-spinner fa-spin"></i> Connexion...</span>
               </button>
-            </form>
+            </div>
           </div>
 
           <div class="sp-footer-note">
@@ -113,6 +234,7 @@ export function renderLogin(root) {
         position: relative;
         overflow: hidden;
         font-family: 'Inter', sans-serif;
+        transition: background 0.4s ease;
       }
 
       /* Cercles de fond */
@@ -122,6 +244,7 @@ export function renderLogin(root) {
         border-radius: 50%;
         opacity: 0.07;
         background: #4CAF50;
+        transition: background 0.4s ease;
       }
       .sp-bg-circle-1 { width: 600px; height: 600px; top: -200px; left: -200px; }
       .sp-bg-circle-2 { width: 400px; height: 400px; bottom: -100px; right: -100px; opacity: 0.05; }
@@ -151,6 +274,7 @@ export function renderLogin(root) {
         justify-content: center;
         position: relative;
         overflow: hidden;
+        transition: background 0.4s ease;
       }
       .sp-brand-panel::before {
         content: '';
@@ -182,6 +306,7 @@ export function renderLogin(root) {
         font-size: 1.1rem;
         letter-spacing: -0.5px;
         box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+        transition: color 0.4s ease;
       }
       .sp-brand-name {
         font-size: 1.8rem;
@@ -214,6 +339,7 @@ export function renderLogin(root) {
         width: 20px;
         color: #a5d6a7;
         font-size: 0.9rem;
+        transition: color 0.4s ease;
       }
       .sp-brand-client { margin-top: auto; }
       .sp-client-badge {
@@ -227,6 +353,7 @@ export function renderLogin(root) {
         font-size: 0.78rem;
         font-weight: 600;
         letter-spacing: 0.05em;
+        transition: all 0.3s ease;
       }
 
       /* Panneau formulaire */
@@ -251,9 +378,14 @@ export function renderLogin(root) {
         border-radius: 10px;
         background: #2e7d32;
         color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 800;
+        transition: background 0.4s ease;
       }
       .sp-mobile-title { font-size: 1rem; font-weight: 700; color: #1f2933; }
-      .sp-mobile-sub { font-size: 0.75rem; color: #888; }
+      .sp-mobile-sub { font-size: 0.75rem; color: #888; transition: all 0.3s ease; }
 
       .sp-form-header { margin-bottom: 28px; }
       .sp-form-title {
@@ -272,7 +404,7 @@ export function renderLogin(root) {
         color: #555;
         margin-bottom: 6px;
       }
-      .sp-label i { color: #2e7d32; margin-right: 4px; }
+      .sp-label i { color: #2e7d32; margin-right: 4px; transition: color 0.4s ease; }
 
       .sp-input-wrap { position: relative; }
       .sp-input {
@@ -330,7 +462,7 @@ export function renderLogin(root) {
         font-size: 0.95rem;
         font-weight: 600;
         cursor: pointer;
-        transition: transform 0.15s, box-shadow 0.15s;
+        transition: transform 0.15s, box-shadow 0.15s, background 0.4s ease;
         box-shadow: 0 4px 14px rgba(46,125,50,0.3);
         font-family: inherit;
         margin-top: 4px;
@@ -369,7 +501,16 @@ export function renderLogin(root) {
     </style>
   `;
 
-  // Toggle password visibility
+  // ─── Appliquer branding initial (depuis localStorage si déjà chargé) ──
+  const cachedBranding = (() => {
+    try { return JSON.parse(localStorage.getItem('sp_branding') || 'null'); } catch { return null; }
+  })();
+  // Reset au branding PAMECAS au chargement de la page login
+  // (on appliquera le bon après saisie du username)
+  applyBranding(root, DEFAULT_BRANDING);
+  injectFocusStyle(root, DEFAULT_BRANDING);
+
+  // ─── Toggle password visibility ───────────────────────────────────
   const btnToggle = root.querySelector('#btn-toggle-pwd');
   const pwdInput = root.querySelector('#password');
   const pwdIcon = root.querySelector('#pwd-icon');
@@ -379,28 +520,47 @@ export function renderLogin(root) {
     pwdIcon.className = isHidden ? 'fa-regular fa-eye-slash' : 'fa-regular fa-eye';
   });
 
-  // Form submit
-  const form = root.querySelector('#login-form');
+  // ─── Détection live du slug via l'input username ──────────────────
+  const usernameInput = root.querySelector('#username');
+  let lastSlug = 'pamecas';
+  let brandingDebounce = null;
+
+  usernameInput?.addEventListener('input', () => {
+    clearTimeout(brandingDebounce);
+    brandingDebounce = setTimeout(async () => {
+      const slug = extractSlug(usernameInput.value.trim());
+      if (slug !== lastSlug) {
+        lastSlug = slug;
+        const branding = await fetchBranding(slug);
+        applyBranding(root, branding);
+        injectFocusStyle(root, branding);
+      }
+    }, 300); // debounce 300ms
+  });
+
+  // ─── Soumission du formulaire ─────────────────────────────────────
   const btn = root.querySelector('#btn-login');
   const btnText = root.querySelector('#btn-text');
   const btnLoader = root.querySelector('#btn-loader');
   const errorDiv = root.querySelector('#login-error');
 
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
+  async function handleLogin() {
     errorDiv.style.display = 'none';
     btn.disabled = true;
     btnText.style.display = 'none';
     btnLoader.style.display = 'inline';
 
-    const username = form.username.value.trim();
-    const password = form.password.value;
+    const username = usernameInput.value.trim();
+    const password = pwdInput.value;
 
     try {
       const result = await post('/api/auth/login', { username, password });
       const { token, user } = result;
       localStorage.setItem('pamecas_token', token);
       localStorage.setItem('pamecas_user', JSON.stringify(user));
+      // Persister le branding de l'instance pour toute l'app
+      const branding = await fetchBranding(user.instance_slug || 'pamecas');
+      localStorage.setItem('sp_branding', JSON.stringify(branding));
       await saveAuth(token, user);
       showToast('Connexion reussie.', 'success');
       window.location.hash = '#/dashboard';
@@ -413,5 +573,12 @@ export function renderLogin(root) {
       btnText.style.display = 'inline';
       btnLoader.style.display = 'none';
     }
+  }
+
+  btn.addEventListener('click', handleLogin);
+
+  // Aussi sur Enter dans les inputs
+  root.querySelector('#login-form')?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') handleLogin();
   });
 }

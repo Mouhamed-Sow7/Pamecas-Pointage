@@ -34,6 +34,12 @@ const UserSchema = new Schema(
       ref: 'Site',
       default: []
     }],
+    instance_slug: {
+      type: String,
+      default: 'pamecas',
+      lowercase: true,
+      trim: true
+    },
     actif: {
       type: Boolean,
       default: true

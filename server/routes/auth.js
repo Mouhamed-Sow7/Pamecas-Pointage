@@ -3,16 +3,118 @@ const jwt = require('jsonwebtoken');
 
 const User = require('../models/User');
 const Site = require('../models/Site');
+const Tenant = require('../models/Tenant');
 const { authenticate } = require('../middleware/auth');
 
 const router = express.Router();
+
+// ─── Config branding par défaut (PAMECAS) ────────────────────────
+const DEFAULT_BRANDING = {
+  slug: 'pamecas',
+  nom: 'PAMECAS',
+  instance_label: 'Instance PAMECAS',
+  couleur_primaire: '#2e7d32',
+  couleur_secondaire: '#1b5e20',
+  couleur_accent: '#4caf50',
+  bg_dark: '#0f2417',
+  mark_text: 'SP',
+  mark_color: '#2e7d32',
+  mark_text_color: '#ffffff',
+  btn_gradient: 'linear-gradient(135deg, #2e7d32, #43a047)',
+  btn_shadow: 'rgba(46,125,50,0.3)',
+  btn_shadow_hover: 'rgba(46,125,50,0.4)',
+  input_focus_color: '#2e7d32',
+  input_focus_shadow: 'rgba(46,125,50,0.1)',
+  label_icon_color: '#2e7d32',
+  feature_icon_color: '#a5d6a7',
+  panel_bg: 'linear-gradient(160deg, #1b5e20 0%, #2e7d32 50%, #388e3c 100%)',
+  circle_color: '#4CAF50',
+};
+
+// ─── Route publique branding (pas besoin d'auth) ──────────────────
+router.get('/branding/:slug', async (req, res) => {
+  try {
+    const slug = req.params.slug.toLowerCase().trim();
+
+    // Toujours retourner PAMECAS si slug = pamecas
+    if (slug === 'pamecas') {
+      return res.json(DEFAULT_BRANDING);
+    }
+
+    const tenant = await Tenant.findOne({ slug, statut: { $in: ['actif', 'trial'] } });
+
+    if (!tenant) {
+      // Slug inconnu → branding PAMECAS par défaut
+      return res.json(DEFAULT_BRANDING);
+    }
+
+    // Construire le branding depuis le tenant
+    const couleur = tenant.configuration?.couleur_theme || '#1565C0';
+    const nom = tenant.configuration?.instance_name || tenant.nom;
+
+    // Générer les variantes de couleur (assombri/éclairci)
+    const branding = {
+      slug: tenant.slug,
+      nom: tenant.nom,
+      instance_label: `Instance ${nom}`,
+      couleur_primaire: couleur,
+      couleur_secondaire: darkenHex(couleur, 20),
+      couleur_accent: lightenHex(couleur, 20),
+      bg_dark: darkenHex(couleur, 55),
+      mark_text: tenant.slug.substring(0, 3).toUpperCase(),
+      mark_color: couleur,
+      mark_text_color: '#ffffff',
+      btn_gradient: `linear-gradient(135deg, ${couleur}, ${lightenHex(couleur, 10)})`,
+      btn_shadow: hexToRgba(couleur, 0.3),
+      btn_shadow_hover: hexToRgba(couleur, 0.4),
+      input_focus_color: couleur,
+      input_focus_shadow: hexToRgba(couleur, 0.1),
+      label_icon_color: couleur,
+      feature_icon_color: lightenHex(couleur, 35),
+      panel_bg: `linear-gradient(160deg, ${darkenHex(couleur, 20)} 0%, ${couleur} 50%, ${lightenHex(couleur, 10)} 100%)`,
+      circle_color: lightenHex(couleur, 10),
+    };
+
+    return res.json(branding);
+  } catch (err) {
+    console.error('Erreur branding:', err);
+    return res.json(DEFAULT_BRANDING);
+  }
+});
+
+// ─── Helpers couleur ──────────────────────────────────────────────
+function hexToRgb(hex) {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return { r, g, b };
+}
+function hexToRgba(hex, alpha) {
+  const { r, g, b } = hexToRgb(hex);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+function darkenHex(hex, percent) {
+  let { r, g, b } = hexToRgb(hex);
+  r = Math.max(0, Math.round(r * (1 - percent / 100)));
+  g = Math.max(0, Math.round(g * (1 - percent / 100)));
+  b = Math.max(0, Math.round(b * (1 - percent / 100)));
+  return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+}
+function lightenHex(hex, percent) {
+  let { r, g, b } = hexToRgb(hex);
+  r = Math.min(255, Math.round(r + (255 - r) * (percent / 100)));
+  g = Math.min(255, Math.round(g + (255 - g) * (percent / 100)));
+  b = Math.min(255, Math.round(b + (255 - b) * (percent / 100)));
+  return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+}
 
 function createTokenPayload(user) {
   return {
     id: user._id.toString(),
     username: user.username,
     role: user.role,
-    site_id: user.site_id || null
+    site_id: user.site_id || null,
+    instance_slug: user.instance_slug || 'pamecas'
   };
 }
 
