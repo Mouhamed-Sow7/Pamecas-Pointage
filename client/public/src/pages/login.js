@@ -2,6 +2,28 @@ import { post } from '../api.js';
 import { saveAuth } from '../store/indexedDB.js';
 import { showToast } from '../components/toast.js';
 
+// ─── Branding neutre (avant saisie / instance inconnue) ───────────
+const NEUTRAL_BRANDING = {
+  slug: 'neutral',
+  instance_label: '',
+  couleur_primaire: '#475569',
+  couleur_secondaire: '#334155',
+  couleur_accent: '#64748b',
+  bg_dark: '#0f172a',
+  mark_text: 'SP',
+  mark_color: '#475569',
+  mark_text_color: '#ffffff',
+  btn_gradient: 'linear-gradient(135deg, #475569, #64748b)',
+  btn_shadow: 'rgba(71,85,105,0.3)',
+  btn_shadow_hover: 'rgba(71,85,105,0.4)',
+  input_focus_color: '#475569',
+  input_focus_shadow: 'rgba(71,85,105,0.1)',
+  label_icon_color: '#475569',
+  feature_icon_color: '#94a3b8',
+  panel_bg: 'linear-gradient(160deg, #1e293b 0%, #334155 50%, #475569 100%)',
+  circle_color: '#64748b',
+};
+
 // ─── Branding par défaut (PAMECAS) ────────────────────────────────
 const DEFAULT_BRANDING = {
   slug: 'pamecas',
@@ -77,9 +99,12 @@ function applyBranding(root, b) {
     el.style.background = b.mark_text_color;
   });
 
-  // Badge instance
+  // Badge instance (masqué si aucune instance détectée)
+  root.querySelectorAll('.sp-brand-client').forEach(el => {
+    el.style.display = b.instance_label ? 'block' : 'none';
+  });
   root.querySelectorAll('.sp-client-badge, .sp-mobile-sub').forEach(el => {
-    el.textContent = b.instance_label;
+    el.textContent = b.instance_label || '';
   });
 
   // Icônes features
@@ -514,10 +539,10 @@ export function renderLogin(root) {
   const cachedBranding = (() => {
     try { return JSON.parse(localStorage.getItem('sp_branding') || 'null'); } catch { return null; }
   })();
-  // Reset au branding PAMECAS au chargement de la page login
-  // (on appliquera le bon après saisie du username)
-  applyBranding(root, DEFAULT_BRANDING);
-  injectFocusStyle(root, DEFAULT_BRANDING);
+  // Reset au branding NEUTRE au chargement de la page login
+  // (on appliquera le bon branding une fois l'instance détectée via le username)
+  applyBranding(root, NEUTRAL_BRANDING);
+  injectFocusStyle(root, NEUTRAL_BRANDING);
 
   // ─── Toggle password visibility ───────────────────────────────────
   const btnToggle = root.querySelector('#btn-toggle-pwd');
@@ -529,23 +554,37 @@ export function renderLogin(root) {
     pwdIcon.className = isHidden ? 'fa-regular fa-eye-slash' : 'fa-regular fa-eye';
   });
 
-  // ─── Détection live du slug via l'input username ──────────────────
-  const usernameInput = root.querySelector('#username');
-  let lastSlug = 'pamecas';
-  let brandingDebounce = null;
+// ─── Détecter le slug pour l'affichage live (null = neutre) ───────
+function detectDisplaySlug(username) {
+  const atMatch = username.match(/@([a-zA-Z0-9_-]+)$/);
+  if (atMatch) return atMatch[1].toLowerCase();
+  const dotMatch = username.match(/\.([a-zA-Z0-9_-]+)$/);
+  if (dotMatch) {
+    const candidate = dotMatch[1].toLowerCase();
+    if (KNOWN_SLUGS.includes(candidate)) return candidate;
+  }
+  return null;
+}
 
-  usernameInput?.addEventListener('input', () => {
-    clearTimeout(brandingDebounce);
-    brandingDebounce = setTimeout(async () => {
-      const slug = extractSlug(usernameInput.value.trim());
-      if (slug !== lastSlug) {
-        lastSlug = slug;
-        const branding = await fetchBranding(slug);
-        applyBranding(root, branding);
-        injectFocusStyle(root, branding);
-      }
-    }, 300); // debounce 300ms
-  });
+// ─── Détection live du slug via l'input username ──────────────────
+const usernameInput = root.querySelector('#username');
+let lastSlug = 'neutral';
+let brandingDebounce = null;
+
+usernameInput?.addEventListener('input', () => {
+  clearTimeout(brandingDebounce);
+  brandingDebounce = setTimeout(async () => {
+    const value = usernameInput.value.trim();
+    const detected = value ? detectDisplaySlug(value) : null;
+    const slug = detected || 'neutral';
+    if (slug !== lastSlug) {
+      lastSlug = slug;
+      const branding = slug === 'neutral' ? NEUTRAL_BRANDING : await fetchBranding(slug);
+      applyBranding(root, branding);
+      injectFocusStyle(root, branding);
+    }
+  }, 300); // debounce 300ms
+});
 
   // ─── Soumission du formulaire ─────────────────────────────────────
   const btn = root.querySelector('#btn-login');

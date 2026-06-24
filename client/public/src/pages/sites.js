@@ -57,7 +57,7 @@ function renderTable(root, sites) {
               <i class="fa-solid fa-pencil"></i>
             </button>
             <button class="btn-action btn-toggle-site" data-id="${site._id}" data-actif="${site.actif}"
-              style="display:flex;align-items:center;gap:5px;padding:5px 10px;border-radius:8px;border:1.5px solid ${site.actif ? "#c62828" : "#2e7d32"};background:white;color:${site.actif ? "#c62828" : "#2e7d32"};cursor:pointer;font-size:0.78rem;font-weight:500;"
+              style="display:flex;align-items:center;gap:5px;padding:5px 10px;border-radius:8px;border:1.5px solid ${site.actif ? "#c62828" : "var(--green)"};background:white;color:${site.actif ? "#c62828" : "var(--green)"};cursor:pointer;font-size:0.78rem;font-weight:500;"
               title="${site.actif ? "Desactiver" : "Activer"}">
               <i class="fa-solid ${site.actif ? "fa-toggle-on" : "fa-toggle-off"}" style="font-size:1rem;"></i>
               ${site.actif ? "Desactiver" : "Activer"}
@@ -71,7 +71,7 @@ function renderTable(root, sites) {
             <button class="btn-copy-kiosque"
               data-url="${site.kiosque_url}"
               data-nom="${site.nom}"
-              style="display:flex;align-items:center;gap:6px;padding:5px 10px;border-radius:8px;border:1.5px solid #2e7d32;background:white;color:#2e7d32;cursor:pointer;font-size:0.75rem;font-weight:500;"
+              style="display:flex;align-items:center;gap:6px;padding:5px 10px;border-radius:8px;border:1.5px solid var(--green);background:white;color:var(--green);cursor:pointer;font-size:0.75rem;font-weight:500;"
               title="${site.kiosque_url}">
               <i class="fa-solid fa-tablet-screen-button"></i> Copier URL
             </button>
@@ -82,7 +82,7 @@ function renderTable(root, sites) {
                 data-token="${site.kiosque_token}"
                 data-nom="${site.nom}"
                 data-site="${site._id}"
-                style="display:flex;align-items:center;gap:5px;padding:5px 10px;margin-top:6px;border-radius:8px;border:none;background:linear-gradient(135deg,#1b5e20,#2e7d32);color:white;cursor:pointer;font-size:0.75rem;font-weight:600;width:100%;">
+                style="display:flex;align-items:center;gap:5px;padding:5px 10px;margin-top:6px;border-radius:8px;border:none;background:linear-gradient(135deg,var(--green-dark),var(--green));color:white;cursor:pointer;font-size:0.75rem;font-weight:600;width:100%;">
                 <i class="fa-solid fa-tablet-screen-button"></i> Deployer kiosque
               </button>
             `
@@ -181,12 +181,12 @@ function openSiteModal(mode, site, root) {
         </div>
         <div style="background:#f8f9fa;border-radius:10px;padding:12px;">
           <div style="font-size:0.82rem;font-weight:600;margin-bottom:10px;color:#444;">
-            <i class="fa-solid fa-clock" style="color:#2e7d32;"></i> Horaires de travail
+            <i class="fa-solid fa-clock" style="color:var(--green);"></i> Horaires de travail
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
             <div>
               <label style="font-size:0.78rem;font-weight:500;display:block;margin-bottom:6px;color:#666;">
-                <i class="fa-regular fa-clock" style="color:#2e7d32;"></i> Heure debut
+                <i class="fa-regular fa-clock" style="color:var(--green);"></i> Heure debut
               </label>
               <input id="f-heure-debut" type="time" value="${site?.config?.heure_debut || "08:00"}"
                 style="width:100%;padding:10px 12px;border:1.5px solid #ddd;border-radius:8px;box-sizing:border-box;font-size:1rem;background:white;color:#1f2933;font-family:inherit;" />
@@ -200,7 +200,7 @@ function openSiteModal(mode, site, root) {
             </div>
           </div>
           <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:0.82rem;">
-            <input id="f-weekend" type="checkbox" ${site?.config?.weekend_actif ? "checked" : ""} style="accent-color:#2e7d32;width:16px;height:16px;">
+            <input id="f-weekend" type="checkbox" ${site?.config?.weekend_actif ? "checked" : ""} style="accent-color:var(--green);width:16px;height:16px;">
             Weekend actif
           </label>
         </div>
@@ -260,7 +260,7 @@ export async function renderSites(root, user) {
       <div class="card" style="display:flex;flex-direction:column;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
           <h2 style="font-size:1.1rem;font-weight:700;">
-            <i class="fa-solid fa-building" style="color:#2e7d32;margin-right:6px;"></i>Agences PAMECAS
+            <i class="fa-solid fa-building" style="color:var(--green);margin-right:6px;"></i>Agences
           </h2>
           ${
             canEdit
@@ -276,7 +276,7 @@ export async function renderSites(root, user) {
         <div style="overflow-x:auto;border-radius:10px;border:1px solid #eee;">
           <table style="width:100%;border-collapse:collapse;font-size:0.85rem;min-width:600px;">
             <thead>
-              <tr style="background:linear-gradient(135deg,#2e7d32,#43a047);color:white;">
+              <tr style="background:linear-gradient(135deg,var(--green),var(--green-light));color:white;">
                 <th style="padding:12px;text-align:left;font-weight:600;">Code</th>
                 <th style="padding:12px;text-align:left;font-weight:600;">Nom</th>
                 <th style="padding:12px;text-align:left;font-weight:600;">Region</th>
