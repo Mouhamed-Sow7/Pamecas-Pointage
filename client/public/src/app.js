@@ -16,6 +16,27 @@ import {
 import { startAutoSync, onSyncComplete } from "./store/syncManager.js";
 import { showToast } from "./components/toast.js";
 
+// ─── Branding multi-tenant — applique les couleurs CSS globales ────
+function applyBrandingCSS() {
+  let branding = null;
+  try {
+    branding = JSON.parse(localStorage.getItem("sp_branding") || "null");
+  } catch (e) {
+    branding = null;
+  }
+  if (!branding) return;
+
+  const root = document.documentElement;
+  if (branding.couleur_primaire) root.style.setProperty("--green", branding.couleur_primaire);
+  if (branding.couleur_accent) root.style.setProperty("--green-light", branding.couleur_accent);
+  if (branding.couleur_secondaire) root.style.setProperty("--green-dark", branding.couleur_secondaire);
+
+  document.querySelectorAll(".logo-mark").forEach((el) => {
+    if (branding.mark_text) el.textContent = branding.mark_text;
+    if (branding.mark_color) el.style.background = branding.mark_color;
+  });
+}
+
 function getCurrentUser() {
   const raw = localStorage.getItem("pamecas_user");
   if (!raw) return null;
@@ -112,6 +133,7 @@ function mountLayout(route, user) {
   const overlay = document.getElementById("sidebar-overlay");
 
   renderNavbar(sidebar, route, user);
+  applyBrandingCSS();
 
   if (route === "/" || route === "/dashboard") {
     if (topbarTitle) topbarTitle.textContent = "Dashboard";
@@ -184,6 +206,7 @@ window.addEventListener("online", updateOfflineBanner);
 window.addEventListener("offline", updateOfflineBanner);
 
 document.addEventListener("DOMContentLoaded", () => {
+  applyBrandingCSS();
   updateOfflineBanner();
   startAutoSync();
   onSyncComplete((count) => {

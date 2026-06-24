@@ -25,10 +25,19 @@ const DEFAULT_BRANDING = {
 };
 
 // ─── Extraire le slug depuis le username ──────────────────────────
-// "admin.dg@cms" → "cms"   |   "admin.dg" → "pamecas"
+// "admin.dg@cms" → "cms"   |   "admin.cms" → "cms"   |   "admin.dg" → "pamecas"
+const KNOWN_SLUGS = ['cms', 'pamecas', 'gds']; // étendre si besoin
 function extractSlug(username) {
-  const match = username.match(/@([a-zA-Z0-9_-]+)$/);
-  return match ? match[1].toLowerCase() : 'pamecas';
+  const atMatch = username.match(/@([a-zA-Z0-9_-]+)$/);
+  if (atMatch) return atMatch[1].toLowerCase();
+
+  const dotMatch = username.match(/\.([a-zA-Z0-9_-]+)$/);
+  if (dotMatch) {
+    const candidate = dotMatch[1].toLowerCase();
+    if (KNOWN_SLUGS.includes(candidate)) return candidate;
+  }
+
+  return 'pamecas';
 }
 
 // ─── Fetch branding depuis l'API ──────────────────────────────────
