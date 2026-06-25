@@ -557,27 +557,18 @@ export async function renderKiosque(root) {
     <style>
       .scan-line {
         position: absolute;
+        top: 0;
         left: 0; right: 0;
         height: 2px;
         background: linear-gradient(90deg, transparent, #4CAF50, transparent);
         animation: scanAnim 2s linear infinite;
         border-radius: 1px;
-          <button onclick="
-            localStorage.removeItem('kiosk_token');
-            localStorage.removeItem('kiosque_mode');
-            localStorage.removeItem('kiosque_nom');
-            localStorage.removeItem('kiosque_site');
-            localStorage.removeItem('kiosque_pin');
-            window.location.hash='#/login';
-            window.location.reload();
-          " style="padding:12px 24px;background:#2e7d32;color:white;border:none;border-radius:10px;font-size:0.95rem;font-weight:600;cursor:pointer;margin-top:8px;">
-        border: 4px solid rgba(255,255,255,0.2);
-        border-top-color: #4CAF50;
-        border-radius: 50%;
-        animation: spin 0.8s linear infinite;
-        margin: 0 auto;
       }
-      @keyframes spin { to { transform: rotate(360deg); } }
+      @keyframes scanAnim {
+        0% { top: 0; }
+        50% { top: calc(100% - 2px); }
+        100% { top: 0; }
+      }
       @keyframes fadeInUp {
         from { opacity: 0; transform: translateY(20px); }
         to { opacity: 1; transform: translateY(0); }
