@@ -578,22 +578,20 @@ export async function renderAgents(root, user) {
 
   root.innerHTML = `
     <div style="display:flex; flex-direction:column; gap:12px;">
-      ${canEdit ? `<div id="demandes-deconnexion-banner" style="display:none;background:#fff3e0;border:1.5px solid #ffb74d;border-radius:12px;padding:14px 18px;">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
-          <i class="fa-solid fa-triangle-exclamation" style="color:#e65100;font-size:1.1rem;"></i>
-          <span style="font-weight:600;color:#e65100;font-size:0.9rem;">Demandes de déconnexion en attente</span>
-        </div>
-        <div id="demandes-list"></div>
-      </div>` : ""}
+      <div id="agents-section">
       <div class="card">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
           <h2 style="font-size:1.1rem;font-weight:700;">
-            <i class="fa-solid fa-users" style="color:#2e7d32;margin-right:6px;"></i>Agents
+            <i class="fa-solid fa-users" style="color:var(--green);margin-right:6px;"></i>Agents
           </h2>
           ${
             canEdit
               ? `
           <div style="display:flex;gap:8px;">
+            <button id="btn-demandes" class="btn-primary" style="position:relative;background:linear-gradient(135deg,#e65100,#ff9800);font-size:0.78rem;padding:6px 10px;">
+              <i class="fa-solid fa-bell"></i> Demandes
+              <span id="demandes-badge" style="display:none;position:absolute;top:-7px;right:-7px;background:#c62828;color:white;border-radius:999px;font-size:0.65rem;font-weight:700;padding:1px 6px;min-width:18px;line-height:1.4;text-align:center;border:2px solid white;">0</span>
+            </button>
             <button id="btn-import-csv" class="btn-primary" style="background:linear-gradient(135deg,#1565c0,#1976d2);font-size:0.78rem;padding:6px 10px;">
               <i class="fa-solid fa-file-csv"></i> Importer CSV
             </button>
@@ -610,7 +608,7 @@ export async function renderAgents(root, user) {
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:10px;align-items:end;">
             <div>
               <label style="font-size:0.75rem;font-weight:600;color:#666;display:block;margin-bottom:4px;">
-                <i class="fa-solid fa-magnifying-glass" style="color:#2e7d32;"></i> Recherche
+                <i class="fa-solid fa-magnifying-glass" style="color:var(--green);"></i> Recherche
               </label>
               <input id="filter-search" placeholder="Nom, prénom ou matricule..."
                 style="width:100%;padding:8px 10px;border:1.5px solid #ddd;border-radius:8px;font-size:0.85rem;box-sizing:border-box;" />
@@ -618,7 +616,7 @@ export async function renderAgents(root, user) {
 
             <div id="filter-agence-wrap">
               <label style="font-size:0.75rem;font-weight:600;color:#666;display:block;margin-bottom:4px;">
-                <i class="fa-solid fa-building" style="color:#2e7d32;"></i> Agence
+                <i class="fa-solid fa-building" style="color:var(--green);"></i> Agence
               </label>
               <select id="filter-agence"
                 style="width:100%;padding:8px 10px;border:1.5px solid #ddd;border-radius:8px;font-size:0.85rem;box-sizing:border-box;">
@@ -628,7 +626,7 @@ export async function renderAgents(root, user) {
 
             <div>
               <label style="font-size:0.75rem;font-weight:600;color:#666;display:block;margin-bottom:4px;">
-                <i class="fa-solid fa-file-contract" style="color:#2e7d32;"></i> Type contrat
+                <i class="fa-solid fa-file-contract" style="color:var(--green);"></i> Type contrat
               </label>
               <select id="filter-type" style="width:100%;padding:8px 10px;border:1.5px solid #ddd;border-radius:8px;font-size:0.85rem;box-sizing:border-box;">
                 <option value="">Tous types</option>
@@ -641,7 +639,7 @@ export async function renderAgents(root, user) {
 
             <div>
               <label style="font-size:0.75rem;font-weight:600;color:#666;display:block;margin-bottom:4px;">
-                <i class="fa-solid fa-circle-half-stroke" style="color:#2e7d32;"></i> Statut
+                <i class="fa-solid fa-circle-half-stroke" style="color:var(--green);"></i> Statut
               </label>
               <select id="filter-statut"
                 style="width:100%;padding:8px 10px;border:1.5px solid #ddd;border-radius:8px;font-size:0.85rem;box-sizing:border-box;">
@@ -665,6 +663,26 @@ export async function renderAgents(root, user) {
       <div id="agents-list" style="display:flex; flex-direction:column; gap:10px;">
         <div style="color:#999; text-align:center; padding:20px 10px;">Chargement...</div>
       </div>
+      </div>
+
+      ${canEdit ? `
+      <div id="demandes-section" style="display:none;">
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+            <h2 style="font-size:1.1rem;font-weight:700;">
+              <i class="fa-solid fa-bell" style="color:#e65100;margin-right:6px;"></i>Demandes de déconnexion
+            </h2>
+            <button id="btn-retour-agents" class="btn-primary" style="background:#eee;color:#333;font-size:0.78rem;padding:6px 10px;">
+              <i class="fa-solid fa-arrow-left"></i> Retour aux agents
+            </button>
+          </div>
+          <div id="demandes-empty" style="display:none;color:#999;text-align:center;padding:30px 10px;">
+            <i class="fa-solid fa-circle-check" style="font-size:1.6rem;color:#9ccc9c;display:block;margin-bottom:8px;"></i>
+            Aucune demande en attente.
+          </div>
+          <div id="demandes-list"></div>
+        </div>
+      </div>` : ""}
     </div>
     ${canEdit ? `<button id="btn-add-agent" class="fab">+</button>` : ""}
   `;
@@ -775,23 +793,55 @@ export async function renderAgents(root, user) {
 
   // ── Charger les demandes de déconnexion en attente (admin only) ──
   if (canEdit) {
+    const btnDemandes = root.querySelector("#btn-demandes");
+    const demandesBadge = root.querySelector("#demandes-badge");
+    const agentsSection = root.querySelector("#agents-section");
+    const demandesSection = root.querySelector("#demandes-section");
+    const btnRetourAgents = root.querySelector("#btn-retour-agents");
+
+    function showDemandesSection() {
+      if (agentsSection) agentsSection.style.display = "none";
+      if (demandesSection) demandesSection.style.display = "block";
+    }
+    function showAgentsSection() {
+      if (demandesSection) demandesSection.style.display = "none";
+      if (agentsSection) agentsSection.style.display = "block";
+    }
+    btnDemandes?.addEventListener("click", showDemandesSection);
+    btnRetourAgents?.addEventListener("click", showAgentsSection);
+
     async function loadDemandesDeconnexion() {
       try {
         const res = await get("/api/agents/demandes-deconnexion");
         const demandes = res.data || [];
-        const banner = root.querySelector("#demandes-deconnexion-banner");
         const list = root.querySelector("#demandes-list");
-        if (!banner || !list) return;
+        const empty = root.querySelector("#demandes-empty");
+        if (!list) return;
 
-        if (!demandes.length) { banner.style.display = "none"; return; }
-        banner.style.display = "block";
+        // Badge — apparait/disparait et se met a jour selon le nombre de demandes
+        if (demandesBadge) {
+          if (demandes.length > 0) {
+            demandesBadge.textContent = demandes.length > 99 ? "99+" : demandes.length;
+            demandesBadge.style.display = "inline-block";
+          } else {
+            demandesBadge.style.display = "none";
+          }
+        }
+
+        if (!demandes.length) {
+          list.innerHTML = "";
+          if (empty) empty.style.display = "block";
+          return;
+        }
+        if (empty) empty.style.display = "none";
+
         list.innerHTML = demandes.map(a => `
-          <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid #ffe0b2;flex-wrap:wrap;" data-agent-id="${a._id}">
+          <div style="display:flex;align-items:center;gap:10px;padding:12px 0;border-top:1px solid #f0f0f0;flex-wrap:wrap;" data-agent-id="${a._id}">
             <div style="flex:1;min-width:180px;">
               <span style="font-weight:600;font-size:0.875rem;">${a.prenom} ${a.nom}</span>
               <span style="color:#888;font-size:0.78rem;margin-left:6px;">${a.matricule}</span>
               <div style="font-size:0.78rem;color:#666;margin-top:2px;">
-                <i class="fa-solid fa-building" style="color:#0f5132;"></i> ${a.site_id?.nom || "—"}
+                <i class="fa-solid fa-building" style="color:var(--green);"></i> ${a.site_id?.nom || "—"}
                 &nbsp;·&nbsp;
                 <i class="fa-solid fa-mobile-screen" style="color:#888;"></i> ${a.session_device || "appareil inconnu"}
                 &nbsp;·&nbsp;
