@@ -26,6 +26,7 @@ async function authenticate(req, res, next) {
         site_nom: "Super Admin",
         sites_ids: [],
         is_superadmin: true,
+        instance_slug: null, // null = acces cross-tenant (plateforme)
       };
       return next();
     }
@@ -45,6 +46,7 @@ async function authenticate(req, res, next) {
         site_nom: site.nom,
         sites_ids: [],
         is_kiosque: true,
+        instance_slug: site.instance_slug || "pamecas",
       };
       return next();
     }
@@ -63,6 +65,7 @@ async function authenticate(req, res, next) {
         site_nom: "God Mode",
         sites_ids: [],
         is_god_mode: true,
+        instance_slug: null, // null = acces cross-tenant (plateforme)
       };
       return next();
     }
@@ -88,6 +91,7 @@ async function authenticate(req, res, next) {
       sites_ids: (user.sites_ids || []).map(
         (s) => s._id?.toString() || s.toString(),
       ),
+      instance_slug: user.instance_slug || "pamecas",
     };
 
     return next();
@@ -127,4 +131,16 @@ function tenantFilter(req, res, next) {
   return next();
 }
 
-module.exports = { authenticate, authorizeRoles, tenantFilter };
+// Filtre multi-tenant (instance_slug) — a ne pas confondre avec tenantFilter
+// qui scope par site_id a l'interieur d'une meme instance.
+// req.user.instance_slug === null  => acces cross-tenant (superadmin plateforme / god mode)
+function tenantScope(req, res, next) {
+  if (!req.user) return next();
+  req.instanceFilter =
+    req.user.instance_slug === null
+      ? {}
+      : { instance_slug: req.user.instance_slug || "pamecas" };
+  return next();
+}
+
+module.exports = { authenticate, authorizeRoles, tenantFilter, tenantScope };

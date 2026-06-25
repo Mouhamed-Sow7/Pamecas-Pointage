@@ -5,11 +5,13 @@ const {
   authenticate,
   authorizeRoles,
   tenantFilter,
+  tenantScope,
 } = require("../middleware/auth");
 
 const router = express.Router();
 router.use(authenticate);
 router.use(tenantFilter);
+router.use(tenantScope);
 
 // GET / — Liste des demandes (admin/superadmin)
 router.get(
@@ -18,7 +20,7 @@ router.get(
   async (req, res) => {
     try {
       const { statut, site_id } = req.query;
-      const filter = { ...req.siteFilter };
+      const filter = { ...req.siteFilter, ...req.instanceFilter };
       if (statut) filter.statut = statut;
       if (site_id) filter.site_id = site_id;
 

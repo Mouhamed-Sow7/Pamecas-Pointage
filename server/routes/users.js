@@ -1,17 +1,18 @@
 const express = require('express');
 const User = require('../models/User');
 const Site = require('../models/Site');
-const { authenticate, authorizeRoles } = require('../middleware/auth');
+const { authenticate, authorizeRoles, tenantScope } = require('../middleware/auth');
 
 const router = express.Router();
 router.use(authenticate);
+router.use(tenantScope);
 
 // GET / — Liste tous les users (superadmin) ou users de ses agences (directeur)
 router.get('/', authorizeRoles('superadmin'), async (req, res) => {
   try {
-    let filter = {};
+    let filter = { ...req.instanceFilter };
     if (req.user.role === 'directeur_regional') {
-      filter = { site_id: { $in: req.user.sites_ids } };
+      filter.site_id = { $in: req.user.sites_ids };
     }
     const users = await User.find(filter).populate('site_id', 'nom code').select('-password');
     return res.json({ data: users });
@@ -49,6 +50,7 @@ router.post('/', authorizeRoles('superadmin'), async (req, res) => {
       nom_complet,
       site_id: site_id || null,
       sites_ids: sites_ids || [],
+      instance_slug: req.user.instance_slug || 'pamecas',
       actif: true
     });
     await user.save();
@@ -62,6 +64,9 @@ router.post('/', authorizeRoles('superadmin'), async (req, res) => {
 // PUT /:id — Modifier un user
 router.put('/:id', authorizeRoles('superadmin'), async (req, res) => {
   try {
+    const target = await User.findOne({ _id: req.params.id, ...req.instanceFilter });
+    if (!target) return res.status(404).json({ message: 'User non trouvé.' });
+
     const { nom_complet, role, site_id, sites_ids, actif, password } = req.body;
     const updates = {};
     if (nom_complet) updates.nom_complet = nom_complet;
@@ -72,16 +77,13 @@ router.put('/:id', authorizeRoles('superadmin'), async (req, res) => {
 
     if (password) {
       // Laisser le pre-save hook hasher
-      const user = await User.findById(req.params.id);
-      if (!user) return res.status(404).json({ message: 'User non trouvé.' });
-      user.password = password;
-      Object.assign(user, updates);
-      await user.save();
-      return res.json(user);
+      target.password = password;
+      Object.assign(target, updates);
+      await target.save();
+      return res.json(target);
     }
 
     const user = await User.findByIdAndUpdate(req.params.id, updates, { new: true }).select('-password');
-    if (!user) return res.status(404).json({ message: 'User non trouvé.' });
     return res.json(user);
   } catch (err) {
     return res.status(500).json({ message: 'Erreur modification.' });
@@ -91,6 +93,8 @@ router.put('/:id', authorizeRoles('superadmin'), async (req, res) => {
 // DELETE /:id — Désactiver un user (pas supprimer)
 router.delete('/:id', authorizeRoles('superadmin'), async (req, res) => {
   try {
+    const target = await User.findOne({ _id: req.params.id, ...req.instanceFilter });
+    if (!target) return res.status(404).json({ message: 'User non trouvé.' });
     await User.findByIdAndUpdate(req.params.id, { actif: false });
     return res.json({ message: 'User désactivé.' });
   } catch (err) {

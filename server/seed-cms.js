@@ -213,10 +213,15 @@ async function seedCMS() {
         adresse: agence.adresse,
         actif: true,
         config: agence.config,
+        instance_slug: 'cms',
       });
       await site.save();
       console.log(`  ✅ Agence créée: ${agence.code}`);
     } else {
+      if (!site.instance_slug || site.instance_slug === 'pamecas') {
+        site.instance_slug = 'cms';
+        await site.save();
+      }
       console.log(`  ℹ️  Agence existante: ${agence.code}`);
     }
     siteMap[agence.code] = site;
@@ -243,9 +248,13 @@ async function seedCMS() {
           site_id: site._id,
           statut: 'actif',
           date_entree: new Date('2020-01-01'),
+          instance_slug: 'cms',
         });
         nouveaux++;
         totalAgents++;
+      } else if (!existing.instance_slug || existing.instance_slug === 'pamecas') {
+        existing.instance_slug = 'cms';
+        await existing.save();
       }
     }
     console.log(`${code}: ${agents.length} agents (${nouveaux} nouveaux)`);

@@ -2,15 +2,27 @@ const express = require("express");
 const { v4: uuidv4 } = require("uuid");
 
 const Site = require("../models/Site");
-const { authenticate, authorizeRoles } = require("../middleware/auth");
+const { authenticate, authorizeRoles, tenantScope } = require("../middleware/auth");
 
 const router = express.Router();
 
 router.use(authenticate);
+router.use(tenantScope);
+
+// Verifie que le site appartient bien au tenant de l'utilisateur
+// (sauf superadmin plateforme / god mode, instance_slug === null => acces cross-tenant)
+async function getSiteInTenant(req, id) {
+  const site = await Site.findById(id);
+  if (!site) return null;
+  if (req.user.instance_slug !== null && site.instance_slug !== req.user.instance_slug) {
+    return null;
+  }
+  return site;
+}
 
 router.get("/", async (req, res) => {
   try {
-    const sites = await Site.find({ actif: true }).sort({ nom: 1 });
+    const sites = await Site.find({ actif: true, ...req.instanceFilter }).sort({ nom: 1 });
     const baseUrl =
       process.env.APP_URL || "https://pamecas-pointage.onrender.com";
     const sitesAvecUrl = sites.map((s) => ({
@@ -30,7 +42,10 @@ router.get("/", async (req, res) => {
 
 router.post("/", authorizeRoles("superadmin"), async (req, res) => {
   try {
-    const site = new Site(req.body);
+    const site = new Site({
+      ...req.body,
+      instance_slug: req.user.instance_slug || "pamecas",
+    });
     site.kiosque_token = uuidv4();
     site.kiosque_token_created_at = new Date();
     await site.save();
@@ -46,15 +61,17 @@ router.post("/", authorizeRoles("superadmin"), async (req, res) => {
 router.put("/:id", authorizeRoles("superadmin"), async (req, res) => {
   try {
     const { id } = req.params;
-    const updates = req.body || {};
+    const updates = { ...(req.body || {}) };
+    delete updates.instance_slug; // non modifiable par ce endpoint
+
+    const existing = await getSiteInTenant(req, id);
+    if (!existing) {
+      return res.status(404).json({ message: "Site non trouvé." });
+    }
 
     const site = await Site.findByIdAndUpdate(id, updates, {
       new: true,
     });
-
-    if (!site) {
-      return res.status(404).json({ message: "Site non trouvé." });
-    }
 
     return res.json(site);
   } catch (err) {
@@ -71,7 +88,7 @@ router.post(
   authorizeRoles("superadmin", "directeur_regional", "admin"),
   async (req, res) => {
     try {
-      const site = await Site.findById(req.params.id);
+      const site = await getSiteInTenant(req, req.params.id);
       if (!site) return res.status(404).json({ message: "Site non trouvé." });
 
       // Vérifier accès multi-tenant
@@ -105,6 +122,8 @@ router.delete(
   authorizeRoles("superadmin", "admin"),
   async (req, res) => {
     try {
+      const site = await getSiteInTenant(req, req.params.id);
+      if (!site) return res.status(404).json({ message: "Site non trouvé." });
       await Site.findByIdAndUpdate(req.params.id, {
         kiosque_token: null,
         kiosque_token_created_at: null,
@@ -153,6 +172,8 @@ router.patch(
       const { pin } = req.body;
       if (!pin || String(pin).length < 4)
         return res.status(400).json({ message: "PIN invalide — minimum 4 chiffres" });
+      const existing = await getSiteInTenant(req, req.params.id);
+      if (!existing) return res.status(404).json({ message: "Site non trouvé" });
       const site = await Site.findByIdAndUpdate(
         req.params.id,
         { kiosque_pin: pin, kiosque_pin_expires_at: null, kiosque_pin_rotated_at: new Date() },
@@ -174,6 +195,8 @@ router.post(
   async (req, res) => {
     try {
       const pin = genererPin();
+      const existing = await getSiteInTenant(req, req.params.id);
+      if (!existing) return res.status(404).json({ message: "Site non trouvé" });
       const site = await Site.findByIdAndUpdate(
         req.params.id,
         {

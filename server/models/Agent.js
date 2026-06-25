@@ -3,6 +3,13 @@ const { Schema } = mongoose;
 
 const AgentSchema = new Schema(
   {
+    instance_slug: {
+      type: String,
+      default: "pamecas",
+      lowercase: true,
+      trim: true,
+      index: true,
+    },
     matricule: {
       type: String,
       unique: true,
@@ -172,5 +179,19 @@ AgentSchema.methods.genererTOTPSecret = function () {
   this.totp_enabled = true;
   return this.totp_secret;
 };
+
+// Securite — herite toujours l'instance_slug du site rattache
+AgentSchema.pre("save", async function (next) {
+  if (this.isModified("site_id") || this.isNew) {
+    try {
+      const Site = mongoose.model("Site");
+      const site = await Site.findById(this.site_id).select("instance_slug");
+      if (site?.instance_slug) this.instance_slug = site.instance_slug;
+    } catch (e) {
+      // ignore — ne bloque pas la sauvegarde si lookup echoue
+    }
+  }
+  next();
+});
 
 module.exports = mongoose.model("Agent", AgentSchema);

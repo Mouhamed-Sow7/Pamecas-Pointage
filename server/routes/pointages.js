@@ -9,12 +9,14 @@ const {
   authenticate,
   authorizeRoles,
   tenantFilter,
+  tenantScope,
 } = require("../middleware/auth");
 
 const router = express.Router();
 
 router.use(authenticate);
 router.use(tenantFilter);
+router.use(tenantScope);
 
 // Haversine distance util
 function distanceMetres(lat1, lon1, lat2, lon2) {
@@ -305,7 +307,7 @@ router.get("/", async (req, res) => {
     const dateStr = date || todayString();
 
     // Base: filtre tenant (injecté par middleware)
-    const query = { ...req.siteFilter, date: dateStr };
+    const query = { ...req.siteFilter, ...req.instanceFilter, date: dateStr };
 
     // Superadmin peut filtrer par site spécifique
     if (site_id && mongoose.Types.ObjectId.isValid(site_id)) {
@@ -333,7 +335,7 @@ router.get("/stats", async (req, res) => {
     const { site_id, date } = req.query;
     const dateStr = date || todayString();
 
-    const filter = { ...req.siteFilter, date: dateStr };
+    const filter = { ...req.siteFilter, ...req.instanceFilter, date: dateStr };
     if (site_id && mongoose.Types.ObjectId.isValid(site_id))
       filter.site_id = site_id;
 

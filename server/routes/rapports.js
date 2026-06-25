@@ -1,7 +1,7 @@
 ﻿const express = require('express');
 const mongoose = require('mongoose');
 const ExcelJS = require('exceljs');
-const { authenticate, authorizeRoles, tenantFilter } = require('../middleware/auth');
+const { authenticate, authorizeRoles, tenantFilter, tenantScope } = require('../middleware/auth');
 const Pointage = require('../models/Pointage');
 const Site = require('../models/Site');
 const Agent = require('../models/Agent');
@@ -10,6 +10,7 @@ const router = express.Router();
 
 router.use(authenticate);
 router.use(tenantFilter);
+router.use(tenantScope);
 
 function todayString() {
   const now = new Date();
@@ -21,7 +22,7 @@ router.get('/dashboard-today', async (req, res) => {
     const { site_id } = req.query;
     const dateStr = todayString();
 
-    const match = { ...req.siteFilter, date: dateStr };
+    const match = { ...req.siteFilter, ...req.instanceFilter, date: dateStr };
 
     // Filtre site spécifique si fourni — vérifier que c'est dans le périmètre
     if (site_id && mongoose.Types.ObjectId.isValid(site_id)) {
@@ -141,6 +142,7 @@ router.get('/export', async (req, res) => {
 
     const filter = {
       ...req.siteFilter,
+      ...req.instanceFilter,
       date: { $gte: date_debut, $lte: date_fin }
     };
 

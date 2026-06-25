@@ -7,7 +7,7 @@ const { parse: csvParse } = require("csv-parse/sync");
 
 const Agent = require("../models/Agent");
 const Pointage = require("../models/Pointage");
-const { authenticate, authorizeRoles } = require("../middleware/auth");
+const { authenticate, authorizeRoles, tenantScope } = require("../middleware/auth");
 const { validateQRData } = require("../utils/totp");
 
 const router = express.Router();
@@ -112,6 +112,7 @@ router.get(
 );
 
 router.use(authenticate);
+router.use(tenantScope);
 
 const createAgentSchema = Joi.object({
   nom: Joi.string().trim().required().messages({
@@ -173,7 +174,7 @@ router.get("/", async (req, res) => {
       limit = 50,
     } = req.query;
 
-    const query = {};
+    const query = { ...req.instanceFilter };
 
     if (site_id) {
       query.site_id = site_id;
@@ -238,6 +239,7 @@ router.get("/search", async (req, res) => {
       const agent = await Agent.findOne({
         matricule: scannedMatricule.toUpperCase(),
         statut: "actif",
+        ...req.instanceFilter,
       }).populate("site_id", "nom code");
 
       if (!agent)
@@ -263,7 +265,7 @@ router.get("/search", async (req, res) => {
 
     // Mode matricule direct (manuel)
     if (matricule) {
-      const filter = { matricule: matricule.toUpperCase(), statut: "actif" };
+      const filter = { matricule: matricule.toUpperCase(), statut: "actif", ...req.instanceFilter };
       if (req.user.is_kiosque && req.user.site_id) {
         filter.site_id = req.user.site_id;
       }
@@ -287,6 +289,7 @@ router.get(
     try {
       const agents = await Agent.find({
         "demande_deconnexion.statut": "en_attente",
+        ...req.instanceFilter,
       }).select("matricule nom prenom session_device demande_deconnexion site_id").populate("site_id", "nom");
       res.json({ data: agents });
     } catch (err) {
@@ -298,7 +301,7 @@ router.get(
 router.get("/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const agent = await Agent.findById(id).populate("site_id");
+    const agent = await Agent.findOne({ _id: id, ...req.instanceFilter }).populate("site_id");
 
     if (!agent) {
       return res.status(404).json({ message: "Agent non trouvé." });
@@ -351,6 +354,15 @@ router.post("/", authorizeRoles("admin", "superadmin"), async (req, res) => {
         message: "Données invalides.",
         details: error.details.map((d) => d.message),
       });
+    }
+
+    // Vérifier que le site appartient au tenant de l'utilisateur
+    if (req.user.instance_slug !== null) {
+      const Site = require("../models/Site");
+      const site = await Site.findById(value.site_id);
+      if (!site || site.instance_slug !== req.user.instance_slug) {
+        return res.status(403).json({ message: "Site invalide pour cette instance." });
+      }
     }
 
     const agent = new Agent({
@@ -444,6 +456,11 @@ router.put("/:id", authorizeRoles("admin", "superadmin"), async (req, res) => {
       return res
         .status(400)
         .json({ message: "Aucune donnée à mettre à jour." });
+    }
+
+    const existing = await Agent.findOne({ _id: id, ...req.instanceFilter });
+    if (!existing) {
+      return res.status(404).json({ message: "Agent non trouvé." });
     }
 
     const agent = await Agent.findByIdAndUpdate(id, fieldsToUpdate, {

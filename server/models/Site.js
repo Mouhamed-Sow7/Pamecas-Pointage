@@ -36,6 +36,13 @@ const ConfigSiteSchema = new mongoose.Schema(
 
 const SiteSchema = new mongoose.Schema(
   {
+    instance_slug: {
+      type: String,
+      default: "pamecas",
+      lowercase: true,
+      trim: true,
+      index: true,
+    },
     code: { type: String, unique: true, required: true, trim: true },
     nom: { type: String, required: true, trim: true },
     region: {

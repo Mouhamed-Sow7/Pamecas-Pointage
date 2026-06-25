@@ -4,6 +4,13 @@ const { Schema } = mongoose;
 
 const PointageSchema = new Schema(
   {
+    instance_slug: {
+      type: String,
+      default: "pamecas",
+      lowercase: true,
+      trim: true,
+      index: true,
+    },
     local_id: {
       type: String,
       unique: true,
@@ -91,5 +98,19 @@ const PointageSchema = new Schema(
 PointageSchema.index({ agent_id: 1, site_id: 1, date: 1 }, { unique: true });
 PointageSchema.index({ site_id: 1, date: 1 }); // pour les requêtes par agence/date
 PointageSchema.index({ date: 1 }); // pour les rapports
+
+// Securite — herite toujours l'instance_slug du site rattache
+PointageSchema.pre("save", async function (next) {
+  if (this.isModified("site_id") || this.isNew) {
+    try {
+      const Site = mongoose.model("Site");
+      const site = await Site.findById(this.site_id).select("instance_slug");
+      if (site?.instance_slug) this.instance_slug = site.instance_slug;
+    } catch (e) {
+      // ignore — ne bloque pas la sauvegarde si lookup echoue
+    }
+  }
+  next();
+});
 
 module.exports = mongoose.model("Pointage", PointageSchema);

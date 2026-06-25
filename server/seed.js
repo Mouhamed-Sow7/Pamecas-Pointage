@@ -811,6 +811,66 @@ async function seed() {
 
     console.log("Connexion DB etablie...");
 
+    // ─── MIGRATION TENANT ISOLATION (idempotent) ────────────────────
+    // Corrige les Sites/Agents/Users crees avant la mise en place du
+    // cloisonnement multi-tenant (instance_slug manquant).
+    await Site.updateMany(
+      { code: /^PAM-/, $or: [{ instance_slug: { $exists: false } }, { instance_slug: null }] },
+      { $set: { instance_slug: "pamecas" } },
+    );
+    await Site.updateMany(
+      { code: /^CMS-/, $or: [{ instance_slug: { $exists: false } }, { instance_slug: null }] },
+      { $set: { instance_slug: "cms" } },
+    );
+    await User.updateMany(
+      { username: { $regex: /(\.|@)cms$/i }, $or: [{ instance_slug: { $exists: false } }, { instance_slug: "pamecas" }] },
+      { $set: { instance_slug: "cms" } },
+    );
+    {
+      const allSites = await Site.find({}).select("_id instance_slug");
+      const slugBySite = new Map(allSites.map((s) => [s._id.toString(), s.instance_slug]));
+      const orphanAgents = await Agent.find({
+        $or: [{ instance_slug: { $exists: false } }, { instance_slug: null }],
+      }).select("_id site_id");
+      let fixedAgents = 0;
+      for (const a of orphanAgents) {
+        const slug = slugBySite.get(a.site_id?.toString());
+        if (slug) {
+          await Agent.updateOne({ _id: a._id }, { $set: { instance_slug: slug } });
+          fixedAgents++;
+        }
+      }
+      if (fixedAgents) console.log(`Migration tenant: ${fixedAgents} agents recloisonnes.`);
+
+      const Conge = require("./models/Conge");
+      const orphanPointages = await Pointage.find({
+        $or: [{ instance_slug: { $exists: false } }, { instance_slug: null }],
+      }).select("_id site_id");
+      let fixedPointages = 0;
+      for (const p of orphanPointages) {
+        const slug = slugBySite.get(p.site_id?.toString());
+        if (slug) {
+          await Pointage.updateOne({ _id: p._id }, { $set: { instance_slug: slug } });
+          fixedPointages++;
+        }
+      }
+      if (fixedPointages) console.log(`Migration tenant: ${fixedPointages} pointages recloisonnes.`);
+
+      const orphanConges = await Conge.find({
+        $or: [{ instance_slug: { $exists: false } }, { instance_slug: null }],
+      }).select("_id site_id");
+      let fixedConges = 0;
+      for (const c of orphanConges) {
+        const slug = slugBySite.get(c.site_id?.toString());
+        if (slug) {
+          await Conge.updateOne({ _id: c._id }, { $set: { instance_slug: slug } });
+          fixedConges++;
+        }
+      }
+      if (fixedConges) console.log(`Migration tenant: ${fixedConges} conges recloisonnes.`);
+    }
+    // ─── FIN MIGRATION TENANT ISOLATION ──────────────────────────────
+
     // Normaliser les PINs kiosque legacy '1234' → null
     await Site.updateMany({ kiosque_pin: "1234" }, { kiosque_pin: null });
 
@@ -819,7 +879,7 @@ async function seed() {
     for (const agence of agences) {
       // Préserver le kiosque_token existant — ne pas l'écraser au reseed
       const existing = await Site.findOne({ code: agence.code });
-      const updateData = { ...agence, actif: true };
+      const updateData = { ...agence, actif: true, instance_slug: "pamecas" };
       if (existing?.kiosque_token) {
         delete updateData.kiosque_token;
         delete updateData.kiosque_token_created_at;
