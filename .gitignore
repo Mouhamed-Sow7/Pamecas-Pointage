@@ -2,4 +2,5 @@ refacto/
 .env
 .env.local
 .env.*.local
+server/COMPTES_UTILISATEURS.md
 
