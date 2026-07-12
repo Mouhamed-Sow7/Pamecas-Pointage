@@ -578,6 +578,20 @@ export async function renderAgents(root, user) {
 
   root.innerHTML = `
     <div style="display:flex; flex-direction:column; gap:12px;">
+
+      <!-- Onglets navigation (admin/superadmin seulement) -->
+      ${canEdit ? `
+      <div style="display:flex;gap:0;border-bottom:2px solid #e8f5e9;margin-bottom:4px;">
+        <button id="tab-liste" style="padding:10px 18px;border:none;background:none;cursor:pointer;font-size:0.875rem;font-weight:600;color:#2e7d32;border-bottom:2px solid #2e7d32;margin-bottom:-2px;transition:all 0.15s;">
+          <i class="fa-solid fa-users"></i> Agents
+        </button>
+        <button id="tab-demandes" style="padding:10px 18px;border:none;background:none;cursor:pointer;font-size:0.875rem;font-weight:600;color:#888;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all 0.15s;position:relative;">
+          <i class="fa-solid fa-bell"></i> Demandes
+          <span id="demandes-badge" style="display:none;position:absolute;top:5px;right:4px;background:#c62828;color:white;border-radius:999px;font-size:0.6rem;font-weight:700;padding:1px 5px;min-width:16px;line-height:1.4;text-align:center;">0</span>
+        </button>
+      </div>` : ""}
+
+      <!-- Panneau Liste agents -->
       <div id="agents-section">
       <div class="card">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
@@ -588,10 +602,6 @@ export async function renderAgents(root, user) {
             canEdit
               ? `
           <div style="display:flex;gap:8px;">
-            <button id="btn-demandes" class="btn-primary" style="position:relative;background:linear-gradient(135deg,#e65100,#ff9800);font-size:0.78rem;padding:6px 10px;">
-              <i class="fa-solid fa-bell"></i> Demandes
-              <span id="demandes-badge" style="display:none;position:absolute;top:-7px;right:-7px;background:#c62828;color:white;border-radius:999px;font-size:0.65rem;font-weight:700;padding:1px 6px;min-width:18px;line-height:1.4;text-align:center;border:2px solid white;">0</span>
-            </button>
             <button id="btn-import-csv" class="btn-primary" style="background:linear-gradient(135deg,#1565c0,#1976d2);font-size:0.78rem;padding:6px 10px;">
               <i class="fa-solid fa-file-csv"></i> Importer CSV
             </button>
@@ -666,15 +676,14 @@ export async function renderAgents(root, user) {
       </div>
 
       ${canEdit ? `
+      <!-- Panneau Demandes (onglet) -->
       <div id="demandes-section" style="display:none;">
         <div class="card">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
-            <h2 style="font-size:1.1rem;font-weight:700;">
-              <i class="fa-solid fa-bell" style="color:#e65100;margin-right:6px;"></i>Demandes de déconnexion
+          <div style="margin-bottom:14px;">
+            <h2 style="font-size:1.1rem;font-weight:700;margin-bottom:4px;">
+              <i class="fa-solid fa-mobile-screen" style="color:#e65100;margin-right:6px;"></i>Demandes de changement d'appareil
             </h2>
-            <button id="btn-retour-agents" class="btn-primary" style="background:#eee;color:#333;font-size:0.78rem;padding:6px 10px;">
-              <i class="fa-solid fa-arrow-left"></i> Retour aux agents
-            </button>
+            <p style="font-size:0.78rem;color:#888;margin:0;">Agents ayant perdu ou changé leur téléphone — approuvez pour leur permettre de se reconnecter.</p>
           </div>
           <div id="demandes-empty" style="display:none;color:#999;text-align:center;padding:30px 10px;">
             <i class="fa-solid fa-circle-check" style="font-size:1.6rem;color:#9ccc9c;display:block;margin-bottom:8px;"></i>
@@ -793,22 +802,30 @@ export async function renderAgents(root, user) {
 
   // ── Charger les demandes de déconnexion en attente (admin only) ──
   if (canEdit) {
-    const btnDemandes = root.querySelector("#btn-demandes");
+    const tabListe = root.querySelector("#tab-liste");
+    const tabDemandes = root.querySelector("#tab-demandes");
     const demandesBadge = root.querySelector("#demandes-badge");
     const agentsSection = root.querySelector("#agents-section");
     const demandesSection = root.querySelector("#demandes-section");
-    const btnRetourAgents = root.querySelector("#btn-retour-agents");
 
-    function showDemandesSection() {
-      if (agentsSection) agentsSection.style.display = "none";
-      if (demandesSection) demandesSection.style.display = "block";
+    function activateTab(active) {
+      // active = "liste" | "demandes"
+      const isListe = active === "liste";
+      if (agentsSection) agentsSection.style.display = isListe ? "block" : "none";
+      if (demandesSection) demandesSection.style.display = isListe ? "none" : "block";
+
+      if (tabListe) {
+        tabListe.style.color = isListe ? "#2e7d32" : "#888";
+        tabListe.style.borderBottom = isListe ? "2px solid #2e7d32" : "2px solid transparent";
+      }
+      if (tabDemandes) {
+        tabDemandes.style.color = isListe ? "#888" : "#e65100";
+        tabDemandes.style.borderBottom = isListe ? "2px solid transparent" : "2px solid #e65100";
+      }
     }
-    function showAgentsSection() {
-      if (demandesSection) demandesSection.style.display = "none";
-      if (agentsSection) agentsSection.style.display = "block";
-    }
-    btnDemandes?.addEventListener("click", showDemandesSection);
-    btnRetourAgents?.addEventListener("click", showAgentsSection);
+
+    tabListe?.addEventListener("click", () => activateTab("liste"));
+    tabDemandes?.addEventListener("click", () => activateTab("demandes"));
 
     async function loadDemandesDeconnexion() {
       try {

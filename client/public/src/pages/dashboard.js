@@ -20,8 +20,11 @@ export function renderDashboard(root, user) {
       superviseur: user?.site_nom || "Votre agence",
     }[user?.role] || "";
 
+  const isManager = user?.role === "admin" || user?.role === "superadmin" || user?.role === "directeur_regional";
+
   root.innerHTML = `
     <div>
+      <!-- En-tête -->
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
         <div>
           <h1 style="font-size:1.3rem;font-weight:700;margin-bottom:4px;">Bonjour ${user?.username || ""}</h1>
@@ -33,14 +36,36 @@ export function renderDashboard(root, user) {
         </div>
       </div>
 
-      <!-- Bannière demandes de déconnexion — admin/superadmin only -->
-      ${(user?.role === "admin" || user?.role === "superadmin") ? `
-      <div id="demandes-deconnexion-banner" style="display:none;background:#fff3e0;border:1.5px solid #ffb74d;border-radius:12px;padding:12px 16px;margin-bottom:16px;">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-          <i class="fa-solid fa-triangle-exclamation" style="color:#e65100;"></i>
-          <span style="font-weight:600;color:#e65100;font-size:0.875rem;">Demandes de déconnexion en attente</span>
+      <!-- Tuiles de notification demandes (admin/superadmin/DR) -->
+      ${isManager ? `
+      <div id="notifications-row" style="display:none;gap:10px;margin-bottom:16px;flex-wrap:wrap;">
+        <div id="notif-deconnexions" style="display:none;flex:1;min-width:160px;background:#fff3e0;border:1.5px solid #ffb74d;border-radius:12px;padding:12px 16px;cursor:pointer;transition:box-shadow 0.2s;"
+          onclick="window.location.hash='#/agents'">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="background:#e65100;color:white;border-radius:8px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0;">
+              <i class="fa-solid fa-mobile-screen"></i>
+            </div>
+            <div>
+              <div id="notif-deconnexions-count" style="font-size:1.25rem;font-weight:700;color:#e65100;line-height:1;">0</div>
+              <div style="font-size:0.72rem;color:#bf360c;font-weight:600;">Chgt. téléphone</div>
+            </div>
+            <i class="fa-solid fa-arrow-right" style="color:#ffb74d;margin-left:auto;font-size:0.8rem;"></i>
+          </div>
         </div>
-        <div id="demandes-list-dashboard"></div>
+
+        <div id="notif-conges" style="display:none;flex:1;min-width:160px;background:#e8f5e9;border:1.5px solid #81c784;border-radius:12px;padding:12px 16px;cursor:pointer;transition:box-shadow 0.2s;"
+          onclick="window.location.hash='#/conges'">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="background:#2e7d32;color:white;border-radius:8px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0;">
+              <i class="fa-solid fa-calendar-days"></i>
+            </div>
+            <div>
+              <div id="notif-conges-count" style="font-size:1.25rem;font-weight:700;color:#2e7d32;line-height:1;">0</div>
+              <div style="font-size:0.72rem;color:#1b5e20;font-weight:600;">Congés en attente</div>
+            </div>
+            <i class="fa-solid fa-arrow-right" style="color:#81c784;margin-left:auto;font-size:0.8rem;"></i>
+          </div>
+        </div>
       </div>` : ""}
 
       <!-- KPI skeleton -->
@@ -91,8 +116,7 @@ export function renderDashboard(root, user) {
                   <th style="padding:10px 14px;text-align:center;font-weight:600;color:#1565c0;border-bottom:1.5px solid #eee;">Taux</th>
                 </tr>
               </thead>
-              <tbody id="table-sites-body">
-              </tbody>
+              <tbody id="table-sites-body"></tbody>
             </table>
           </div>
         </div>
@@ -114,7 +138,6 @@ export function renderDashboard(root, user) {
       skeleton.style.display = "none";
       content.style.display = "block";
 
-      // ─── Lire data.kpis (ce que le backend envoie vraiment) ───
       const kpis = data.kpis || {};
       const presents = kpis.presents ?? data.present ?? 0;
       const absents = kpis.absents ?? data.absent ?? 0;
@@ -126,8 +149,6 @@ export function renderDashboard(root, user) {
       root.querySelector("#kpi-retard").textContent = retards;
       root.querySelector("#kpi-taux").textContent = `${taux}%`;
 
-      // ─── Tableau par agence ───────────────────────────────────
-      // Backend envoie par_site[].site (nom), frontend lisait sites[].nom
       const parSite = data.par_site || data.sites || [];
       const body = root.querySelector("#table-sites-body");
       body.innerHTML = "";
@@ -168,122 +189,96 @@ export function renderDashboard(root, user) {
         });
       }
 
-      // Date recap
       const recapDate = root.querySelector("#recap-date");
-      if (recapDate)
-        recapDate.textContent = new Date().toLocaleDateString("fr-FR");
+      if (recapDate) recapDate.textContent = new Date().toLocaleDateString("fr-FR");
 
-      // Statut sync
       if (!navigator.onLine) {
-        syncStatus.innerHTML =
-          '<i class="fa-solid fa-wifi-slash"></i> Hors ligne';
+        syncStatus.innerHTML = '<i class="fa-solid fa-wifi-slash"></i> Hors ligne';
         syncStatus.className = "badge badge-pending";
       } else {
-        syncStatus.innerHTML =
-          '<i class="fa-solid fa-circle-check"></i> A jour';
+        syncStatus.innerHTML = '<i class="fa-solid fa-circle-check"></i> A jour';
         syncStatus.className = "badge badge-synced";
       }
     } catch (err) {
-      // Stop polling on auth or server-unavailable errors
       if (err && (err.status === 401 || err.status === 503)) {
-        if (intervalId) {
-          clearInterval(intervalId);
-        }
+        if (intervalId) clearInterval(intervalId);
         return;
       }
-
       skeleton.style.display = "none";
       content.style.display = "block";
       showToast("Impossible de charger le dashboard.", "warning");
-      syncStatus.innerHTML =
-        '<i class="fa-solid fa-triangle-exclamation"></i> Erreur';
+      syncStatus.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Erreur';
       syncStatus.className = "badge badge-pending";
     }
   }
 
   loadData();
 
-  // ── Demandes de déconnexion (admin/superadmin) ────────────────────
-  if (user?.role === "admin" || user?.role === "superadmin") {
-    async function loadDemandesDashboard() {
+  // ── Tuiles de notification (admin/superadmin/DR) ──────────────────────────
+  if (isManager) {
+    async function loadNotifications() {
       try {
         const token = localStorage.getItem("pamecas_token");
-        const r = await fetch("/api/agents/demandes-deconnexion", {
-          headers: { Authorization: "Bearer " + token },
-        });
-        if (!r.ok) return;
-        const data = await r.json();
-        const demandes = data.data || [];
-        const banner = root.querySelector("#demandes-deconnexion-banner");
-        const list = root.querySelector("#demandes-list-dashboard");
-        if (!banner || !list) return;
-        if (!demandes.length) { banner.style.display = "none"; return; }
-        banner.style.display = "block";
-        list.innerHTML = demandes.map(a => `
-          <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-top:1px solid #ffe0b2;flex-wrap:wrap;" data-id="${a._id}">
-            <span style="font-weight:600;font-size:0.82rem;">${a.prenom} ${a.nom}</span>
-            <span style="color:#888;font-size:0.78rem;">${a.matricule}</span>
-            <span style="font-size:0.78rem;color:#555;">— ${{telephone_vole:"Téléphone volé",telephone_perdu:"Téléphone perdu",telephone_detruit:"Téléphone détruit",autre:"Autre"}[a.demande_deconnexion?.motif] || "—"}</span>
-            <div style="margin-left:auto;display:flex;gap:6px;">
-              <button class="btn-approuver" data-id="${a._id}"
-                style="padding:4px 10px;border-radius:7px;border:none;background:#2e7d32;color:white;font-size:0.75rem;cursor:pointer;">
-                <i class="fa-solid fa-check"></i> Approuver
-              </button>
-              <button class="btn-rejeter" data-id="${a._id}"
-                style="padding:4px 10px;border-radius:7px;border:1.5px solid #c62828;background:white;color:#c62828;font-size:0.75rem;cursor:pointer;">
-                <i class="fa-solid fa-xmark"></i> Rejeter
-              </button>
-            </div>
-          </div>
-        `).join("");
-        list.querySelectorAll(".btn-approuver").forEach(btn => {
-          btn.addEventListener("click", async () => {
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
-            btn.disabled = true;
-            const t = localStorage.getItem("pamecas_token");
-            await fetch("/api/agents/" + btn.dataset.id + "/approuver-deconnexion", {
-              method: "POST", headers: { Authorization: "Bearer " + t },
+        const notifRow = root.querySelector("#notifications-row");
+        const notifDecoCard = root.querySelector("#notif-deconnexions");
+        const notifCongesCard = root.querySelector("#notif-conges");
+
+        // Demandes de déconnexion
+        if (user?.role === "admin" || user?.role === "superadmin") {
+          try {
+            const r = await fetch("/api/agents/demandes-deconnexion", {
+              headers: { Authorization: "Bearer " + token },
             });
-            loadDemandesDashboard();
+            if (r.ok) {
+              const data = await r.json();
+              const nb = (data.data || []).length;
+              const countEl = root.querySelector("#notif-deconnexions-count");
+              if (countEl) countEl.textContent = nb;
+              if (notifDecoCard) notifDecoCard.style.display = nb > 0 ? "block" : "none";
+            }
+          } catch { /* silencieux */ }
+        }
+
+        // Congés en attente
+        try {
+          const r = await fetch("/api/conges?statut=en_attente", {
+            headers: { Authorization: "Bearer " + token },
           });
-        });
-        list.querySelectorAll(".btn-rejeter").forEach(btn => {
-          btn.addEventListener("click", async () => {
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
-            btn.disabled = true;
-            const t = localStorage.getItem("pamecas_token");
-            await fetch("/api/agents/" + btn.dataset.id + "/refuser-deconnexion", {
-              method: "POST", headers: { Authorization: "Bearer " + t },
-            });
-            loadDemandesDashboard();
-          });
-        });
+          if (r.ok) {
+            const data = await r.json();
+            const nb = (data.data || []).length;
+            const countEl = root.querySelector("#notif-conges-count");
+            if (countEl) countEl.textContent = nb;
+            if (notifCongesCard) notifCongesCard.style.display = nb > 0 ? "block" : "none";
+          }
+        } catch { /* silencieux */ }
+
+        // Afficher la row si au moins une tuile est visible
+        if (notifRow) {
+          const anyVisible =
+            (notifDecoCard?.style.display !== "none") ||
+            (notifCongesCard?.style.display !== "none");
+          notifRow.style.display = anyVisible ? "flex" : "none";
+        }
       } catch (e) { /* silencieux */ }
     }
-    loadDemandesDashboard();
-    setInterval(loadDemandesDashboard, 60000);
+
+    loadNotifications();
+    setInterval(loadNotifications, 60000);
   }
 
-  // Start polling only if a token exists
+  // Polling données KPI
   const token = localStorage.getItem("pamecas_token");
   if (token) {
     intervalId = setInterval(() => {
       const t = localStorage.getItem("pamecas_token");
-      if (!t) {
-        clearInterval(intervalId);
-        return;
-      }
+      if (!t) { clearInterval(intervalId); return; }
       loadData();
     }, 30000);
 
-    // Cleanup when navigating away via hashchange
-    window.addEventListener(
-      "hashchange",
-      () => {
-        if (intervalId) clearInterval(intervalId);
-      },
-      { once: true },
-    );
+    window.addEventListener("hashchange", () => {
+      if (intervalId) clearInterval(intervalId);
+    }, { once: true });
   }
 
   root._cleanup = () => {
