@@ -7,7 +7,10 @@
     "start": "node server/app.js",
     "dev": "nodemon server/app.js",
     "seed": "node server/seed.js",
+    "seed:cms": "node server/seed-cms.js",
+    "seed:gmv": "node server/seed-gmv.js",
     "migrate": "node server/scripts/migrate_matricules.js",
+    "reset:passwords": "node server/scripts/reset-demo-passwords.js",
     "test": "jest"
   },
   "keywords": [
