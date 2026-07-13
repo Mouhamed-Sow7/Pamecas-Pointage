@@ -579,19 +579,7 @@ export async function renderAgents(root, user, initialTab = null) {
   root.innerHTML = `
     <div style="display:flex; flex-direction:column; gap:12px;">
 
-      <!-- Onglets navigation (admin/superadmin seulement) -->
-      ${canEdit ? `
-      <div style="display:flex;gap:0;border-bottom:2px solid #e8f5e9;margin-bottom:4px;">
-        <button id="tab-liste" style="padding:10px 18px;border:none;background:none;cursor:pointer;font-size:0.875rem;font-weight:600;color:#2e7d32;border-bottom:2px solid #2e7d32;margin-bottom:-2px;transition:all 0.15s;">
-          <i class="fa-solid fa-users"></i> Agents
-        </button>
-        <button id="tab-demandes" style="padding:10px 18px;border:none;background:none;cursor:pointer;font-size:0.875rem;font-weight:600;color:#888;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all 0.15s;position:relative;">
-          <i class="fa-solid fa-bell"></i> Demandes
-          <span id="demandes-badge" style="display:none;position:absolute;top:5px;right:4px;background:#c62828;color:white;border-radius:999px;font-size:0.6rem;font-weight:700;padding:1px 5px;min-width:16px;line-height:1.4;text-align:center;">0</span>
-        </button>
-      </div>` : ""}
-
-      <!-- Panneau Liste agents -->
+      <!-- En-tête Agents -->
       <div id="agents-section">
       <div class="card">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
@@ -601,9 +589,12 @@ export async function renderAgents(root, user, initialTab = null) {
           ${
             canEdit
               ? `
-          <div style="display:flex;gap:8px;">
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button id="btn-add-agent-header" class="btn-primary" style="font-size:0.78rem;padding:6px 12px;">
+              <i class="fa-solid fa-user-plus"></i> Ajouter
+            </button>
             <button id="btn-import-csv" class="btn-primary" style="background:linear-gradient(135deg,#1565c0,#1976d2);font-size:0.78rem;padding:6px 10px;">
-              <i class="fa-solid fa-file-csv"></i> Importer CSV
+              <i class="fa-solid fa-file-csv"></i> CSV
             </button>
             <button id="btn-qr-sheet" class="btn-primary" style="background:linear-gradient(135deg,#6a1b9a,#8e24aa);font-size:0.78rem;padding:6px 10px;">
               <i class="fa-solid fa-id-card"></i> QR Cards
@@ -675,23 +666,7 @@ export async function renderAgents(root, user, initialTab = null) {
       </div>
       </div>
 
-      ${canEdit ? `
-      <!-- Panneau Demandes (onglet) -->
-      <div id="demandes-section" style="display:none;">
-        <div class="card">
-          <div style="margin-bottom:14px;">
-            <h2 style="font-size:1.1rem;font-weight:700;margin-bottom:4px;">
-              <i class="fa-solid fa-mobile-screen" style="color:#e65100;margin-right:6px;"></i>Demandes de changement d'appareil
-            </h2>
-            <p style="font-size:0.78rem;color:#888;margin:0;">Agents ayant perdu ou changé leur téléphone — approuvez pour leur permettre de se reconnecter.</p>
-          </div>
-          <div id="demandes-empty" style="display:none;color:#999;text-align:center;padding:30px 10px;">
-            <i class="fa-solid fa-circle-check" style="font-size:1.6rem;color:#9ccc9c;display:block;margin-bottom:8px;"></i>
-            Aucune demande en attente.
-          </div>
-          <div id="demandes-list"></div>
-        </div>
-      </div>` : ""}
+
     </div>
     ${canEdit ? `<button id="btn-add-agent" class="fab">+</button>` : ""}
   `;
@@ -732,15 +707,18 @@ export async function renderAgents(root, user, initialTab = null) {
     ?.addEventListener("click", () => fetchAgents(root, 1));
 
   if (canEdit) {
-    const addBtn = root.querySelector("#btn-add-agent");
-    addBtn.addEventListener("click", async () => {
+    // Bouton Ajouter (header) + FAB
+    const openAddModal = async () => {
       let sites = [];
       try {
         const res = await get("/api/sites");
         sites = res.data || res || [];
       } catch (err) {}
       openAgentModal("create", null, sites);
-    });
+    };
+    root.querySelector("#btn-add-agent-header")?.addEventListener("click", openAddModal);
+    const addBtn = root.querySelector("#btn-add-agent");
+    addBtn?.addEventListener("click", openAddModal);
 
     const btnImportCsv = root.querySelector("#btn-import-csv");
     btnImportCsv.addEventListener("click", () => openImportModal(root));
@@ -800,126 +778,4 @@ export async function renderAgents(root, user, initialTab = null) {
 
   fetchAgents(root, 1);
 
-  // ── Charger les demandes de déconnexion en attente (admin only) ──
-  if (canEdit) {
-    const tabListe = root.querySelector("#tab-liste");
-    const tabDemandes = root.querySelector("#tab-demandes");
-    const demandesBadge = root.querySelector("#demandes-badge");
-    const agentsSection = root.querySelector("#agents-section");
-    const demandesSection = root.querySelector("#demandes-section");
-
-    function activateTab(active) {
-      // active = "liste" | "demandes"
-      const isListe = active === "liste";
-      if (agentsSection) agentsSection.style.display = isListe ? "block" : "none";
-      if (demandesSection) demandesSection.style.display = isListe ? "none" : "block";
-
-      if (tabListe) {
-        tabListe.style.color = isListe ? "#2e7d32" : "#888";
-        tabListe.style.borderBottom = isListe ? "2px solid #2e7d32" : "2px solid transparent";
-      }
-      if (tabDemandes) {
-        tabDemandes.style.color = isListe ? "#888" : "#e65100";
-        tabDemandes.style.borderBottom = isListe ? "2px solid transparent" : "2px solid #e65100";
-      }
-    }
-
-    tabListe?.addEventListener("click", () => activateTab("liste"));
-    tabDemandes?.addEventListener("click", () => activateTab("demandes"));
-
-    // Activer l'onglet demandé depuis l'URL (?tab=demandes)
-    if (initialTab === "demandes") {
-      activateTab("demandes");
-    } else {
-      activateTab("liste");
-    }
-
-    async function loadDemandesDeconnexion() {
-      try {
-        const res = await get("/api/agents/demandes-deconnexion");
-        const demandes = res.data || [];
-        const list = root.querySelector("#demandes-list");
-        const empty = root.querySelector("#demandes-empty");
-        if (!list) return;
-
-        // Badge — apparait/disparait et se met a jour selon le nombre de demandes
-        if (demandesBadge) {
-          if (demandes.length > 0) {
-            demandesBadge.textContent = demandes.length > 99 ? "99+" : demandes.length;
-            demandesBadge.style.display = "inline-block";
-          } else {
-            demandesBadge.style.display = "none";
-          }
-        }
-
-        if (!demandes.length) {
-          list.innerHTML = "";
-          if (empty) empty.style.display = "block";
-          return;
-        }
-        if (empty) empty.style.display = "none";
-
-        list.innerHTML = demandes.map(a => `
-          <div style="display:flex;align-items:center;gap:10px;padding:12px 0;border-top:1px solid #f0f0f0;flex-wrap:wrap;" data-agent-id="${a._id}">
-            <div style="flex:1;min-width:180px;">
-              <span style="font-weight:600;font-size:0.875rem;">${a.prenom} ${a.nom}</span>
-              <span style="color:#888;font-size:0.78rem;margin-left:6px;">${a.matricule}</span>
-              <div style="font-size:0.78rem;color:#666;margin-top:2px;">
-                <i class="fa-solid fa-building" style="color:var(--green);"></i> ${a.site_id?.nom || "—"}
-                &nbsp;·&nbsp;
-                <i class="fa-solid fa-mobile-screen" style="color:#888;"></i> ${a.session_device || "appareil inconnu"}
-                &nbsp;·&nbsp;
-                Motif : <strong>${{
-                  telephone_vole: "Téléphone volé",
-                  telephone_perdu: "Téléphone perdu",
-                  telephone_detruit: "Téléphone détruit/HS",
-                  autre: "Autre"
-                }[a.demande_deconnexion?.motif] || a.demande_deconnexion?.motif}</strong>
-              </div>
-            </div>
-            <div style="display:flex;gap:6px;">
-              <button class="btn-approuver-deconnexion btn-primary" data-id="${a._id}"
-                style="font-size:0.78rem;padding:5px 10px;background:#2e7d32;">
-                <i class="fa-solid fa-check"></i> Approuver
-              </button>
-              <button class="btn-refuser-deconnexion" data-id="${a._id}"
-                style="font-size:0.78rem;padding:5px 10px;border-radius:8px;border:1.5px solid #c62828;background:white;color:#c62828;cursor:pointer;">
-                <i class="fa-solid fa-xmark"></i> Refuser
-              </button>
-            </div>
-          </div>
-        `).join("");
-
-        // Handlers approuver / refuser
-        list.querySelectorAll(".btn-approuver-deconnexion").forEach(btn => {
-          btn.addEventListener("click", async () => {
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
-            btn.disabled = true;
-            try {
-              const res = await post(`/api/agents/${btn.dataset.id}/approuver-deconnexion`, {});
-              showToast(res.message || "Session révoquée — agent peut se reconnecter", "success");
-              loadDemandesDeconnexion();
-            } catch { showToast("Erreur", "error"); }
-          });
-        });
-        list.querySelectorAll(".btn-refuser-deconnexion").forEach(btn => {
-          btn.addEventListener("click", async () => {
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
-            btn.disabled = true;
-            try {
-              await post(`/api/agents/${btn.dataset.id}/refuser-deconnexion`, {});
-              showToast("Demande refusée", "info");
-              loadDemandesDeconnexion();
-            } catch { showToast("Erreur", "error"); }
-          });
-        });
-      } catch (e) {
-        console.warn("Erreur chargement demandes déconnexion:", e);
-      }
-    }
-    loadDemandesDeconnexion();
-    // Rafraîchir toutes les 60s
-    const demandesInterval = setInterval(loadDemandesDeconnexion, 60000);
-    window.addEventListener("hashchange", () => clearInterval(demandesInterval), { once: true });
-  }
 }

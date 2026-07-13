@@ -40,7 +40,7 @@ export function renderDashboard(root, user) {
       ${isManager ? `
       <div id="notifications-row" style="display:none;gap:10px;margin-bottom:16px;flex-wrap:wrap;">
         <div id="notif-deconnexions" style="display:none;flex:1;min-width:160px;background:#fff3e0;border:1.5px solid #ffb74d;border-radius:12px;padding:12px 16px;cursor:pointer;transition:box-shadow 0.2s;"
-          onclick="window.location.hash='#/agents?tab=demandes'">
+          onclick="window.location.hash='#/demandes'">
           <div style="display:flex;align-items:center;gap:10px;">
             <div style="background:#e65100;color:white;border-radius:8px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0;">
               <i class="fa-solid fa-mobile-screen"></i>
@@ -54,7 +54,7 @@ export function renderDashboard(root, user) {
         </div>
 
         <div id="notif-conges" style="display:none;flex:1;min-width:160px;background:#e8f5e9;border:1.5px solid #81c784;border-radius:12px;padding:12px 16px;cursor:pointer;transition:box-shadow 0.2s;"
-          onclick="window.location.hash='#/conges'">
+          onclick="window.location.hash='#/demandes'">
           <div style="display:flex;align-items:center;gap:10px;">
             <div style="background:#2e7d32;color:white;border-radius:8px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0;">
               <i class="fa-solid fa-calendar-days"></i>

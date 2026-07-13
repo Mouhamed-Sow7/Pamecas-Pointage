@@ -84,7 +84,17 @@ export async function renderNavbar(container, currentRoute, user) {
       path: "#/agents",
       label: "Agents",
       icon: '<i class="fa-solid fa-users"></i>',
-      badge: nbDemandesDeco > 0 ? nbDemandesDeco : 0,
+    });
+  }
+
+  // Demandes RH — section centralisée (admin/superadmin/DR)
+  if (user && ["superadmin", "admin", "directeur_regional"].includes(user.role)) {
+    const totalDemandes = nbDemandesDeco + nbCongesAttente;
+    links.push({
+      path: "#/demandes",
+      label: "Demandes",
+      icon: '<i class="fa-solid fa-inbox"></i>',
+      badge: totalDemandes > 0 ? totalDemandes : 0,
     });
   }
 
@@ -109,7 +119,6 @@ export async function renderNavbar(container, currentRoute, user) {
       path: "#/conges",
       label: "Congés",
       icon: '<i class="fa-solid fa-calendar-days"></i>',
-      badge: nbCongesAttente > 0 ? nbCongesAttente : 0,
     });
   }
 

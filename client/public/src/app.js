@@ -2,6 +2,7 @@ import { renderLogin } from "./pages/login.js";
 import { renderDashboard } from "./pages/dashboard.js";
 import { renderPointage } from "./pages/pointage.js";
 import { renderAgents } from "./pages/agents.js";
+import { renderDemandes } from "./pages/demandes.js";
 import { renderRapports } from "./pages/rapports.js";
 import { renderSites } from "./pages/sites.js";
 import { renderKiosque } from "./pages/kiosque.js";
@@ -150,6 +151,9 @@ function mountLayout(route, user, queryParams = {}) {
   } else if (route === "/rapports") {
     if (topbarTitle) topbarTitle.textContent = "Rapports";
     renderRapports(main, user).catch(() => {});
+  } else if (route === "/demandes") {
+    if (topbarTitle) topbarTitle.textContent = "Demandes RH";
+    renderDemandes(main, user);
   } else if (route === "/conges") {
     if (topbarTitle) topbarTitle.textContent = "Congés";
     renderConges(main, user);
