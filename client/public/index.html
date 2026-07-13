@@ -776,6 +776,95 @@
           margin-left: 64px;
         }
       }
+
+      /* ── Onglets agents ─────────────────────────────────────────── */
+      .agents-tab {
+        padding: 10px 20px;
+        border: none;
+        background: none;
+        cursor: pointer;
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: #aaa;
+        border-bottom: 2px solid transparent;
+        margin-bottom: -2px;
+        transition: color 0.15s, border-color 0.15s;
+        position: relative;
+        white-space: nowrap;
+      }
+      .agents-tab:hover {
+        color: #555;
+      }
+      .agents-tab-active {
+        color: #2e7d32;
+        border-bottom: 2px solid #2e7d32;
+      }
+      .agents-tab-demandes-active {
+        color: #e65100;
+        border-bottom: 2px solid #e65100;
+      }
+
+      /* ── Tuiles notification dashboard ──────────────────────────── */
+      .notif-tile {
+        flex: 1;
+        min-width: 155px;
+        border-radius: 12px;
+        padding: 12px 16px;
+        cursor: pointer;
+        transition: box-shadow 0.2s, transform 0.15s;
+        text-decoration: none;
+      }
+      .notif-tile:hover {
+        box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+        transform: translateY(-2px);
+      }
+      .notif-tile-inner {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .notif-tile-icon {
+        border-radius: 8px;
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1rem;
+        flex-shrink: 0;
+        color: white;
+      }
+      .notif-tile-count {
+        font-size: 1.3rem;
+        font-weight: 700;
+        line-height: 1;
+      }
+      .notif-tile-label {
+        font-size: 0.72rem;
+        font-weight: 600;
+      }
+      .notif-tile-arrow {
+        margin-left: auto;
+        font-size: 0.8rem;
+        opacity: 0.5;
+      }
+
+      /* ── Badge navbar ───────────────────────────────────────────── */
+      .nav-badge {
+        position: absolute;
+        top: 4px;
+        right: 4px;
+        background: #c62828;
+        color: white;
+        border-radius: 999px;
+        font-size: 0.58rem;
+        font-weight: 700;
+        padding: 1px 4px;
+        min-width: 14px;
+        line-height: 1.5;
+        text-align: center;
+        border: 1.5px solid rgba(0,0,0,0.15);
+      }
     </style>
   </head>
   <body>

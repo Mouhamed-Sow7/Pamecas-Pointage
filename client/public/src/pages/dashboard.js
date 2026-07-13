@@ -40,7 +40,7 @@ export function renderDashboard(root, user) {
       ${isManager ? `
       <div id="notifications-row" style="display:none;gap:10px;margin-bottom:16px;flex-wrap:wrap;">
         <div id="notif-deconnexions" style="display:none;flex:1;min-width:160px;background:#fff3e0;border:1.5px solid #ffb74d;border-radius:12px;padding:12px 16px;cursor:pointer;transition:box-shadow 0.2s;"
-          onclick="window.location.hash='#/agents'">
+          onclick="window.location.hash='#/agents?tab=demandes'">
           <div style="display:flex;align-items:center;gap:10px;">
             <div style="background:#e65100;color:white;border-radius:8px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0;">
               <i class="fa-solid fa-mobile-screen"></i>

@@ -13,21 +13,37 @@ export async function renderConges(root, user) {
   }
   root.innerHTML = `
     <div>
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
         <h2 style="font-size:1.1rem;font-weight:700;">
           <i class="fa-solid fa-calendar-days" style="color:#2e7d32;margin-right:6px;"></i>Demandes de congé
         </h2>
-        <div style="display:flex;gap:8px;">
+        <div style="display:flex;gap:8px;align-items:center;">
           <select id="filtre-statut-conge" style="padding:8px 10px;border:1.5px solid #ddd;border-radius:8px;font-size:0.85rem;">
-            <option value="">Toutes</option>
             <option value="en_attente">En attente</option>
+            <option value="">Toutes</option>
             <option value="approuve">Approuvées</option>
             <option value="refuse">Refusées</option>
           </select>
         </div>
       </div>
 
-      <div id="conges-list" style="display:flex;flex-direction:column;gap:8px;max-height:calc(100vh - 200px);overflow-y:auto;">
+      <!-- Stats rapides -->
+      <div id="conges-stats" style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
+        <div style="background:#fff3e0;border-radius:8px;padding:8px 14px;font-size:0.78rem;font-weight:600;color:#e65100;display:flex;align-items:center;gap:6px;">
+          <i class="fa-solid fa-clock"></i>
+          <span id="stat-attente">—</span> en attente
+        </div>
+        <div style="background:#e8f5e9;border-radius:8px;padding:8px 14px;font-size:0.78rem;font-weight:600;color:#2e7d32;display:flex;align-items:center;gap:6px;">
+          <i class="fa-solid fa-circle-check"></i>
+          <span id="stat-approuve">—</span> approuvées
+        </div>
+        <div style="background:#ffebee;border-radius:8px;padding:8px 14px;font-size:0.78rem;font-weight:600;color:#c62828;display:flex;align-items:center;gap:6px;">
+          <i class="fa-solid fa-circle-xmark"></i>
+          <span id="stat-refuse">—</span> refusées
+        </div>
+      </div>
+
+      <div id="conges-list" style="display:flex;flex-direction:column;gap:8px;max-height:calc(100vh - 260px);overflow-y:auto;">
         <div style="text-align:center;padding:20px;color:#999;">
           <i class="fa-solid fa-spinner fa-spin"></i> Chargement...
         </div>
@@ -35,8 +51,22 @@ export async function renderConges(root, user) {
     </div>
   `;
 
+  async function loadStats() {
+    try {
+      const [rA, rR, rT] = await Promise.all([
+        get("/api/conges?statut=en_attente"),
+        get("/api/conges?statut=approuve"),
+        get("/api/conges?statut=refuse"),
+      ]);
+      const el = (id) => document.getElementById(id);
+      if (el("stat-attente")) el("stat-attente").textContent = (rA.data || []).length;
+      if (el("stat-approuve")) el("stat-approuve").textContent = (rR.data || []).length;
+      if (el("stat-refuse")) el("stat-refuse").textContent = (rT.data || []).length;
+    } catch { /* silencieux */ }
+  }
+
   async function loadConges() {
-    const statut = document.getElementById("filtre-statut-conge")?.value || "";
+    const statut = document.getElementById("filtre-statut-conge")?.value ?? "en_attente";
     const list = document.getElementById("conges-list");
 
     try {
@@ -169,4 +199,5 @@ export async function renderConges(root, user) {
     .getElementById("filtre-statut-conge")
     ?.addEventListener("change", loadConges);
   await loadConges();
+  await loadStats();
 }

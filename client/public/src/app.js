@@ -92,7 +92,7 @@ function showKiosqueExpiredBanner() {
   }, 100);
 }
 
-function mountLayout(route, user) {
+function mountLayout(route, user, queryParams = {}) {
   const app = document.getElementById("app");
   if (!app) return;
 
@@ -143,7 +143,7 @@ function mountLayout(route, user) {
     renderPointage(main, user);
   } else if (route === "/agents") {
     if (topbarTitle) topbarTitle.textContent = "Agents";
-    renderAgents(main, user);
+    renderAgents(main, user, queryParams.tab || null);
   } else if (route === "/sites") {
     if (topbarTitle) topbarTitle.textContent = "Sites";
     renderSites(main, user);
@@ -180,6 +180,8 @@ async function router() {
 
   const hash = window.location.hash || "#/dashboard";
   const route = hash.replace("#", "").split("?")[0] || "/dashboard";
+  const queryStr = hash.includes("?") ? hash.split("?")[1] : "";
+  const queryParams = Object.fromEntries(new URLSearchParams(queryStr));
 
   // Kiosque — pas besoin d'authentification
   if (route.startsWith("/kiosque")) {
@@ -198,7 +200,7 @@ async function router() {
     return;
   }
 
-  mountLayout(route, user);
+  mountLayout(route, user, queryParams);
 }
 
 window.addEventListener("hashchange", router);

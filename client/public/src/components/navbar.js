@@ -36,6 +36,28 @@ export async function renderNavbar(container, currentRoute, user) {
   const pending = await getBadgeCount();
   const isOnline = navigator.onLine;
 
+  // Charger les badges de demandes en attente (admin/superadmin seulement)
+  let nbDemandesDeco = 0;
+  let nbCongesAttente = 0;
+  const isManager = user && ["admin", "superadmin", "directeur_regional"].includes(user.role);
+  if (isManager) {
+    const token = localStorage.getItem("pamecas_token");
+    try {
+      if (user.role === "admin" || user.role === "superadmin") {
+        const r = await fetch("/api/agents/demandes-deconnexion", {
+          headers: { Authorization: "Bearer " + token },
+        });
+        if (r.ok) { const d = await r.json(); nbDemandesDeco = (d.data || []).length; }
+      }
+    } catch { /* silencieux */ }
+    try {
+      const r = await fetch("/api/conges?statut=en_attente", {
+        headers: { Authorization: "Bearer " + token },
+      });
+      if (r.ok) { const d = await r.json(); nbCongesAttente = (d.data || []).length; }
+    } catch { /* silencieux */ }
+  }
+
   const links = [
     {
       path: "#/dashboard",
@@ -62,6 +84,7 @@ export async function renderNavbar(container, currentRoute, user) {
       path: "#/agents",
       label: "Agents",
       icon: '<i class="fa-solid fa-users"></i>',
+      badge: nbDemandesDeco > 0 ? nbDemandesDeco : 0,
     });
   }
 
@@ -86,6 +109,7 @@ export async function renderNavbar(container, currentRoute, user) {
       path: "#/conges",
       label: "Congés",
       icon: '<i class="fa-solid fa-calendar-days"></i>',
+      badge: nbCongesAttente > 0 ? nbCongesAttente : 0,
     });
   }
 
@@ -110,10 +134,14 @@ export async function renderNavbar(container, currentRoute, user) {
   const htmlLinks = links
     .map((link) => {
       const isActive = currentRoute === link.path.replace("#", "");
+      const badgeHtml = link.badge
+        ? `<span class="nav-badge">${link.badge > 9 ? "9+" : link.badge}</span>`
+        : "";
       return `
-      <button class="nav-link ${isActive ? "nav-link-active" : ""}" data-path="${link.path}">
+      <button class="nav-link ${isActive ? "nav-link-active" : ""}" data-path="${link.path}" style="position:relative;">
         <span style="font-size:1rem;width:20px;text-align:center;">${link.icon}</span>
         <span class="nav-text">${link.label}</span>
+        ${badgeHtml}
       </button>
     `;
     })

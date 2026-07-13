@@ -573,7 +573,7 @@ async function openImportModal(root) {
   });
 }
 
-export async function renderAgents(root, user) {
+export async function renderAgents(root, user, initialTab = null) {
   const canEdit = user && (user.role === "admin" || user.role === "superadmin");
 
   root.innerHTML = `
@@ -826,6 +826,13 @@ export async function renderAgents(root, user) {
 
     tabListe?.addEventListener("click", () => activateTab("liste"));
     tabDemandes?.addEventListener("click", () => activateTab("demandes"));
+
+    // Activer l'onglet demandé depuis l'URL (?tab=demandes)
+    if (initialTab === "demandes") {
+      activateTab("demandes");
+    } else {
+      activateTab("liste");
+    }
 
     async function loadDemandesDeconnexion() {
       try {
