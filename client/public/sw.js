@@ -1,25 +1,27 @@
 ﻿// Version du cache â€” incrementer a chaque deploiement majeur
-const CACHE_VERSION = "smartpointage-v7";
+const CACHE_VERSION = "smartpointage-v8";
 const CACHE_NAME = CACHE_VERSION;
 
 const STATIC_ASSETS = [
-  "/",
-  "/index.html",
-  "/src/app.js",
-  "/src/css/global.css",
-  "/src/api.js",
-  "/src/pages/login.js",
-  "/src/pages/dashboard.js",
-  "/src/pages/pointage.js",
-  "/src/pages/agents.js",
-  "/src/pages/sites.js",
-  "/src/pages/rapports.js",
-  "/src/components/navbar.js",
-  "/src/components/modal.js",
-  "/src/components/toast.js",
-  "/src/store/indexedDB.js",
-  "/src/store/syncManager.js",
-  "/manifest.json",
+  "/app/",
+  "/app/index.html",
+  "/app/src/app.js",
+  "/app/src/css/global.css",
+  "/app/src/api.js",
+  "/app/src/pages/login.js",
+  "/app/src/pages/dashboard.js",
+  "/app/src/pages/pointage.js",
+  "/app/src/pages/agents.js",
+  "/app/src/pages/sites.js",
+  "/app/src/pages/rapports.js",
+  "/app/src/pages/demandes.js",
+  "/app/src/pages/conges.js",
+  "/app/src/components/navbar.js",
+  "/app/src/components/modal.js",
+  "/app/src/components/toast.js",
+  "/app/src/store/indexedDB.js",
+  "/app/src/store/syncManager.js",
+  "/app/manifest.json",
 ];
 
 // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Install : mise en cache des assets statiques Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬

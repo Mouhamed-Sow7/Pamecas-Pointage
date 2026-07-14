@@ -251,6 +251,9 @@ export function renderLogin(root) {
           </div>
 
           <div class="sp-footer-note">
+            <a href="/" style="color:rgba(255,255,255,0.35);text-decoration:none;font-size:0.75rem;margin-right:12px;">
+              <i class="fa-solid fa-arrow-left" style="font-size:0.65rem;"></i> Site web
+            </a>
             SmartPointage &copy; 2026 &mdash; Tous droits reserves
           </div>
         </div>

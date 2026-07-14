@@ -99,8 +99,21 @@ app.use(compression());
 app.use(express.json({ limit: "10mb" }));
 app.use(morgan("dev"));
 
-// Static client
+// Static files
 const publicPath = path.join(__dirname, "..", "client", "public");
+const landingPath = path.join(__dirname, "..", "landing");
+const adminPath  = path.join(__dirname, "..", "admin");
+
+// Landing → racine /
+app.use("/", express.static(landingPath));
+
+// Admin SaaS → /admin
+app.use("/admin", express.static(adminPath));
+
+// App cliente → /app
+app.use("/app", express.static(publicPath));
+
+// Compat rétrocompatibilité : les assets CSS/JS/vendor de l'app restent accessibles à la racine
 app.use(express.static(publicPath));
 
 // Routes API
@@ -134,12 +147,27 @@ app.get("/kiosk", (req, res) => {
   res.sendFile(path.join(publicPath, "kiosk.html"));
 });
 
+// SPA app cliente — toutes les routes /app/* → index.html de l'app
+app.get("/app/*", (req, res) => {
+  res.sendFile(path.join(publicPath, "index.html"));
+});
+
+// Compat : les anciens hash-routes (#/dashboard etc.) fonctionnaient sur /
+// On redirige / vers /app si ce n'est pas un asset statique
+app.get("/", (req, res) => {
+  res.sendFile(path.join(landingPath, "index.html"));
+});
+
 // ✅ SPA catch-all — uniquement pour les routes non-API et non-fichiers statiques
 app.get("*", (req, res, next) => {
-  // Ne pas intercepter les appels API ni les fichiers avec extension
   if (req.path.startsWith("/api/") || req.path.includes(".")) {
     return next();
   }
+  // Routes de l'admin panel
+  if (req.path.startsWith("/admin")) {
+    return res.sendFile(path.join(adminPath, "index.html"));
+  }
+  // Tout le reste → app SPA
   res.sendFile(path.join(publicPath, "index.html"));
 });
 

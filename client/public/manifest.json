@@ -2,14 +2,17 @@
   "name": "SmartPointage",
   "short_name": "SmartPointage",
   "description": "Systeme de pointage digital pour agences et entreprises au Senegal.",
-  "start_url": "/",
-  "scope": "/",
+  "start_url": "/app/",
+  "scope": "/app/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#2E7D32",
   "theme_color": "#2E7D32",
   "lang": "fr",
-  "categories": ["business", "productivity"],
+  "categories": [
+    "business",
+    "productivity"
+  ],
   "icons": [
     {
       "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='192' height='192' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='32' fill='%232E7D32'/%3E%3Ccircle cx='96' cy='96' r='60' fill='%234CAF50'/%3E%3Ctext x='50%25' y='56%25' text-anchor='middle' dominant-baseline='middle' font-family='Inter,sans-serif' font-size='44' font-weight='700' fill='%23FFFFFF'%3ESP%3C/text%3E%3C/svg%3E",
@@ -27,12 +30,12 @@
   "shortcuts": [
     {
       "name": "Pointage",
-      "url": "/#/pointage",
+      "url": "/app/#/pointage",
       "description": "Pointer une arrivee ou un depart"
     },
     {
       "name": "Dashboard",
-      "url": "/#/dashboard",
+      "url": "/app/#/dashboard",
       "description": "Voir les statistiques du jour"
     }
   ]
