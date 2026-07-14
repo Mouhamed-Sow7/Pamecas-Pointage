@@ -137,6 +137,11 @@ app.use("/api/admin", adminRouter);
 app.use("/api/agent-portal", agentPortalRouter);
 app.use("/api/conges", congesRouter);
 
+// ── Health check — keep-alive pour Render free tier ─────────────────────────
+app.get("/api/health", (req, res) => {
+  res.json({ status: "ok", ts: new Date().toISOString() });
+});
+
 // Servir agent.html sur /agent
 app.get("/agent", (req, res) => {
   res.sendFile(path.join(publicPath, "agent.html"));
