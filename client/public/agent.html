@@ -903,6 +903,58 @@
       </div>
     </div>
 
+
+    <!-- ─── ENROLLMENT BIOMÉTRIQUE ─────────────────────────── -->
+    <div id="screen-enrollment" style="display:none;min-height:100vh;background:linear-gradient(160deg,#0f5132 0%,#1a7a4a 100%);align-items:center;justify-content:center;padding:24px;flex-direction:column;">
+      <div style="background:white;border-radius:20px;padding:32px 24px;max-width:360px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+        <!-- Icône -->
+        <div style="width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,#2e7d32,#4caf50);margin:0 auto 16px;display:flex;align-items:center;justify-content:center;">
+          <svg viewBox="0 0 24 24" width="36" height="36" fill="white">
+            <path d="M17.81 4.47c-.08 0-.16-.02-.23-.06C15.66 3.42 14 3 12.01 3c-1.98 0-3.86.47-5.57 1.41-.24.13-.54.04-.68-.2-.13-.24-.04-.55.2-.68C7.82 2.52 9.86 2 12.01 2c2.13 0 3.99.47 6.03 1.52.25.13.34.43.21.67-.09.18-.26.28-.44.28zM3.5 9.72c-.1 0-.2-.03-.29-.09-.23-.16-.28-.47-.12-.7.99-1.4 2.25-2.5 3.75-3.27C9.98 4.04 14 4.03 17.15 6.65c1.5.77 2.76 1.86 3.75 3.25.16.22.11.54-.12.7-.23.16-.54.11-.7-.12-.9-1.26-2.04-2.25-3.39-2.94-2.87-2.43-6.62-2.43-9.49.01-1.36.69-2.5 1.69-3.4 2.96-.08.14-.23.21-.3.21zm6.25 2.47c-.06 0-.12-.01-.18-.04-.26-.1-.39-.38-.29-.64.25-.67.73-1.21 1.33-1.54 1.32-.73 2.97-.22 3.69 1.1.13.24.05.54-.19.67-.24.13-.54.05-.67-.19-.46-.83-1.51-1.13-2.34-.67-.38.2-.66.55-.82.96-.08.23-.29.35-.53.35zm4.5 12.81c-.12 0-.23-.05-.32-.13-.73-.73-1.15-1.12-2.04-1.42C10.2 23.09 8 22.49 8 20.5c0-2.2 1.79-4 4-4s4 1.8 4 4c0 .28-.22.5-.5.5s-.5-.22-.5-.5c0-1.65-1.35-3-3-3s-3 1.35-3 3c0 1.28 1.66 1.76 2.89 2.16 1.06.35 1.63.84 2.43 1.63.19.2.19.51 0 .71-.09.09-.21.13-.32.13z"/>
+          </svg>
+        </div>
+
+        <h2 style="font-size:1.2rem;font-weight:700;margin-bottom:8px;color:#1a1a1a;">Sécuriser mon appareil</h2>
+        <p style="font-size:0.85rem;color:#666;margin-bottom:24px;line-height:1.5;">
+          Pour pointer, vous devez enregistrer votre empreinte digitale ou Face ID sur cet appareil.<br><br>
+          <strong style="color:#2e7d32;">Cela prend 5 secondes.</strong>
+        </p>
+
+        <div id="enrollment-status" style="display:none;background:#f5f5f5;border-radius:10px;padding:12px;margin-bottom:16px;font-size:0.82rem;color:#555;"></div>
+
+        <button id="btn-start-enrollment" style="width:100%;padding:14px;background:linear-gradient(135deg,#2e7d32,#4caf50);color:white;border:none;border-radius:12px;font-size:1rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="white">
+            <path d="M17.81 4.47c-.08 0-.16-.02-.23-.06C15.66 3.42 14 3 12.01 3c-1.98 0-3.86.47-5.57 1.41-.24.13-.54.04-.68-.2-.13-.24-.04-.55.2-.68C7.82 2.52 9.86 2 12.01 2c2.13 0 3.99.47 6.03 1.52.25.13.34.43.21.67-.09.18-.26.28-.44.28z"/>
+          </svg>
+          Activer la biométrie
+        </button>
+
+        <p style="font-size:0.72rem;color:#aaa;margin-top:16px;">
+          Votre empreinte ne quitte jamais votre téléphone.<br>
+          SmartPointage ne stocke que la clé cryptographique.
+        </p>
+      </div>
+    </div>
+
+    <!-- ─── CHALLENGE BIOMÉTRIQUE (avant pointage) ──────── -->
+    <div id="screen-bio-challenge" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:9999;align-items:center;justify-content:center;padding:24px;">
+      <div style="background:white;border-radius:20px;padding:32px 24px;max-width:320px;width:100%;text-align:center;">
+        <div id="bio-challenge-icon" style="width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,#1565c0,#42a5f5);margin:0 auto 16px;display:flex;align-items:center;justify-content:center;">
+          <svg viewBox="0 0 24 24" width="32" height="32" fill="white">
+            <path d="M17.81 4.47c-.08 0-.16-.02-.23-.06C15.66 3.42 14 3 12.01 3c-1.98 0-3.86.47-5.57 1.41-.24.13-.54.04-.68-.2-.13-.24-.04-.55.2-.68C7.82 2.52 9.86 2 12.01 2c2.13 0 3.99.47 6.03 1.52.25.13.34.43.21.67-.09.18-.26.28-.44.28zM3.5 9.72c-.1 0-.2-.03-.29-.09-.23-.16-.28-.47-.12-.7.99-1.4 2.25-2.5 3.75-3.27C9.98 4.04 14 4.03 17.15 6.65c1.5.77 2.76 1.86 3.75 3.25.16.22.11.54-.12.7-.23.16-.54.11-.7-.12-.9-1.26-2.04-2.25-3.39-2.94-2.87-2.43-6.62-2.43-9.49.01-1.36.69-2.5 1.69-3.4 2.96-.08.14-.23.21-.3.21z"/>
+          </svg>
+        </div>
+        <h3 id="bio-challenge-title" style="font-size:1.1rem;font-weight:700;margin-bottom:8px;">Confirmation biométrique</h3>
+        <p id="bio-challenge-msg" style="font-size:0.85rem;color:#666;margin-bottom:20px;">Confirmez votre identité pour enregistrer ce pointage.</p>
+        <div id="bio-challenge-spinner" style="display:none;margin:16px auto;">
+          <div style="width:40px;height:40px;border:3px solid #e0e0e0;border-top-color:#1565c0;border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto;"></div>
+        </div>
+        <button id="btn-bio-cancel" style="width:100%;padding:11px;border:1.5px solid #ddd;background:white;color:#666;border-radius:10px;font-size:0.875rem;cursor:pointer;margin-top:8px;">
+          Annuler
+        </button>
+      </div>
+    </div>
+
     <!-- ─── APP ────────────────────────────────────── -->
     <div id="screen-app">
       <header class="app-header">
@@ -1840,6 +1892,235 @@
 
         try { await loadStats(); } catch (e) { /* ignore */ }
         startPolling();
+
+        // Vérifier l'enrollment biométrique (seulement au premier login réel)
+        if (fromLogin) {
+          checkAndEnroll(agent).catch(e => console.warn("Enrollment check:", e));
+        }
+      }
+
+
+      // ════════════════════════════════════════════════════════════════
+      // PASSKEYS / WEBAUTHN — Biométrie sans PIN
+      // ════════════════════════════════════════════════════════════════
+
+      // Charger @simplewebauthn/browser depuis CDN
+      // (inject dynamiquement pour ne pas bloquer le chargement initial)
+      function loadWebAuthnLib() {
+        return new Promise((resolve, reject) => {
+          if (window.SimpleWebAuthnBrowser) return resolve();
+          const s = document.createElement("script");
+          s.src = "https://unpkg.com/@simplewebauthn/browser@13/dist/bundle/index.umd.min.js";
+          s.onload = resolve;
+          s.onerror = reject;
+          document.head.appendChild(s);
+        });
+      }
+
+      // ── Vérifier si l'appareil supporte la biométrie platform ──────
+      async function checkBiometricSupport() {
+        if (!window.PublicKeyCredential) return false;
+        try {
+          return await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+        } catch { return false; }
+      }
+
+      // ── Vérifier si cet agent a une passkey enregistrée ────────────
+      async function hasPasskey() {
+        try {
+          const r = await apiFetch("/api/passkey/devices");
+          if (!r.ok) return false;
+          const data = await r.json();
+          return (data.data || []).some(d => d.status === "active");
+        } catch { return false; }
+      }
+
+      // ── ENROLLMENT — Enregistrer la biométrie ──────────────────────
+      async function startEnrollment() {
+        const btn = $("btn-start-enrollment");
+        const status = $("enrollment-status");
+
+        btn.disabled = true;
+        btn.innerHTML = '<div style="width:20px;height:20px;border:2px solid rgba(255,255,255,0.4);border-top-color:white;border-radius:50%;animation:spin 0.8s linear infinite;display:inline-block;"></div> En cours...';
+
+        try {
+          await loadWebAuthnLib();
+
+          // 1. Obtenir les options du serveur
+          const optRes = await apiFetch("/api/passkey/register/options", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({}),
+          });
+          if (!optRes.ok) throw new Error("Erreur serveur");
+          const options = await optRes.json();
+
+          // 2. Déclencher Face ID / Empreinte
+          status.style.display = "block";
+          status.innerHTML = '<i class="fa-solid fa-fingerprint" style="color:#2e7d32;"></i> Posez votre doigt ou regardez la caméra...';
+
+          const credential = await SimpleWebAuthnBrowser.startRegistration({ optionsJSON: options });
+
+          // 3. Vérifier côté serveur
+          status.innerHTML = '<i class="fa-solid fa-spinner fa-spin" style="color:#1565c0;"></i> Enregistrement...';
+          const verRes = await apiFetch("/api/passkey/register/verify", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(credential),
+          });
+          const verData = await verRes.json();
+
+          if (!verRes.ok || !verData.verified) {
+            throw new Error(verData.message || "Échec enregistrement");
+          }
+
+          // ✅ Succès
+          status.innerHTML = '<i class="fa-solid fa-circle-check" style="color:#2e7d32;"></i> <strong>Biométrie activée !</strong> Appareil : ' + verData.device.name;
+          status.style.background = "#e8f5e9";
+
+          setTimeout(() => {
+            $("screen-enrollment").style.display = "none";
+            const agent = getAgent();
+            showApp(agent, false);
+          }, 1500);
+
+        } catch (err) {
+          console.error("Enrollment error:", err);
+          status.style.display = "block";
+          status.style.background = "#ffebee";
+
+          if (err.name === "NotAllowedError") {
+            status.innerHTML = '<i class="fa-solid fa-circle-xmark" style="color:#c62828;"></i> Biométrie refusée. Réessayez.';
+          } else if (err.name === "InvalidStateError") {
+            status.innerHTML = '<i class="fa-solid fa-circle-check" style="color:#2e7d32;"></i> Cet appareil est déjà enregistré.';
+            setTimeout(() => {
+              $("screen-enrollment").style.display = "none";
+              showApp(getAgent(), false);
+            }, 1500);
+          } else {
+            status.innerHTML = '<i class="fa-solid fa-triangle-exclamation" style="color:#e65100;"></i> ' + (err.message || "Erreur inconnue");
+          }
+
+          btn.disabled = false;
+          btn.innerHTML = '<svg viewBox="0 0 24 24" width="20" height="20" fill="white"><path d="M17.81 4.47c-.08 0-.16-.02-.23-.06C15.66 3.42 14 3 12.01 3c-1.98 0-3.86.47-5.57 1.41-.24.13-.54.04-.68-.2-.13-.24-.04-.55.2-.68C7.82 2.52 9.86 2 12.01 2c2.13 0 3.99.47 6.03 1.52.25.13.34.43.21.67-.09.18-.26.28-.44.28z"/></svg> Réessayer';
+        }
+      }
+
+      $("btn-start-enrollment")?.addEventListener("click", startEnrollment);
+
+      // ── CHALLENGE BIOMÉTRIQUE — avant chaque pointage ──────────────
+      function showBioChallenge() {
+        return new Promise((resolve, reject) => {
+          const screen = $("screen-bio-challenge");
+          const spinner = $("bio-challenge-spinner");
+          const cancelBtn = $("btn-bio-cancel");
+
+          screen.style.display = "flex";
+          spinner.style.display = "none";
+
+          const cancel = () => {
+            screen.style.display = "none";
+            reject(new Error("CANCELLED"));
+          };
+
+          cancelBtn.onclick = cancel;
+
+          // Lancer la vérification biométrique automatiquement
+          (async () => {
+            try {
+              await loadWebAuthnLib();
+              spinner.style.display = "block";
+
+              // 1. Obtenir le challenge
+              const optRes = await apiFetch("/api/passkey/auth/options", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({}),
+              });
+
+              if (!optRes.ok) {
+                const errData = await optRes.json();
+                if (errData.error === "NO_PASSKEY") {
+                  screen.style.display = "none";
+                  reject(new Error("NO_PASSKEY"));
+                  return;
+                }
+                throw new Error(errData.message || "Erreur serveur");
+              }
+
+              const options = await optRes.json();
+
+              // 2. Déclencher Face ID / Empreinte
+              $("bio-challenge-msg").textContent = "Posez votre doigt ou regardez la caméra...";
+              const credential = await SimpleWebAuthnBrowser.startAuthentication({ optionsJSON: options });
+
+              // 3. Vérifier
+              $("bio-challenge-msg").textContent = "Vérification...";
+              const verRes = await apiFetch("/api/passkey/auth/verify", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(credential),
+              });
+              const verData = await verRes.json();
+
+              if (!verRes.ok || !verData.verified) {
+                throw new Error(verData.message || "Échec biométrique");
+              }
+
+              screen.style.display = "none";
+              resolve(verData.bio_token);
+
+            } catch (err) {
+              spinner.style.display = "none";
+              screen.style.display = "none";
+              reject(err);
+            }
+          })();
+        });
+      }
+
+      // ── Wrapper pointage avec biométrie ────────────────────────────
+      // Intercepter les clics sur les boutons de pointage
+      async function triggerPointageWithBio(originalHandler) {
+        try {
+          const bioToken = await showBioChallenge();
+          // Stocker temporairement le token bio (2 min) pour l'inclure dans la requête
+          sessionStorage.setItem("bio_token", bioToken);
+          await originalHandler();
+          sessionStorage.removeItem("bio_token");
+        } catch (err) {
+          if (err.message === "CANCELLED") {
+            showToast("Pointage annulé.", "warning");
+          } else if (err.message === "NO_PASSKEY") {
+            // L'agent n'a pas encore de passkey → enrollment
+            showToast("Enregistrez d'abord votre biométrie.", "warning");
+            $("screen-app").style.display = "none";
+            $("screen-enrollment").style.display = "flex";
+          } else if (err.name === "NotAllowedError") {
+            showToast("Biométrie refusée. Réessayez.", "error");
+          } else {
+            showToast(err.message || "Erreur biométrique.", "error");
+          }
+        }
+      }
+
+      // ── Vérification enrollment au lancement de l'app ──────────────
+      async function checkAndEnroll(agent) {
+        // Vérifier si le navigateur supporte la biométrie
+        const supported = await checkBiometricSupport();
+        if (!supported) {
+          // Navigateur sans biométrie → on laisse passer (démo ou vieux téléphone)
+          console.warn("Biométrie non supportée sur cet appareil");
+          return;
+        }
+
+        // Vérifier si une passkey existe déjà
+        const enrolled = await hasPasskey();
+        if (!enrolled) {
+          // Pas de passkey → écran d'enrollment obligatoire
+          $("screen-app").style.display = "none";
+          $("screen-enrollment").style.display = "flex";
+        }
       }
 
       document.addEventListener("visibilitychange", () => {

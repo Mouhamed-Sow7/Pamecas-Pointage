@@ -126,6 +126,7 @@ const usersRouter = require("./routes/users");
 const adminRouter = require("./routes/admin");
 const agentPortalRouter = require("./routes/agent-portal");
 const congesRouter = require("./routes/conges");
+const passkeyRouter = require("./routes/passkey");
 
 app.use("/api/auth", authRouter);
 app.use("/api/agents", agentsRouter);
@@ -136,6 +137,7 @@ app.use("/api/users", usersRouter);
 app.use("/api/admin", adminRouter);
 app.use("/api/agent-portal", agentPortalRouter);
 app.use("/api/conges", congesRouter);
+app.use("/api/passkey", passkeyRouter);
 
 // ── Health check — keep-alive pour Render free tier ─────────────────────────
 app.get("/api/health", (req, res) => {
