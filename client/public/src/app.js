@@ -112,20 +112,28 @@ function mountLayout(route, user, queryParams = {}) {
     return;
   }
 
-  app.className = "layout-with-sidebar";
-  app.innerHTML = `
-    <div class="topbar" id="topbar">
-      <button id="topbar-menu-btn" class="topbar-menu-btn" type="button"><i class="fa-solid fa-bars"></i></button>
-      <div class="topbar-title" id="topbar-title"></div>
-      <div class="topbar-right">
-        <span class="status-dot ${navigator.onLine ? "online" : "offline"}"></span>
-        <span class="topbar-user">${user?.username || ""}</span>
+  // ── Construire le layout UNE SEULE FOIS — évite le glitch de rechargement ──
+  const layoutExists = app.classList.contains("layout-with-sidebar") &&
+    document.getElementById("main-content") &&
+    document.getElementById("sidebar");
+
+  if (!layoutExists) {
+    app.className = "layout-with-sidebar";
+    app.innerHTML = `
+      <div class="topbar" id="topbar">
+        <button id="topbar-menu-btn" class="topbar-menu-btn" type="button"><i class="fa-solid fa-bars"></i></button>
+        <div class="topbar-title" id="topbar-title"></div>
+        <div class="topbar-right">
+          <span class="status-dot ${navigator.onLine ? "online" : "offline"}"></span>
+          <span class="topbar-user">${user?.username || ""}</span>
+        </div>
       </div>
-    </div>
-    <div class="overlay" id="sidebar-overlay"></div>
-    <aside class="sidebar" id="sidebar"></aside>
-    <main class="main-content" id="main-content"></main>
-  `;
+      <div class="overlay" id="sidebar-overlay"></div>
+      <aside class="sidebar" id="sidebar"></aside>
+      <main class="main-content" id="main-content"></main>
+    `;
+    applyBrandingCSS();
+  }
 
   const sidebar = document.getElementById("sidebar");
   const main = document.getElementById("main-content");
@@ -133,8 +141,8 @@ function mountLayout(route, user, queryParams = {}) {
   const topbarMenuBtn = document.getElementById("topbar-menu-btn");
   const overlay = document.getElementById("sidebar-overlay");
 
+  // Toujours rafraîchir la navbar (badges, lien actif)
   renderNavbar(sidebar, route, user);
-  applyBrandingCSS();
 
   if (route === "/" || route === "/dashboard") {
     if (topbarTitle) topbarTitle.textContent = "Dashboard";
@@ -174,9 +182,12 @@ function mountLayout(route, user, queryParams = {}) {
     `;
   }
 
-  if (topbarMenuBtn) topbarMenuBtn.addEventListener("click", openSidebar);
-  if (overlay) overlay.addEventListener("click", closeSidebar);
-  initResponsiveSidebar();
+  // N'ajouter les listeners que si le layout vient d'être créé (évite doublons)
+  if (!layoutExists) {
+    if (topbarMenuBtn) topbarMenuBtn.addEventListener("click", openSidebar);
+    if (overlay) overlay.addEventListener("click", closeSidebar);
+    initResponsiveSidebar();
+  }
 }
 
 async function router() {

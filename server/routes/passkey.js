@@ -121,7 +121,7 @@ router.post("/register/options", authenticateAgent, async (req, res) => {
     const options = await generateRegistrationOptions({
       rpName: RP_NAME,
       rpID: RP_ID,
-      userID: new TextEncoder().encode(agent._id.toString()),
+      userID: Buffer.from(agent._id.toString(), "utf-8"),
       userName: agent.matricule,
       userDisplayName: `${agent.prenom} ${agent.nom}`,
 
@@ -180,6 +180,9 @@ router.post("/register/verify", authenticateAgent, async (req, res) => {
     }
 
     const { credential: cred } = verification.registrationInfo;
+    if (!cred || !cred.id || !cred.publicKey) {
+      return res.status(400).json({ message: "Credential incomplet reçu de l'appareil." });
+    }
 
     // Sauvegarder l'appareil
     const deviceName = parseDeviceName(req.headers["user-agent"]);

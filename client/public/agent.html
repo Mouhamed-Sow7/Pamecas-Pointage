@@ -1927,7 +1927,7 @@
         return new Promise((resolve, reject) => {
           if (window.SimpleWebAuthnBrowser) return resolve();
           const s = document.createElement("script");
-          s.src = "https://unpkg.com/@simplewebauthn/browser@13/dist/bundle/index.umd.min.js";
+          s.src = "https://cdn.jsdelivr.net/npm/@simplewebauthn/browser@13/dist/bundle/index.umd.min.js";
           s.onload = resolve;
           s.onerror = reject;
           document.head.appendChild(s);
@@ -1936,6 +1936,11 @@
 
       // ── Vérifier si l'appareil supporte la biométrie platform ──────
       async function checkBiometricSupport() {
+        // WebAuthn nécessite HTTPS (sauf localhost)
+        if (location.protocol !== "https:" && location.hostname !== "localhost") {
+          console.warn("WebAuthn nécessite HTTPS");
+          return false;
+        }
         if (!window.PublicKeyCredential) return false;
         try {
           return await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
@@ -2002,20 +2007,30 @@
           }, 1500);
 
         } catch (err) {
-          console.error("Enrollment error:", err);
+          console.error("Enrollment error:", err.name, err.message, err);
           status.style.display = "block";
           status.style.background = "#ffebee";
 
           if (err.name === "NotAllowedError") {
-            status.innerHTML = '<i class="fa-solid fa-circle-xmark" style="color:#c62828;"></i> Biométrie refusée. Réessayez.';
+            status.innerHTML = '<i class="fa-solid fa-circle-xmark" style="color:#c62828;"></i> Biométrie refusée ou annulée. Réessayez.';
           } else if (err.name === "InvalidStateError") {
             status.innerHTML = '<i class="fa-solid fa-circle-check" style="color:#2e7d32;"></i> Cet appareil est déjà enregistré.';
             setTimeout(() => {
               $("screen-enrollment").style.display = "none";
               showApp(getAgent(), false);
             }, 1500);
+          } else if (err.name === "NotSupportedError") {
+            status.innerHTML = '<i class="fa-solid fa-triangle-exclamation" style="color:#e65100;"></i> Face ID / Empreinte non disponible sur cet appareil.';
+          } else if (err.name === "SecurityError") {
+            status.innerHTML = '<i class="fa-solid fa-triangle-exclamation" style="color:#e65100;"></i> Erreur de sécurité — assurez-vous d'utiliser HTTPS.';
+          } else if (err.name === "AbortError") {
+            status.innerHTML = '<i class="fa-solid fa-circle-xmark" style="color:#c62828;"></i> Opération annulée. Réessayez.';
+          } else if (err.message?.includes("fetch") || err.message?.includes("network")) {
+            status.innerHTML = '<i class="fa-solid fa-wifi" style="color:#e65100;"></i> Erreur réseau — vérifiez votre connexion.';
           } else {
-            status.innerHTML = '<i class="fa-solid fa-triangle-exclamation" style="color:#e65100;"></i> ' + (err.message || "Erreur inconnue");
+            // Afficher l'erreur technique complète pour le debug
+            const msg = `[${err.name}] ${err.message || "Erreur inconnue"}`;
+            status.innerHTML = '<i class="fa-solid fa-triangle-exclamation" style="color:#e65100;"></i> ' + msg;
           }
 
           btn.disabled = false;
