@@ -81,7 +81,7 @@ const authenticateAgent = async (req, res, next) => {
         // charger l'agent complet pour la suite (profil, site, etc.)
         const agent = await Agent.findById(decoded.id).populate(
           "site_id",
-          "nom code",
+          "nom code kiosque_pin kiosque_pin_expires_at",
         );
         req.agent = agent;
         return next();

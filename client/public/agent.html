@@ -1827,22 +1827,39 @@
           $("modal-logout-pin").classList.remove("open");
       });
 
-      $("btn-confirm-logout").addEventListener("click", () => {
+      $("btn-confirm-logout").addEventListener("click", async () => {
         const entered = $("logout-pin-input").value.trim();
-        const storedPin = localStorage.getItem("kiosque_pin");
+        const errEl = $("logout-pin-error");
+        let storedPin = localStorage.getItem("kiosque_pin");
+
+        // Si pas de PIN en local → tenter un refresh depuis le serveur
         if (!storedPin) {
-          // PIN non configuré
-          $("logout-pin-error").textContent =
-            "Déconnexion PIN non configurée — contactez votre administrateur";
-          $("logout-pin-error").style.display = "block";
+          try {
+            const r = await apiFetch("/api/agent-portal/me");
+            if (r && r.ok) {
+              const fresh = await r.json();
+              if (fresh.site_id?.kiosque_pin) {
+                storedPin = fresh.site_id.kiosque_pin;
+                localStorage.setItem("kiosque_pin", storedPin);
+              }
+            }
+          } catch (_) {}
+        }
+
+        if (!storedPin) {
+          errEl.textContent = "PIN de l'agence non configuré — demandez à votre administrateur de configurer le PIN kiosque de votre agence.";
+          errEl.style.display = "block";
           return;
         }
+
         if (entered !== storedPin) {
-          $("logout-pin-error").style.display = "block";
+          errEl.textContent = "Code PIN incorrect.";
+          errEl.style.display = "block";
           $("logout-pin-input").value = "";
           $("logout-pin-input").focus();
           return;
         }
+
         $("modal-logout-pin").classList.remove("open");
         clearAuth();
         clearInterval(totpInterval);
@@ -2127,11 +2144,30 @@
         if (!document.hidden && getToken()) loadStats();
       });
 
-      (function init() {
+      (async function init() {
         const token = getToken();
         const agent = getAgent();
         if (token && agent) {
-          showApp(agent);
+          // Afficher l'app immédiatement avec les données locales
+          await showApp(agent, false);
+
+          // Puis rafraîchir depuis /me pour avoir le PIN à jour
+          try {
+            const r = await apiFetch("/api/agent-portal/me");
+            if (r.ok) {
+              const fresh = await r.json();
+              // Mettre à jour le PIN en localStorage
+              if (fresh.site_id?.kiosque_pin) {
+                localStorage.setItem("kiosque_pin", fresh.site_id.kiosque_pin);
+              }
+              // Mettre à jour l'agent en localStorage
+              localStorage.setItem("agent_data", JSON.stringify(fresh));
+              // Vérifier l'enrollment biométrique
+              checkAndEnroll(fresh).catch(e => console.warn("Enrollment:", e));
+            }
+          } catch (e) {
+            console.warn("Refresh /me failed:", e);
+          }
         } else {
           $("screen-login").style.display = "flex";
         }
