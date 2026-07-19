@@ -2,6 +2,7 @@
 <html lang="fr">
   <head>
     <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta
       http-equiv="Cache-Control"
       content="no-cache, no-store, must-revalidate"
@@ -2022,7 +2023,7 @@
           } else if (err.name === "NotSupportedError") {
             status.innerHTML = '<i class="fa-solid fa-triangle-exclamation" style="color:#e65100;"></i> Face ID / Empreinte non disponible sur cet appareil.';
           } else if (err.name === "SecurityError") {
-            status.innerHTML = '<i class="fa-solid fa-triangle-exclamation" style="color:#e65100;"></i> Erreur de sécurité — assurez-vous d'utiliser HTTPS.';
+            status.innerHTML = '<i class="fa-solid fa-triangle-exclamation" style="color:#e65100;"></i> Erreur de sécurité &#8212; utilisez HTTPS.';
           } else if (err.name === "AbortError") {
             status.innerHTML = '<i class="fa-solid fa-circle-xmark" style="color:#c62828;"></i> Opération annulée. Réessayez.';
           } else if (err.message?.includes("fetch") || err.message?.includes("network")) {
