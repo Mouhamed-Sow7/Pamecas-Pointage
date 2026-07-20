@@ -1806,8 +1806,12 @@
           const data = await r.json();
           if (!r.ok) throw new Error(data.message || "Erreur");
           // Stocker les credentials pour retry après reload
+          // (base64 simple — sessionStorage disparaît à la fermeture du navigateur)
           if (_pendingCreds) {
-            sessionStorage.setItem("pending_login", JSON.stringify(_pendingCreds));
+            sessionStorage.setItem("pending_login", JSON.stringify({
+              id: _pendingCreds.id,
+              pwd: btoa(unescape(encodeURIComponent(_pendingCreds.pwd)))
+            }));
           }
           // Afficher confirmation
           $("demande-form-block").style.display = "none";
@@ -1919,10 +1923,11 @@
         try { await loadStats(); } catch (e) { /* ignore */ }
         startPolling();
 
-        // Vérifier l'enrollment biométrique (seulement au premier login réel)
-        if (fromLogin) {
+        // Vérifier l'enrollment biométrique à chaque affichage de l'app
+        // (fromLogin ou reload — on vérifie toujours, checkAndEnroll est idempotent)
+        setTimeout(() => {
           checkAndEnroll(agent).catch(e => console.warn("Enrollment check:", e));
-        }
+        }, 800); // délai court pour laisser l'app se rendre d'abord
       }
 
 
@@ -2177,6 +2182,10 @@
         if (pendingRaw && !token) {
           try {
             const creds = JSON.parse(pendingRaw);
+            // Décoder pwd depuis base64 si nécessaire
+            try {
+              creds.pwd = decodeURIComponent(escape(atob(creds.pwd)));
+            } catch (_) { /* pwd déjà en clair (ancienne session) */ }
             _pendingCreds = creds;
             // Restaurer l'écran "en attente"
             $("screen-login").style.display = "none";
@@ -2187,12 +2196,14 @@
             // Reprendre le polling toutes les 5s
             stopRetryLogin();
             _retryLoginInterval = setInterval(async () => {
-              if (!_pendingCreds) return stopRetryLogin();
+              if (!_pendingCreds || !_pendingCreds.pwd) return stopRetryLogin();
               const res = await attemptLogin(_pendingCreds.id, _pendingCreds.pwd, true);
               if (res?.success) {
                 sessionStorage.removeItem("pending_login");
                 _pendingCreds = null;
                 stopRetryLogin();
+              } else if (res?.blocked) {
+                // Toujours bloqué — on continue à attendre
               }
             }, 5000);
             return;
