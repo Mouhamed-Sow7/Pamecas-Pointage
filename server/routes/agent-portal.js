@@ -168,8 +168,23 @@ router.post("/login", authenticateAgent, async (req, res) => {
 // GET /me - Retourne le profil agent (utilisé par le portail agent pour rafraîchir)
 router.get("/me", authenticateAgent, async (req, res) => {
   try {
-    // req.agent a été peuplé par authenticateAgent
-    return res.json(req.agent);
+    const agent = req.agent;
+    // Retourner l'agent avec site_id populé (kiosque_pin inclus)
+    return res.json({
+      _id: agent._id,
+      nom: agent.nom,
+      prenom: agent.prenom,
+      matricule: agent.matricule,
+      poste: agent.poste,
+      type_contrat: agent.type_contrat,
+      statut: agent.statut,
+      totp_enabled: agent.totp_enabled,
+      totp_secret: agent.totp_secret,
+      jours_conge_annuels: agent.jours_conge_annuels,
+      jours_conge_acquis: agent.jours_conge_acquis,
+      instance_slug: agent.instance_slug,
+      site_id: agent.site_id, // objet populé avec kiosque_pin
+    });
   } catch (err) {
     console.error("Erreur /me agent-portal:", err);
     return res.status(500).json({ message: "Erreur serveur" });

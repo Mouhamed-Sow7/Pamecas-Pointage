@@ -1714,11 +1714,7 @@
           sessionStorage.removeItem("pending_login");
           _pendingCreds = null;
           setAuth(data.token, data.agent);
-          if (data.agent.kiosque_pin) {
-            localStorage.setItem("kiosque_pin", data.agent.kiosque_pin);
-          } else {
-            localStorage.removeItem("kiosque_pin");
-          }
+          // PIN lu en temps réel depuis /me lors de la déconnexion — pas de cache local
           $("screen-session-active").style.display = "none";
           await showApp(data.agent, true);
           return { success: true };
@@ -1843,41 +1839,59 @@
       $("btn-confirm-logout").addEventListener("click", async () => {
         const entered = $("logout-pin-input").value.trim();
         const errEl = $("logout-pin-error");
-        let storedPin = localStorage.getItem("kiosque_pin");
+        const confirmBtn = $("btn-confirm-logout");
 
-        // Si pas de PIN en local → tenter un refresh depuis le serveur
-        if (!storedPin) {
-          try {
-            const r = await apiFetch("/api/agent-portal/me");
-            if (r && r.ok) {
-              const fresh = await r.json();
-              if (fresh.site_id?.kiosque_pin) {
-                storedPin = fresh.site_id.kiosque_pin;
-                localStorage.setItem("kiosque_pin", storedPin);
-              }
-            }
-          } catch (_) {}
-        }
-
-        if (!storedPin) {
-          errEl.textContent = "PIN de l'agence non configuré — demandez à votre administrateur de configurer le PIN kiosque de votre agence.";
+        if (!entered) {
+          errEl.textContent = "Saisissez le code PIN.";
           errEl.style.display = "block";
           return;
         }
 
-        if (entered !== storedPin) {
-          errEl.textContent = "Code PIN incorrect.";
-          errEl.style.display = "block";
-          $("logout-pin-input").value = "";
-          $("logout-pin-input").focus();
-          return;
-        }
+        // Toujours lire le PIN depuis le serveur (jamais depuis localStorage)
+        // → garantit que le PIN rotatif est toujours à jour
+        confirmBtn.textContent = "Vérification...";
+        confirmBtn.disabled = true;
+        errEl.style.display = "none";
 
-        $("modal-logout-pin").classList.remove("open");
-        clearAuth();
-        clearInterval(totpInterval);
-        $("screen-app").style.display = "none";
-        $("screen-login").style.display = "flex";
+        try {
+          const r = await apiFetch("/api/agent-portal/me");
+          if (!r || !r.ok) {
+            errEl.textContent = "Erreur réseau — réessayez.";
+            errEl.style.display = "block";
+            return;
+          }
+
+          const fresh = await r.json();
+          const serverPin = fresh.site_id?.kiosque_pin ?? null;
+
+          if (!serverPin) {
+            errEl.innerHTML = "PIN de déconnexion non configuré pour votre agence.<br><small>Demandez à votre responsable de générer un PIN dans l'espace admin.</small>";
+            errEl.style.display = "block";
+            return;
+          }
+
+          if (entered !== serverPin) {
+            errEl.textContent = "Code PIN incorrect. Réessayez.";
+            errEl.style.display = "block";
+            $("logout-pin-input").value = "";
+            $("logout-pin-input").focus();
+            return;
+          }
+
+          // ✅ PIN correct → déconnexion
+          $("modal-logout-pin").classList.remove("open");
+          clearAuth();
+          clearInterval(totpInterval);
+          $("screen-app").style.display = "none";
+          $("screen-login").style.display = "flex";
+
+        } catch (e) {
+          errEl.textContent = "Erreur de vérification. Réessayez.";
+          errEl.style.display = "block";
+        } finally {
+          confirmBtn.textContent = "Confirmer la déconnexion";
+          confirmBtn.disabled = false;
+        }
       });
 
       $("logout-pin-input").addEventListener("keydown", (e) => {
@@ -2221,9 +2235,7 @@
             const r = await apiFetch("/api/agent-portal/me");
             if (r && r.ok) {
               const fresh = await r.json();
-              if (fresh.site_id?.kiosque_pin) {
-                localStorage.setItem("kiosque_pin", fresh.site_id.kiosque_pin);
-              }
+              // PIN lu en temps réel depuis /me lors de la déconnexion
               localStorage.setItem("agent_data", JSON.stringify(fresh));
               checkAndEnroll(fresh).catch(e => console.warn("Enrollment:", e));
             }
