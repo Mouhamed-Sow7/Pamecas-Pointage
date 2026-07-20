@@ -28,7 +28,7 @@ router.get("/", async (req, res) => {
     const sitesAvecUrl = sites.map((s) => ({
       ...s.toObject(),
       kiosque_url: s.kiosque_token
-        ? `${baseUrl}/#/kiosque?ktoken=${s.kiosque_token}`
+        ? `${baseUrl}/kiosk?ktoken=${s.kiosque_token}`
         : null,
     }));
     return res.json({ data: sitesAvecUrl });
