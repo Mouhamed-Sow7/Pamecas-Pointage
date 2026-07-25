@@ -20,6 +20,71 @@ async function getSiteInTenant(req, id) {
   return site;
 }
 
+// ── DEBUG (BUG 1) — diagnostiquer les doublons de site ──────────────
+// GET /:agentMatricule/debug-pin-mismatch
+// Compare le site_id réel de l'agent (y compris sites inactifs, invisibles
+// dans la liste admin normale qui filtre actif:true) avec tous les sites
+// portant un nom similaire. Permet de détecter un doublon : l'admin
+// régénère le PIN sur le site "actif" affiché dans la liste, alors que
+// l'agent est rattaché à un AUTRE document Site (souvent désactivé) qui,
+// lui, ne reçoit jamais le nouveau PIN.
+router.get(
+  "/debug-pin-mismatch/:matricule",
+  authorizeRoles("admin", "superadmin"),
+  async (req, res) => {
+    try {
+      const Agent = require("../models/Agent");
+      const agent = await Agent.findOne({
+        matricule: req.params.matricule.toUpperCase(),
+      }).select("matricule nom prenom site_id");
+      if (!agent) {
+        return res.status(404).json({ message: "Agent introuvable" });
+      }
+
+      const agentSite = await Site.findById(agent.site_id);
+
+      const candidats = agentSite
+        ? await Site.find({
+            _id: { $ne: agentSite._id },
+            $or: [{ nom: agentSite.nom }, { code: agentSite.code }],
+          }).select("nom code actif kiosque_pin kiosque_pin_expires_at instance_slug")
+        : [];
+
+      return res.json({
+        agent: {
+          matricule: agent.matricule,
+          nom_complet: `${agent.prenom} ${agent.nom}`,
+          site_id_reel: agent.site_id,
+        },
+        site_reellement_rattache: agentSite
+          ? {
+              _id: agentSite._id,
+              nom: agentSite.nom,
+              code: agentSite.code,
+              actif: agentSite.actif,
+              kiosque_pin: agentSite.kiosque_pin,
+              kiosque_pin_expires_at: agentSite.kiosque_pin_expires_at,
+              instance_slug: agentSite.instance_slug,
+              visible_dans_liste_admin: agentSite.actif === true,
+            }
+          : null,
+        autres_sites_avec_meme_nom_ou_code: candidats,
+        diagnostic:
+          !agentSite
+            ? "L'agent n'a AUCUN site valide (site_id pointe vers un document inexistant)."
+            : agentSite.actif !== true
+              ? "⚠️ Le site réel de l'agent est INACTIF (actif:false) — il n'apparaît PAS dans la liste admin (qui filtre actif:true). C'est probablement pour ça que le PIN régénéré via l'admin n'atteint jamais cet agent."
+              : candidats.length > 0
+                ? "⚠️ Un ou plusieurs sites portent le même nom/code — vérifiez que l'admin modifie bien le bon _id."
+                : "Le site de l'agent est actif et unique — le problème est ailleurs (voir kiosque_pin ci-dessus).",
+      });
+    } catch (err) {
+      console.error("Erreur debug-pin-mismatch:", err);
+      res.status(500).json({ message: "Erreur serveur" });
+    }
+  },
+);
+
 router.get("/", async (req, res) => {
   try {
     const sites = await Site.find({ actif: true, ...req.instanceFilter }).sort({ nom: 1 });
