@@ -4,6 +4,53 @@ const jwt = require("jsonwebtoken");
 const Agent = require("../models/Agent");
 const Conge = require("../models/Conge");
 const Pointage = require("../models/Pointage");
+const Site = require("../models/Site");
+
+// Sécurité: si le populate("site_id", ...) ne remonte pas le PIN (site_id non
+// peuplé, ObjectId brut, doc supprimé/recréé, etc.), on retente une lecture
+// directe du Site pour ne jamais bloquer l'agent à tort. On log systématiquement
+// pour diagnostiquer le BUG 1 (PIN toujours "non configuré").
+async function ensureSitePopulatedWithPin(agent, context) {
+  const rawSiteId = agent.site_id;
+  const isPopulated =
+    rawSiteId && typeof rawSiteId === "object" && "kiosque_pin" in rawSiteId;
+
+  console.log(
+    `[PIN-DEBUG:${context}] agent=${agent.matricule} site_id populé=${isPopulated} raw=`,
+    isPopulated
+      ? { _id: rawSiteId._id, nom: rawSiteId.nom, kiosque_pin: rawSiteId.kiosque_pin }
+      : rawSiteId,
+  );
+
+  if (isPopulated && rawSiteId.kiosque_pin) {
+    return agent;
+  }
+
+  // Fallback: rawSiteId peut être un ObjectId non-peuplé si le populate a
+  // échoué silencieusement. On refait une lecture directe.
+  const siteId = isPopulated ? rawSiteId._id : rawSiteId;
+  if (!siteId) {
+    console.warn(`[PIN-DEBUG:${context}] agent=${agent.matricule} n'a AUCUN site_id en DB`);
+    return agent;
+  }
+
+  const freshSite = await Site.findById(siteId).select(
+    "nom code kiosque_pin kiosque_pin_expires_at",
+  );
+
+  if (!freshSite) {
+    console.warn(
+      `[PIN-DEBUG:${context}] agent=${agent.matricule} site_id=${siteId} introuvable en DB (site supprimé/recréé avec un nouvel _id ?)`,
+    );
+    return agent;
+  }
+
+  console.log(
+    `[PIN-DEBUG:${context}] fallback réussi — PIN récupéré directement: ${freshSite.kiosque_pin}`,
+  );
+  agent.site_id = freshSite;
+  return agent;
+}
 
 const router = express.Router();
 
@@ -144,6 +191,7 @@ router.post("/login", authenticateAgent, async (req, res) => {
       { expiresIn: "24h" },
     );
 
+    await ensureSitePopulatedWithPin(agent, "POST /login");
     const sitePin = agent.site_id?.kiosque_pin ?? null;
     res.json({
       message: "Connexion réussie",
@@ -169,6 +217,7 @@ router.post("/login", authenticateAgent, async (req, res) => {
 router.get("/me", authenticateAgent, async (req, res) => {
   try {
     const agent = req.agent;
+    await ensureSitePopulatedWithPin(agent, "GET /me");
     // Retourner l'agent avec site_id populé (kiosque_pin inclus)
     return res.json({
       _id: agent._id,

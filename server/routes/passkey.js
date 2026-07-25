@@ -31,6 +31,11 @@ const RP_NAME = "SmartPointage";
 const RP_ID = process.env.WEBAUTHN_RP_ID || "smartpointage.digitalesf.com";
 const ORIGIN = process.env.WEBAUTHN_ORIGIN || "https://smartpointage.digitalesf.com";
 
+console.log(
+  `[WebAuthn] RP_ID="${RP_ID}" (env: ${process.env.WEBAUTHN_RP_ID ? "set" : "fallback par défaut"}) ` +
+    `ORIGIN="${ORIGIN}" (env: ${process.env.WEBAUTHN_ORIGIN ? "set" : "fallback par défaut"})`,
+);
+
 // Store temporaire en mémoire pour les challenges (TTL 5 min)
 // En production on peut utiliser Redis, mais pour un SaaS Sénégal ça suffit
 const challengeStore = new Map();
@@ -126,10 +131,18 @@ router.post("/register/options", authenticateAgent, async (req, res) => {
       userDisplayName: `${agent.prenom} ${agent.nom}`,
 
       // ── Forcer UNIQUEMENT biométrie — pas de PIN, pas de clé USB ──
+      // NB (BUG 2 fix): residentKey:"required" force une clé découvrable
+      // (discoverable credential). Sur iOS Safari, si le compte iCloud
+      // Keychain n'est pas configuré pour les passkeys, cela peut faire
+      // échouer startRegistration() côté client avant même l'affichage de
+      // Face ID/Touch ID. "preferred" garde le comportement souhaité
+      // (biométrie obligatoire via userVerification: required) sans forcer
+      // l'échec sur les appareils qui ne supportent pas encore le mode
+      // discoverable.
       authenticatorSelection: {
         authenticatorAttachment: "platform",   // intégré au téléphone uniquement
         userVerification: "required",          // biométrie obligatoire
-        residentKey: "required",
+        residentKey: "preferred",
       },
 
       // Exclure les appareils déjà enregistrés

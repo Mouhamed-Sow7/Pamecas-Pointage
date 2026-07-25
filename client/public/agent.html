@@ -1661,12 +1661,20 @@
       let _pendingCreds = null;
       let _retryLoginInterval = null;
 
+      // NB (BUG 3 fix): stopRetryLogin() ne doit PAS toucher à _pendingCreds.
+      // Avant ce fix, la fonction nullifiait _pendingCreds — or elle est
+      // appelée juste APRÈS l'avoir renseigné (au démarrage du polling, y
+      // compris après restauration depuis sessionStorage au reload), ce qui
+      // effaçait les credentials avant même le premier tick du setInterval.
+      // Résultat : le polling tournait mais _pendingCreds était toujours
+      // null → retour anticipé → jamais de retry réel. Les appelants qui
+      // veulent explicitement effacer les credentials le font eux-mêmes
+      // (_pendingCreds = null) à côté de l'appel.
       function stopRetryLogin() {
         if (_retryLoginInterval) {
           clearInterval(_retryLoginInterval);
           _retryLoginInterval = null;
         }
-        _pendingCreds = null;
       }
 
       // attemptLogin(id, pwd, silent) — silent=true n'affiche pas d'erreur (utilisé par le polling)
@@ -1862,7 +1870,16 @@
           }
 
           const fresh = await r.json();
+          console.log("[PIN-DEBUG] réponse /me complète:", fresh);
+          console.log("[PIN-DEBUG] fresh.site_id:", fresh.site_id);
+          console.log(
+            "[PIN-DEBUG] typeof fresh.site_id:",
+            typeof fresh.site_id,
+            "kiosque_pin présent:",
+            fresh.site_id && "kiosque_pin" in fresh.site_id,
+          );
           const serverPin = fresh.site_id?.kiosque_pin ?? null;
+          console.log("[PIN-DEBUG] serverPin résolu:", serverPin);
 
           if (!serverPin) {
             errEl.innerHTML = "PIN de déconnexion non configuré pour votre agence.<br><small>Demandez à votre responsable de générer un PIN dans l'espace admin.</small>";
@@ -2004,12 +2021,28 @@
           });
           if (!optRes.ok) throw new Error("Erreur serveur");
           const options = await optRes.json();
+          console.log("[WEBAUTHN-DEBUG] options reçues du serveur:", options);
+          console.log("[WEBAUTHN-DEBUG] SimpleWebAuthnBrowser chargé:", !!window.SimpleWebAuthnBrowser);
+          console.log(
+            "[WEBAUTHN-DEBUG] browserSupportsWebAuthn:",
+            window.SimpleWebAuthnBrowser?.browserSupportsWebAuthn?.(),
+          );
 
           // 2. Déclencher Face ID / Empreinte
           status.style.display = "block";
           status.innerHTML = '<i class="fa-solid fa-fingerprint" style="color:#2e7d32;"></i> Posez votre doigt ou regardez la caméra...';
 
-          const credential = await SimpleWebAuthnBrowser.startRegistration({ optionsJSON: options });
+          let credential;
+          try {
+            credential = await SimpleWebAuthnBrowser.startRegistration({ optionsJSON: options });
+          } catch (startErr) {
+            // Log complet AVANT le catch générique plus bas, pour capturer
+            // la vraie stack trace (utile en particulier pour le TypeError
+            // constaté sur iOS Safari — BUG 2).
+            console.error("[WEBAUTHN-DEBUG] startRegistration a levé une erreur:", startErr);
+            console.error("[WEBAUTHN-DEBUG] stack:", startErr?.stack);
+            throw startErr;
+          }
 
           // 3. Vérifier côté serveur
           status.innerHTML = '<i class="fa-solid fa-spinner fa-spin" style="color:#1565c0;"></i> Enregistrement...';
