@@ -1907,7 +1907,15 @@
             return;
           }
 
-          // ✅ PIN correct → déconnexion
+          // ✅ PIN correct → libérer la session côté serveur AVANT de nettoyer
+          // le local, sinon session_token reste actif en base et bloque toute
+          // reconnexion ultérieure (SESSION_ACTIVE), même depuis cet appareil.
+          try {
+            await apiFetch("/api/agent-portal/logout", { method: "POST" });
+          } catch (e) {
+            console.warn("Logout serveur échoué (on continue quand même) :", e);
+          }
+
           $("modal-logout-pin").classList.remove("open");
           clearAuth();
           clearInterval(totpInterval);
