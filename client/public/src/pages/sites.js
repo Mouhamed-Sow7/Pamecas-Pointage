@@ -427,8 +427,9 @@ function openGeofenceModal(site, root) {
         <i class="fa-solid fa-spinner fa-spin"></i> Localisation en cours...
       </div>
 
-      <div id="geo-map-wrap" style="display:none;border-radius:10px;overflow:hidden;border:1px solid #eee;">
-        <iframe id="geo-map" width="100%" height="220" style="border:0;display:block;" loading="lazy"></iframe>
+      <div id="geo-map-wrap" style="display:none;border-radius:10px;overflow:hidden;border:1px solid #eee;position:relative;width:256px;height:256px;margin:0 auto;background:#eee;">
+        <img id="geo-map-tile" width="256" height="256" style="display:block;" />
+        <div id="geo-map-pin" style="position:absolute;width:14px;height:14px;border-radius:50%;background:#c62828;border:2px solid white;box-shadow:0 0 0 2px rgba(198,40,40,0.4);transform:translate(-50%,-50%);"></div>
       </div>
 
       ${existing ? `
@@ -450,8 +451,8 @@ function openGeofenceModal(site, root) {
     confirmText: "Confirmer et déployer",
     cancelText: "Annuler",
     onConfirm: async (close) => {
-      const lat = document.getElementById("geo-map")?.dataset.lat;
-      const lng = document.getElementById("geo-map")?.dataset.lng;
+      const lat = document.getElementById("geo-map-wrap")?.dataset.lat;
+      const lng = document.getElementById("geo-map-wrap")?.dataset.lng;
       if (!lat || !lng) {
         showToast("Position non disponible — réessaie ou vérifie l'autorisation de localisation.", "error");
         return;
@@ -470,14 +471,27 @@ function openGeofenceModal(site, root) {
 
   const statusEl = document.getElementById("geo-status");
   const mapWrap = document.getElementById("geo-map-wrap");
-  const mapFrame = document.getElementById("geo-map");
+  const mapTile = document.getElementById("geo-map-tile");
+  const mapPin = document.getElementById("geo-map-pin");
 
   function showPosition(lat, lng, label) {
-    mapFrame.dataset.lat = lat;
-    mapFrame.dataset.lng = lng;
-    const delta = 0.004; // zoom approx. rue/quartier
-    const bbox = `${lng - delta},${lat - delta},${lng + delta},${lat + delta}`;
-    mapFrame.src = `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&marker=${lat},${lng}&layer=mapnik`;
+    mapWrap.dataset.lat = lat;
+    mapWrap.dataset.lng = lng;
+
+    // Formule standard slippy-map (OSM wiki) : tuile + position en pixel du point
+    const zoom = 16;
+    const n = Math.pow(2, zoom);
+    const latRad = (lat * Math.PI) / 180;
+    const xTileF = ((lng + 180) / 360) * n;
+    const yTileF = ((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2) * n;
+    const xTile = Math.floor(xTileF);
+    const yTile = Math.floor(yTileF);
+
+    mapTile.src = `https://tile.openstreetmap.org/${zoom}/${xTile}/${yTile}.png`;
+    // Pixel exact du point à l'intérieur de la tuile (256px)
+    mapPin.style.left = `${(xTileF - xTile) * 256}px`;
+    mapPin.style.top = `${(yTileF - yTile) * 256}px`;
+
     mapWrap.style.display = "block";
     statusEl.innerHTML = `<i class="fa-solid fa-location-crosshairs" style="color:var(--green);"></i> ${label} : ${lat.toFixed(5)}, ${lng.toFixed(5)}`;
   }
