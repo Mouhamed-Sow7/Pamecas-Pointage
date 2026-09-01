@@ -87,14 +87,13 @@ export async function renderNavbar(container, currentRoute, user) {
     });
   }
 
-  // Demandes RH — section centralisée (admin/superadmin/DR)
+  // Demandes RH — changement d'appareil uniquement (les congés ont leur propre menu ci-dessous)
   if (user && ["superadmin", "admin", "directeur_regional"].includes(user.role)) {
-    const totalDemandes = nbDemandesDeco + nbCongesAttente;
     links.push({
       path: "#/demandes",
       label: "Demandes",
       icon: '<i class="fa-solid fa-inbox"></i>',
-      badge: totalDemandes > 0 ? totalDemandes : 0,
+      badge: nbDemandesDeco > 0 ? nbDemandesDeco : 0,
     });
   }
 
@@ -119,6 +118,7 @@ export async function renderNavbar(container, currentRoute, user) {
       path: "#/conges",
       label: "Congés",
       icon: '<i class="fa-solid fa-calendar-days"></i>',
+      badge: nbCongesAttente > 0 ? nbCongesAttente : 0,
     });
   }
 
@@ -217,4 +217,61 @@ export async function renderNavbar(container, currentRoute, user) {
   container
     .querySelector("#sidebar-collapse-btn")
     ?.addEventListener("click", toggleSidebar);
+
+  startBadgePolling(container, user);
+}
+
+// ── Polling silencieux des badges (Demandes / Congés) ──────────────────────
+// Ne redessine QUE les badges (pas toute la sidebar) pour éviter tout
+// flicker/glitch visuel, et fait disparaître les compteurs dès traitement
+// d'une demande sans que l'admin ait besoin d'actualiser la page.
+let _badgePollHandle = null;
+
+function startBadgePolling(container, user) {
+  if (_badgePollHandle) clearInterval(_badgePollHandle);
+  const isManager = user && ["admin", "superadmin", "directeur_regional"].includes(user.role);
+  if (!isManager) return;
+
+  const tick = async () => {
+    // Le container (sidebar) a pu être remplacé entre-temps par un re-render de page
+    const sidebar = document.getElementById("sidebar") || container;
+    if (!sidebar.isConnected) { clearInterval(_badgePollHandle); return; }
+
+    const token = localStorage.getItem("pamecas_token");
+    let nbDeco = 0, nbConges = 0;
+    try {
+      if (user.role === "admin" || user.role === "superadmin") {
+        const r = await fetch("/api/agents/demandes-deconnexion", { headers: { Authorization: "Bearer " + token } });
+        if (r.ok) nbDeco = ((await r.json()).data || []).length;
+      }
+    } catch { /* silencieux */ }
+    try {
+      const r = await fetch("/api/conges?statut=en_attente", { headers: { Authorization: "Bearer " + token } });
+      if (r.ok) nbConges = ((await r.json()).data || []).length;
+    } catch { /* silencieux */ }
+
+    patchBadge(sidebar, "#/demandes", nbDeco);
+    patchBadge(sidebar, "#/conges", nbConges);
+  };
+
+  _badgePollHandle = setInterval(tick, 8000);
+}
+
+function patchBadge(sidebar, path, count) {
+  const btn = sidebar.querySelector(`.nav-link[data-path="${path}"]`);
+  if (!btn) return;
+  let badge = btn.querySelector(".nav-badge");
+  if (count > 0) {
+    const text = count > 9 ? "9+" : String(count);
+    if (badge) {
+      if (badge.textContent !== text) badge.textContent = text;
+    } else {
+      badge = document.createElement("span");
+      badge.className = "nav-badge";
+      badge.textContent = text;
+      btn.appendChild(badge);
+    }
+  } else if (badge) {
+    badge.remove();
+  }
 }

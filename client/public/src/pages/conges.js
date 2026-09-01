@@ -65,14 +65,21 @@ export async function renderConges(root, user) {
     } catch { /* silencieux */ }
   }
 
-  async function loadConges() {
+  let lastSignature = null;
+
+  async function loadConges({ silent = false } = {}) {
     const statut = document.getElementById("filtre-statut-conge")?.value ?? "en_attente";
     const list = document.getElementById("conges-list");
+    if (!list) return stopPolling(); // page quittée
 
     try {
       const url = `/api/conges${statut ? `?statut=${statut}` : ""}`;
       const res = await get(url);
       const conges = res.data || [];
+
+      const signature = JSON.stringify(conges.map((c) => c._id + c.statut));
+      if (silent && signature === lastSignature) return;
+      lastSignature = signature;
 
       if (!conges.length) {
         list.innerHTML = `<div style="text-align:center;padding:32px;color:#bbb;">Aucune demande</div>`;
@@ -197,7 +204,15 @@ export async function renderConges(root, user) {
 
   document
     .getElementById("filtre-statut-conge")
-    ?.addEventListener("change", loadConges);
+    ?.addEventListener("change", () => loadConges());
+
+  let pollHandle = setInterval(() => { loadConges({ silent: true }); loadStats(); }, 8000);
+  function stopPolling() {
+    if (pollHandle) { clearInterval(pollHandle); pollHandle = null; }
+    window.removeEventListener("hashchange", stopPolling);
+  }
+  window.addEventListener("hashchange", stopPolling);
+
   await loadConges();
   await loadStats();
 }
