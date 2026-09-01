@@ -404,12 +404,104 @@ export async function renderSites(root, user) {
         showToast("Token kiosque manquant — clique d'abord sur 'Générer' pour ce site.", "error");
         return;
       }
-      // Utilise l'URL kiosque déjà générée côté serveur (#/kiosque?ktoken=...)
-      // Le format /kiosk?site=... n'est pas compatible avec renderKiosque() qui lit le hash
-      window.open(site.kiosque_url, "_blank");
+      openGeofenceModal(site, root);
       return;
     }
   });
 
   fetchSites(root);
+}
+
+// ─── Modal de confirmation geofencing avant déploiement kiosk ────────────────
+function openGeofenceModal(site, root) {
+  const existing = site.coordonnees?.latitude && site.coordonnees?.longitude ? site.coordonnees : null;
+
+  const content = `
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <p style="margin:0;color:#555;font-size:0.88rem;">
+        Le kiosque de <strong>${site.nom}</strong> ne pourra valider les pointages que dans un rayon de <strong>500 m</strong>
+        autour de la position confirmée ci-dessous.
+      </p>
+
+      <div id="geo-status" style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:#f5f5f5;border-radius:8px;font-size:0.85rem;color:#666;">
+        <i class="fa-solid fa-spinner fa-spin"></i> Localisation en cours...
+      </div>
+
+      <div id="geo-map-wrap" style="display:none;border-radius:10px;overflow:hidden;border:1px solid #eee;">
+        <iframe id="geo-map" width="100%" height="220" style="border:0;display:block;" loading="lazy"></iframe>
+      </div>
+
+      ${existing ? `
+        <div style="font-size:0.78rem;color:#888;background:#fff8f5;border-radius:8px;padding:8px 10px;">
+          <i class="fa-solid fa-circle-info"></i> Ce site a déjà une position enregistrée
+          (${existing.latitude.toFixed(5)}, ${existing.longitude.toFixed(5)}).
+          Confirmer ci-dessous la remplacera par ta position actuelle.
+          <button id="btn-clear-geo" type="button" style="margin-left:6px;background:none;border:none;color:#c62828;text-decoration:underline;cursor:pointer;font-size:0.78rem;padding:0;">
+            Retirer le geofencing de ce site
+          </button>
+        </div>
+      ` : ""}
+    </div>
+  `;
+
+  showModal({
+    title: "Confirmer la zone de pointage",
+    content,
+    confirmText: "Confirmer et déployer",
+    cancelText: "Annuler",
+    onConfirm: async (close) => {
+      const lat = document.getElementById("geo-map")?.dataset.lat;
+      const lng = document.getElementById("geo-map")?.dataset.lng;
+      if (!lat || !lng) {
+        showToast("Position non disponible — réessaie ou vérifie l'autorisation de localisation.", "error");
+        return;
+      }
+      try {
+        await put(`/api/sites/${site._id}/coordonnees`, { latitude: parseFloat(lat), longitude: parseFloat(lng) });
+        showToast("Zone de pointage confirmée.", "success");
+        close();
+        window.open(site.kiosque_url, "_blank");
+        fetchSites(root);
+      } catch {
+        showToast("Erreur lors de l'enregistrement de la position.", "error");
+      }
+    },
+  });
+
+  const statusEl = document.getElementById("geo-status");
+  const mapWrap = document.getElementById("geo-map-wrap");
+  const mapFrame = document.getElementById("geo-map");
+
+  function showPosition(lat, lng, label) {
+    mapFrame.dataset.lat = lat;
+    mapFrame.dataset.lng = lng;
+    const delta = 0.004; // zoom approx. rue/quartier
+    const bbox = `${lng - delta},${lat - delta},${lng + delta},${lat + delta}`;
+    mapFrame.src = `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&marker=${lat},${lng}&layer=mapnik`;
+    mapWrap.style.display = "block";
+    statusEl.innerHTML = `<i class="fa-solid fa-location-crosshairs" style="color:var(--green);"></i> ${label} : ${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+  }
+
+  if (!navigator.geolocation) {
+    statusEl.innerHTML = `<i class="fa-solid fa-triangle-exclamation" style="color:#e65100;"></i> Géolocalisation non disponible sur cet appareil/navigateur.`;
+  } else {
+    navigator.geolocation.getCurrentPosition(
+      (pos) => showPosition(pos.coords.latitude, pos.coords.longitude, "Position actuelle détectée"),
+      () => {
+        statusEl.innerHTML = `<i class="fa-solid fa-triangle-exclamation" style="color:#c62828;"></i> Localisation refusée ou indisponible — autorise l'accès à la position pour confirmer la zone.`;
+      },
+      { enableHighAccuracy: true, timeout: 10000 },
+    );
+  }
+
+  document.getElementById("btn-clear-geo")?.addEventListener("click", async () => {
+    try {
+      await put(`/api/sites/${site._id}/coordonnees`, { clear: true });
+      showToast("Geofencing retiré pour ce site.", "success");
+      document.getElementById("gds-modal-overlay")?.remove();
+      fetchSites(root);
+    } catch {
+      showToast("Erreur lors du retrait du geofencing.", "error");
+    }
+  });
 }

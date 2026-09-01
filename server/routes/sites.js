@@ -200,10 +200,21 @@ router.delete(
   },
 );
 
-// PATCH /:id/coordonnees — Mise à jour coordonnées GPS du site (kiosque)
+// PATCH /:id/coordonnees — Définir (ou retirer) la position GPS du site (geofencing kiosque)
 router.patch("/:id/coordonnees", authenticate, async (req, res) => {
   try {
-    const { latitude, longitude } = req.body;
+    const { latitude, longitude, clear } = req.body;
+
+    if (clear) {
+      const site = await Site.findByIdAndUpdate(
+        req.params.id,
+        { $unset: { coordonnees: "" } },
+        { new: true },
+      );
+      if (!site) return res.status(404).json({ message: "Site introuvable" });
+      return res.json({ message: "Geofencing retiré — ce site n'a plus de zone de pointage restreinte.", site });
+    }
+
     if (!latitude || !longitude) {
       return res.status(400).json({ message: "latitude et longitude requis" });
     }
