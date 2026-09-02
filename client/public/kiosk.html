@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#1a472a" />
+    <link rel="manifest" href="/manifest-kiosk.json" />
+    <title>SmartPointage — Kiosque</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="/vendor/fontawesome-free-7.2.0-web/css/all.min.css"
+    />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <style>
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+        font-family:
+          DM Sans,
+          sans-serif;
+        background: #0a1a0f;
+        color: #fff;
+      }
+      #kiosk-root {
+        min-height: 100vh;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="kiosk-root"></div>
+
+    <script type="module">
+      // Bootstrap kiosk app — renderKiosque() lit uniquement window.location.hash,
+      // donc on convertit les query params du path (?site=... ou ?ktoken=...)
+      // vers le format hash attendu (#/kiosque?...) AVANT de monter le module.
+      (function () {
+        const root = document.getElementById("kiosk-root");
+        const search = window.location.search; // ex: "?site=abc123" ou "?ktoken=uuid"
+        const hasHashParams = window.location.hash.includes("?");
+
+        if (search && !hasHashParams) {
+          // Reconstruit l'URL au format hash que renderKiosque() sait lire
+          const params = new URLSearchParams(search);
+          window.location.hash = "#/kiosque?" + params.toString();
+        }
+
+        import("/src/pages/kiosque.js").then((mod) => {
+          try {
+            const modern = localStorage.getItem("kiosk_token");
+            if (modern && !localStorage.getItem("kiosque_mode")) {
+              localStorage.setItem("kiosque_mode", modern);
+            }
+          } catch (e) {}
+          if (mod && typeof mod.renderKiosque === "function")
+            mod.renderKiosque(root);
+        });
+      })();
+    </script>
+  </body>
+</html>

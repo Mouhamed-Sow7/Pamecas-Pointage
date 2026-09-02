@@ -1,0 +1,917 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
+    <title>SmartPointage Admin - Espace SaaS</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <a href="#" class="logo">
+          <svg
+            class="logo-icon"
+            width="32"
+            height="32"
+            viewBox="0 0 40 40"
+            fill="none"
+          >
+            <rect width="40" height="40" rx="8" fill="#2E7D32" />
+            <path
+              d="M12 20L17 25L28 14"
+              stroke="white"
+              stroke-width="3"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+          <span>Admin SaaS</span>
+        </a>
+      </div>
+      <nav class="sidebar-nav">
+        <ul>
+          <li class="active" data-view="dashboard">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+              <rect
+                x="2"
+                y="2"
+                width="7"
+                height="7"
+                rx="1"
+                fill="currentColor"
+              />
+              <rect
+                x="11"
+                y="2"
+                width="7"
+                height="7"
+                rx="1"
+                fill="currentColor"
+              />
+              <rect
+                x="2"
+                y="11"
+                width="7"
+                height="7"
+                rx="1"
+                fill="currentColor"
+              />
+              <rect
+                x="11"
+                y="11"
+                width="7"
+                height="7"
+                rx="1"
+                fill="currentColor"
+              />
+            </svg>
+            Dashboard
+          </li>
+          <li data-view="clients">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+              <path
+                d="M10 10C12.7614 10 15 7.76142 15 5C15 2.23858 12.7614 0 10 0C7.23858 0 5 2.23858 5 5C5 7.76142 7.23858 10 10 10Z"
+                fill="currentColor"
+              />
+              <path
+                d="M0 18C0 14.6863 4.47715 12 10 12C15.5228 12 20 14.6863 20 18V20H0V18Z"
+                fill="currentColor"
+              />
+            </svg>
+            Clients
+          </li>
+          <li data-view="create">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+              <path
+                d="M10 4V16M4 10H16"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              />
+            </svg>
+            Nouveau client
+          </li>
+          <li data-view="billing">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+              <rect
+                x="2"
+                y="4"
+                width="16"
+                height="12"
+                rx="2"
+                stroke="currentColor"
+                stroke-width="2"
+              />
+              <path d="M2 8H18" stroke="currentColor" stroke-width="2" />
+              <rect
+                x="5"
+                y="11"
+                width="4"
+                height="2"
+                rx="0.5"
+                fill="currentColor"
+              />
+            </svg>
+            Facturation
+          </li>
+        </ul>
+      </nav>
+      <div class="sidebar-footer">
+        <button class="btn-logout" id="logoutBtn">Déconnexion</button>
+      </div>
+    </aside>
+    <!-- Main Content -->
+    <main class="main-content">
+      <!-- Dashboard View -->
+      <section class="view active" id="view-dashboard">
+        <div class="page-header">
+          <h1>Dashboard</h1>
+          <p>Vue d'ensemble de votre activité SaaS</p>
+        </div>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon blue">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M16 21V19C16 16.7909 14.2091 15 12 15H5C2.79086 15 1 16.7909 1 19V21"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                />
+                <circle
+                  cx="8.5"
+                  cy="7"
+                  r="4"
+                  stroke="currentColor"
+                  stroke-width="2"
+                />
+                <path
+                  d="M20 8V14M17 11H23"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                />
+              </svg>
+            </div>
+            <div class="stat-info">
+              <span class="stat-value" id="stat-tenants">0</span>
+              <span class="stat-label">Clients actifs</span>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon green">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M17 21V19C17 16.7909 15.2091 15 13 15H6C3.79086 15 2 16.7909 2 19V21"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                />
+                <circle
+                  cx="9"
+                  cy="7"
+                  r="4"
+                  stroke="currentColor"
+                  stroke-width="2"
+                />
+                <path
+                  d="M23 21V19C22.9999 17.1771 21.7651 15.5857 20 15.13"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                />
+                <path
+                  d="M16 3.13C17.7699 3.58324 19.0078 5.17799 19.0078 7.005C19.0078 8.83201 17.7699 10.4268 16 10.88"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                />
+              </svg>
+            </div>
+            <div class="stat-info">
+              <span class="stat-value" id="stat-agents">0</span>
+              <span class="stat-label">Agents total</span>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon purple">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <rect
+                  x="3"
+                  y="4"
+                  width="18"
+                  height="16"
+                  rx="2"
+                  stroke="currentColor"
+                  stroke-width="2"
+                />
+                <path d="M3 10H21" stroke="currentColor" stroke-width="2" />
+                <rect
+                  x="7"
+                  y="14"
+                  width="3"
+                  height="3"
+                  rx="0.5"
+                  fill="currentColor"
+                />
+              </svg>
+            </div>
+            <div class="stat-info">
+              <span class="stat-value" id="stat-pointages">0</span>
+              <span class="stat-label">Pointages ce mois</span>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon orange">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M12 2V22M17 7L12 2L7 7M17 17L12 22L7 17"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </div>
+            <div class="stat-info">
+              <span class="stat-value" id="stat-revenus">0</span>
+              <span class="stat-label">FCFA/mois</span>
+            </div>
+          </div>
+        </div>
+        <div class="section-card">
+          <div class="section-header">
+            <h2>Clients récents</h2>
+            <button class="btn-link" onclick="showView('clients')">
+              Voir tout →
+            </button>
+          </div>
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Client</th>
+                  <th>Plan</th>
+                  <th>Statut</th>
+                  <th>Sites</th>
+                  <th>Revenu</th>
+                </tr>
+              </thead>
+              <tbody id="dashboard-tenants">
+                <tr>
+                  <td colspan="5" class="loading">Chargement...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+      <!-- Clients View -->
+      <section class="view" id="view-clients">
+        <div class="page-header">
+          <h1>Clients</h1>
+          <div class="header-actions">
+            <div class="search-box">
+              <input
+                type="text"
+                id="searchClient"
+                placeholder="Rechercher un client..."
+              />
+            </div>
+            <select id="filterStatut">
+              <option value="">Tous les statuts</option>
+              <option value="actif">Actif</option>
+              <option value="trial">Trial</option>
+              <option value="suspendu">Suspendu</option>
+            </select>
+            <select id="filterPlan">
+              <option value="">Tous les plans</option>
+              <option value="pro">Pro</option>
+              <option value="enterprise">Enterprise</option>
+            </select>
+          </div>
+        </div>
+        <div class="clients-grid" id="clients-grid">
+          <!-- Clients will be loaded here -->
+        </div>
+      </section>
+      <!-- Create Client View -->
+      <section class="view" id="view-create">
+        <div class="page-header">
+          <h1>Nouveau client</h1>
+          <p>Créer une nouvelle instance SmartPointage</p>
+        </div>
+        <div class="form-container">
+          <form id="createClientForm">
+            <div class="form-section">
+              <h3>Informations du client</h3>
+              <div class="form-grid">
+                <div class="form-group">
+                  <label for="clientNom">Nom de l'organisation *</label>
+                  <input
+                    type="text"
+                    id="clientNom"
+                    required
+                    placeholder="Ex: PAMECAS"
+                  />
+                </div>
+                <div class="form-group">
+                  <label for="clientSlug">Sous-domaine *</label>
+                  <div class="input-with-suffix">
+                    <input
+                      type="text"
+                      id="clientSlug"
+                      required
+                      placeholder="pamecas"
+                      pattern="[a-z0-9-]+"
+                    />
+                    <span class="suffix">.smartpointage.sn</span>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label for="clientPlan">Plan *</label>
+                  <select id="clientPlan" required>
+                    <option value="pro">Pro (120 000 FCFA/site/mois)</option>
+                    <option value="enterprise">
+                      Enterprise (180 000 FCFA/site/mois)
+                    </option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="clientSites">Nombre de sites</label>
+                  <input type="number" id="clientSites" value="1" min="1" />
+                </div>
+              </div>
+            </div>
+            <div class="form-section">
+              <h3>Contact administratif</h3>
+              <div class="form-grid">
+                <div class="form-group">
+                  <label for="contactNom">Nom du contact *</label>
+                  <input
+                    type="text"
+                    id="contactNom"
+                    required
+                    placeholder="Ex: Moussa Sow"
+                  />
+                </div>
+                <div class="form-group">
+                  <label for="contactEmail">Email *</label>
+                  <input
+                    type="email"
+                    id="contactEmail"
+                    required
+                    placeholder="contact@organisation.sn"
+                  />
+                </div>
+                <div class="form-group">
+                  <label for="contactTel">Téléphone</label>
+                  <input
+                    type="tel"
+                    id="contactTel"
+                    placeholder="+221 77 123 45 67"
+                  />
+                </div>
+              </div>
+            </div>
+            <div class="form-actions">
+              <button type="submit" class="btn btn-primary">
+                Créer l'instance
+              </button>
+              <button
+                type="button"
+                class="btn btn-outline"
+                onclick="showView('clients')"
+              >
+                Annuler
+              </button>
+            </div>
+          </form>
+        </div>
+      </section>
+      <!-- Billing View -->
+      <section class="view" id="view-billing">
+        <div class="page-header">
+          <h1>Facturation</h1>
+          <div class="header-actions">
+            <button class="btn btn-outline" id="exportBtn">Exporter</button>
+          </div>
+        </div>
+        <div class="billing-summary">
+          <div class="summary-card">
+            <h3>Revenus ce mois</h3>
+            <span class="amount" id="billing-total">0 FCFA</span>
+          </div>
+          <div class="summary-card">
+            <h3>Factures en attente</h3>
+            <span class="amount" id="billing-pending">0</span>
+          </div>
+        </div>
+        <div class="section-card">
+          <div class="section-header"><h2>Historique des paiements</h2></div>
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Client</th>
+                  <th>Plan</th>
+                  <th>Montant</th>
+                  <th>Prochaine facturation</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="billing-table">
+                <tr>
+                  <td colspan="5" class="loading">Chargement...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+      <!-- Client Detail Modal -->
+      <div class="modal" id="clientModal">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h2 id="modalClientName">Client</h2>
+            <button class="modal-close" onclick="closeModal()">&times;</button>
+          </div>
+          <div class="modal-body" id="modalBody">
+            <!-- Client details will be loaded here -->
+          </div>
+        </div>
+      </div>
+    </main>
+    <!-- Toast notifications -->
+    <div class="toast-container" id="toastContainer"></div>
+    <script src="js/admin.js"></script>
+  </body>
+</html>
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SmartPointage Admin - Espace SaaS</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <a href="#" class="logo">
+          <svg
+            class="logo-icon"
+            width="32"
+            height="32"
+            viewBox="0 0 40 40"
+            fill="none"
+          >
+            <rect width="40" height="40" rx="8" fill="#2E7D32" />
+            <path
+              d="M12 20L17 25L28 14"
+              stroke="white"
+              stroke-width="3"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+          <span>Admin SaaS</span>
+        </a>
+      </div>
+      <nav class="sidebar-nav">
+        <ul>
+          <li class="active" data-view="dashboard">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+              <rect
+                x="2"
+                y="2"
+                width="7"
+                height="7"
+                rx="1"
+                fill="currentColor"
+              />
+              <rect
+                x="11"
+                y="2"
+                width="7"
+                height="7"
+                rx="1"
+                fill="currentColor"
+              />
+              <rect
+                x="2"
+                y="11"
+                width="7"
+                height="7"
+                rx="1"
+                fill="currentColor"
+              />
+              <rect
+                x="11"
+                y="11"
+                width="7"
+                height="7"
+                rx="1"
+                fill="currentColor"
+              />
+            </svg>
+            Dashboard
+          </li>
+          <li data-view="clients">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+              <path
+                d="M10 10C12.7614 10 15 7.76142 15 5C15 2.23858 12.7614 0 10 0C7.23858 0 5 2.23858 5 5C5 7.76142 7.23858 10 10 10Z"
+                fill="currentColor"
+              />
+              <path
+                d="M0 18C0 14.6863 4.47715 12 10 12C15.5228 12 20 14.6863 20 18V20H0V18Z"
+                fill="currentColor"
+              />
+            </svg>
+            Clients
+          </li>
+          <li data-view="create">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+              <path
+                d="M10 4V16M4 10H16"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              />
+            </svg>
+            Nouveau client
+          </li>
+          <li data-view="billing">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+              <rect
+                x="2"
+                y="4"
+                width="16"
+                height="12"
+                rx="2"
+                stroke="currentColor"
+                stroke-width="2"
+              />
+              <path d="M2 8H18" stroke="currentColor" stroke-width="2" />
+              <rect
+                x="5"
+                y="11"
+                width="4"
+                height="2"
+                rx="0.5"
+                fill="currentColor"
+              />
+            </svg>
+            Facturation
+          </li>
+        </ul>
+      </nav>
+      <div class="sidebar-footer">
+        <button class="btn-logout" id="logoutBtn">Déconnexion</button>
+      </div>
+    </aside>
+    <!-- Main Content -->
+    <main class="main-content">
+      <!-- Dashboard View -->
+      <section class="view active" id="view-dashboard">
+        <div class="page-header">
+          <h1>Dashboard</h1>
+          <p>Vue d'ensemble de votre activité SaaS</p>
+        </div>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon blue">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M16 21V19C16 16.7909 14.2091 15 12 15H5C2.79086 15 1 16.7909 1 19V21"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                />
+                <circle
+                  cx="8.5"
+                  cy="7"
+                  r="4"
+                  stroke="currentColor"
+                  stroke-width="2"
+                />
+                <path
+                  d="M20 8V14M17 11H23"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                />
+              </svg>
+            </div>
+            <div class="stat-info">
+              <span class="stat-value" id="stat-tenants">0</span>
+              <span class="stat-label">Clients actifs</span>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon green">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M17 21V19C17 16.7909 15.2091 15 13 15H6C3.79086 15 2 16.7909 2 19V21"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                />
+                <circle
+                  cx="9"
+                  cy="7"
+                  r="4"
+                  stroke="currentColor"
+                  stroke-width="2"
+                />
+                <path
+                  d="M23 21V19C22.9999 17.1771 21.7651 15.5857 20 15.13"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                />
+                <path
+                  d="M16 3.13C17.7699 3.58324 19.0078 5.17799 19.0078 7.005C19.0078 8.83201 17.7699 10.4268 16 10.88"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                />
+              </svg>
+            </div>
+            <div class="stat-info">
+              <span class="stat-value" id="stat-agents">0</span>
+              <span class="stat-label">Agents total</span>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon purple">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <rect
+                  x="3"
+                  y="4"
+                  width="18"
+                  height="16"
+                  rx="2"
+                  stroke="currentColor"
+                  stroke-width="2"
+                />
+                <path d="M3 10H21" stroke="currentColor" stroke-width="2" />
+                <rect
+                  x="7"
+                  y="14"
+                  width="3"
+                  height="3"
+                  rx="0.5"
+                  fill="currentColor"
+                />
+              </svg>
+            </div>
+            <div class="stat-info">
+              <span class="stat-value" id="stat-pointages">0</span>
+              <span class="stat-label">Pointages ce mois</span>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon orange">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M12 2V22M17 7L12 2L7 7M17 17L12 22L7 17"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </div>
+            <div class="stat-info">
+              <span class="stat-value" id="stat-revenus">0</span>
+              <span class="stat-label">FCFA/mois</span>
+            </div>
+          </div>
+        </div>
+        <div class="section-card">
+          <div class="section-header">
+            <h2>Clients récents</h2>
+            <button class="btn-link" onclick="showView('clients')">
+              Voir tout →
+            </button>
+          </div>
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Client</th>
+                  <th>Plan</th>
+                  <th>Statut</th>
+                  <th>Sites</th>
+                  <th>Revenu</th>
+                </tr>
+              </thead>
+              <tbody id="dashboard-tenants">
+                <tr>
+                  <td colspan="5" class="loading">Chargement...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+      <!-- Clients View -->
+      <section class="view" id="view-clients">
+        <div class="page-header">
+          <h1>Clients</h1>
+          <div class="header-actions">
+            <div class="search-box">
+              <input
+                type="text"
+                id="searchClient"
+                placeholder="Rechercher un client..."
+              />
+            </div>
+            <select id="filterStatut">
+              <option value="">Tous les statuts</option>
+              <option value="actif">Actif</option>
+              <option value="trial">Trial</option>
+              <option value="suspendu">Suspendu</option>
+            </select>
+            <select id="filterPlan">
+              <option value="">Tous les plans</option>
+              <option value="pro">Pro</option>
+              <option value="enterprise">Enterprise</option>
+            </select>
+          </div>
+        </div>
+        <div class="clients-grid" id="clients-grid">
+          <!-- Clients will be loaded here -->
+        </div>
+      </section>
+      <!-- Create Client View -->
+      <section class="view" id="view-create">
+        <div class="page-header">
+          <h1>Nouveau client</h1>
+          <p>Créer une nouvelle instance SmartPointage</p>
+        </div>
+        <div class="form-container">
+          <form id="createClientForm">
+            <div class="form-section">
+              <h3>Informations du client</h3>
+              <div class="form-grid">
+                <div class="form-group">
+                  <label for="clientNom">Nom de l'organisation *</label>
+                  <input
+                    type="text"
+                    id="clientNom"
+                    required
+                    placeholder="Ex: PAMECAS"
+                  />
+                </div>
+                <div class="form-group">
+                  <label for="clientSlug">Sous-domaine *</label>
+                  <div class="input-with-suffix">
+                    <input
+                      type="text"
+                      id="clientSlug"
+                      required
+                      placeholder="pamecas"
+                      pattern="[a-z0-9-]+"
+                    />
+                    <span class="suffix">.smartpointage.sn</span>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label for="clientPlan">Plan *</label>
+                  <select id="clientPlan" required>
+                    <option value="pro">Pro (120 000 FCFA/site/mois)</option>
+                    <option value="enterprise">
+                      Enterprise (180 000 FCFA/site/mois)
+                    </option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="clientSites">Nombre de sites</label>
+                  <input type="number" id="clientSites" value="1" min="1" />
+                </div>
+              </div>
+            </div>
+            <div class="form-section">
+              <h3>Contact administratif</h3>
+              <div class="form-grid">
+                <div class="form-group">
+                  <label for="contactNom">Nom du contact *</label>
+                  <input
+                    type="text"
+                    id="contactNom"
+                    required
+                    placeholder="Ex: Moussa Sow"
+                  />
+                </div>
+                <div class="form-group">
+                  <label for="contactEmail">Email *</label>
+                  <input
+                    type="email"
+                    id="contactEmail"
+                    required
+                    placeholder="contact@organisation.sn"
+                  />
+                </div>
+                <div class="form-group">
+                  <label for="contactTel">Téléphone</label>
+                  <input
+                    type="tel"
+                    id="contactTel"
+                    placeholder="+221 77 123 45 67"
+                  />
+                </div>
+              </div>
+            </div>
+            <div class="form-actions">
+              <button type="submit" class="btn btn-primary">
+                Créer l'instance
+              </button>
+              <button
+                type="button"
+                class="btn btn-outline"
+                onclick="showView('clients')"
+              >
+                Annuler
+              </button>
+            </div>
+          </form>
+        </div>
+      </section>
+      <!-- Billing View -->
+      <section class="view" id="view-billing">
+        <div class="page-header">
+          <h1>Facturation</h1>
+          <div class="header-actions">
+            <button class="btn btn-outline" id="exportBtn">Exporter</button>
+          </div>
+        </div>
+        <div class="billing-summary">
+          <div class="summary-card">
+            <h3>Revenus ce mois</h3>
+            <span class="amount" id="billing-total">0 FCFA</span>
+          </div>
+          <div class="summary-card">
+            <h3>Factures en attente</h3>
+            <span class="amount" id="billing-pending">0</span>
+          </div>
+        </div>
+        <div class="section-card">
+          <div class="section-header"><h2>Historique des paiements</h2></div>
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Client</th>
+                  <th>Plan</th>
+                  <th>Montant</th>
+                  <th>Prochaine facturation</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="billing-table">
+                <tr>
+                  <td colspan="5" class="loading">Chargement...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+      <!-- Client Detail Modal -->
+      <div class="modal" id="clientModal">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h2 id="modalClientName">Client</h2>
+            <button class="modal-close" onclick="closeModal()">&times;</button>
+          </div>
+          <div class="modal-body" id="modalBody">
+            <!-- Client details will be loaded here -->
+          </div>
+        </div>
+      </div>
+    </main>
+    <!-- Toast notifications -->
+    <div class="toast-container" id="toastContainer"></div>
+    <script src="js/admin.js"></script>
+  </body>
+</html>

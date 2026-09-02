@@ -1,0 +1,933 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
+    <meta
+      name="description"
+      content="SmartPointage - Le pointage digital pour vos équipes terrain. Remplacez les cahiers de pointage par un système QR code offline-first."
+    />
+    <title>SmartPointage — Le pointage digital pour vos équipes terrain</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <!-- Header / Navigation -->
+    <header class="header" id="header">
+      <div class="container">
+        <nav class="nav">
+          <a href="#" class="logo">
+            <svg
+              class="logo-icon"
+              width="40"
+              height="40"
+              viewBox="0 0 40 40"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <rect width="40" height="40" rx="8" fill="#2E7D32" />
+              <path
+                d="M12 20L17 25L28 14"
+                stroke="white"
+                stroke-width="3"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+            <span>SmartPointage</span>
+          </a>
+          <ul class="nav-links">
+            <li><a href="#fonctionnalites">Fonctionnalités</a></li>
+            <li><a href="#tarifs">Tarifs</a></li>
+            <li><a href="#clients">Clients</a></li>
+            <li><a href="#contact">Contact</a></li>
+          </ul>
+          <a href="/app" class="btn btn-primary nav-cta">Se connecter</a>
+          <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Menu">
+            <span></span>
+            <span></span>
+            <span></span>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero" id="hero">
+      <div class="container">
+        <div class="hero-content">
+          <h1 class="hero-title fade-in">
+            Le pointage digital pour vos équipes terrain
+          </h1>
+          <p class="hero-subtitle fade-in">
+            Remplacez les cahiers de pointage par un système QR code
+            offline-first, avec rapports automatiques et tableau de bord en
+            temps réel.
+          </p>
+          <div class="hero-buttons fade-in">
+            <a href="/app" class="btn btn-primary btn-lg">Accéder à l'application</a>
+            <a href="#contact" class="btn btn-outline btn-lg">Nous contacter</a>
+          </div>
+          <div class="hero-badge fade-in">
+            <span class="badge-text">Utilisé par</span>
+            <span class="badge-clients"
+              >PAMECAS • Grande Muraille Verte Sénégal</span
+            >
+          </div>
+        </div>
+        <div class="hero-illustration fade-in">
+          <div class="phone-mockup">
+            <div class="phone-screen">
+              <div class="app-header">
+                <span class="app-title">SmartPointage</span>
+              </div>
+              <div class="qr-scanner">
+                <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
+                  <rect
+                    x="4"
+                    y="4"
+                    width="24"
+                    height="24"
+                    rx="4"
+                    stroke="#2E7D32"
+                    stroke-width="4"
+                  />
+                  <rect
+                    x="52"
+                    y="4"
+                    width="24"
+                    height="24"
+                    rx="4"
+                    stroke="#2E7D32"
+                    stroke-width="4"
+                  />
+                  <rect
+                    x="4"
+                    y="52"
+                    width="24"
+                    height="24"
+                    rx="4"
+                    stroke="#2E7D32"
+                    stroke-width="4"
+                  />
+                  <rect x="52" y="52" width="12" height="12" fill="#2E7D32" />
+                  <rect x="16" y="16" width="8" height="8" fill="#2E7D32" />
+                  <rect x="56" y="16" width="8" height="8" fill="#2E7D32" />
+                  <rect x="16" y="56" width="8" height="8" fill="#2E7D32" />
+                  <rect x="36" y="36" width="8" height="8" fill="#2E7D32" />
+                </svg>
+              </div>
+              <div class="scan-result">
+                <div class="agent-info">
+                  <span class="agent-name">Moussa Sow</span>
+                  <span class="agent-matricule">PAM-001</span>
+                </div>
+                <div class="status-badge success">
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <circle cx="10" cy="10" r="10" fill="#4CAF50" />
+                    <path
+                      d="M6 10L9 13L14 7"
+                      stroke="white"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                  </svg>
+                  Présent • 08:15
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Problème / Solution -->
+    <section class="problem-solution" id="problem-solution">
+      <div class="container">
+        <div class="comparison-grid">
+          <div class="comparison-card problem fade-in">
+            <h3 class="card-title">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="12" fill="#F44336" />
+                <path
+                  d="M8 8L16 16M16 8L8 16"
+                  stroke="white"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                />
+              </svg>
+              Avant SmartPointage
+            </h3>
+            <ul class="comparison-list">
+              <li class="problem-item">
+                <span class="icon">❌</span>
+                <span>Cahiers perdus ou mal remplis</span>
+              </li>
+              <li class="problem-item">
+                <span class="icon">❌</span>
+                <span>Rapports Excel à saisir manuellement</span>
+              </li>
+              <li class="problem-item">
+                <span class="icon">❌</span>
+                <span>Fraudes et erreurs humaines</span>
+              </li>
+              <li class="problem-item">
+                <span class="icon">❌</span>
+                <span>Pas de visibilité en temps réel</span>
+              </li>
+            </ul>
+          </div>
+          <div class="comparison-card solution fade-in">
+            <h3 class="card-title">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="12" fill="#4CAF50" />
+                <path
+                  d="M8 12L11 15L16 9"
+                  stroke="white"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+              Avec SmartPointage
+            </h3>
+            <ul class="comparison-list">
+              <li class="solution-item">
+                <span class="icon">✅</span>
+                <span>QR Code unique par agent</span>
+              </li>
+              <li class="solution-item">
+                <span class="icon">✅</span>
+                <span>Rapports Excel automatiques par email</span>
+              </li>
+              <li class="solution-item">
+                <span class="icon">✅</span>
+                <span>Anti-fraude cooldown + sons d'alerte</span>
+              </li>
+              <li class="solution-item">
+                <span class="icon">✅</span>
+                <span>Dashboard temps réel multi-agences</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Fonctionnalités -->
+    <section class="features" id="fonctionnalites">
+      <div class="container">
+        <h2 class="section-title fade-in">Fonctionnalités</h2>
+        <p class="section-subtitle fade-in">
+          Tout ce dont vous avez besoin pour gérer vos équipes terrain
+        </p>
+        <div class="features-grid">
+          <div class="feature-card fade-in">
+            <div class="feature-icon">
+              <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+                <rect
+                  x="4"
+                  y="4"
+                  width="40"
+                  height="40"
+                  rx="8"
+                  fill="#E8F5E9"
+                />
+                <rect
+                  x="12"
+                  y="12"
+                  width="10"
+                  height="10"
+                  rx="2"
+                  stroke="#2E7D32"
+                  stroke-width="2"
+                />
+                <rect
+                  x="26"
+                  y="12"
+                  width="10"
+                  height="10"
+                  rx="2"
+                  stroke="#2E7D32"
+                  stroke-width="2"
+                />
+                <rect
+                  x="12"
+                  y="26"
+                  width="10"
+                  height="10"
+                  rx="2"
+                  stroke="#2E7D32"
+                  stroke-width="2"
+                />
+                <rect x="28" y="28" width="6" height="6" fill="#2E7D32" />
+              </svg>
+            </div>
+            <h3>Pointage QR Code</h3>
+            <p>
+              Scan instantané avec son de confirmation. Chaque agent possède son
+              QR code unique.
+            </p>
+          </div>
+          <div class="feature-card fade-in">
+            <div class="feature-icon">
+              <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+                <rect
+                  x="4"
+                  y="4"
+                  width="40"
+                  height="40"
+                  rx="8"
+                  fill="#E8F5E9"
+                />
+                <path
+                  d="M24 12V24L32 28"
+                  stroke="#2E7D32"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                />
+                <circle
+                  cx="24"
+                  cy="24"
+                  r="16"
+                  stroke="#2E7D32"
+                  stroke-width="2"
+                />
+                <path
+                  d="M8 40L12 36M40 40L36 36"
+                  stroke="#2E7D32"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                />
+              </svg>
+            </div>
+            <h3>Mode Offline-First</h3>
+            <p>
+              Fonctionne sans internet, synchronisation automatique dès que la
+              connexion revient.
+            </p>
+          </div>
+          <div class="feature-card fade-in">
+            <div class="feature-icon">
+              <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+                <rect
+                  x="4"
+                  y="4"
+                  width="40"
+                  height="40"
+                  rx="8"
+                  fill="#E8F5E9"
+                />
+                <rect
+                  x="12"
+                  y="8"
+                  width="24"
+                  height="32"
+                  rx="4"
+                  stroke="#2E7D32"
+                  stroke-width="2"
+                />
+                <line
+                  x1="18"
+                  y1="16"
+                  x2="30"
+                  y2="16"
+                  stroke="#2E7D32"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                />
+                <circle cx="24" cy="34" r="3" fill="#2E7D32" />
+              </svg>
+            </div>
+            <h3>Kiosque tablette</h3>
+            <p>
+              Déployez en 2 minutes sur n'importe quelle tablette Android ou
+              iPad.
+            </p>
+          </div>
+          <div class="feature-card fade-in">
+            <div class="feature-icon">
+              <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+                <rect
+                  x="4"
+                  y="4"
+                  width="40"
+                  height="40"
+                  rx="8"
+                  fill="#E8F5E9"
+                />
+                <rect
+                  x="8"
+                  y="14"
+                  width="32"
+                  height="22"
+                  rx="2"
+                  stroke="#2E7D32"
+                  stroke-width="2"
+                />
+                <path d="M8 22H40" stroke="#2E7D32" stroke-width="2" />
+                <circle cx="16" cy="18" r="2" fill="#2E7D32" />
+                <rect
+                  x="12"
+                  y="26"
+                  width="8"
+                  height="4"
+                  rx="1"
+                  fill="#2E7D32"
+                />
+              </svg>
+            </div>
+            <h3>Dashboard temps réel</h3>
+            <p>
+              Présents, absents, retards par agence. Visibilité totale en un
+              coup d'œil.
+            </p>
+          </div>
+          <div class="feature-card fade-in">
+            <div class="feature-icon">
+              <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+                <rect
+                  x="4"
+                  y="4"
+                  width="40"
+                  height="40"
+                  rx="8"
+                  fill="#E8F5E9"
+                />
+                <rect
+                  x="12"
+                  y="8"
+                  width="24"
+                  height="32"
+                  rx="2"
+                  stroke="#2E7D32"
+                  stroke-width="2"
+                />
+                <path
+                  d="M20 24L23 27L28 21"
+                  stroke="#2E7D32"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                <rect
+                  x="16"
+                  y="32"
+                  width="16"
+                  height="4"
+                  rx="1"
+                  fill="#2E7D32"
+                />
+              </svg>
+            </div>
+            <h3>Rapports automatiques</h3>
+            <p>
+              Excel mensuel envoyé par email à chaque directeur régional
+              automatiquement.
+            </p>
+          </div>
+          <div class="feature-card fade-in">
+            <div class="feature-icon">
+              <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+                <rect
+                  x="4"
+                  y="4"
+                  width="40"
+                  height="40"
+                  rx="8"
+                  fill="#E8F5E9"
+                />
+                <rect
+                  x="8"
+                  y="12"
+                  width="14"
+                  height="24"
+                  rx="2"
+                  stroke="#2E7D32"
+                  stroke-width="2"
+                />
+                <rect
+                  x="26"
+                  y="12"
+                  width="14"
+                  height="24"
+                  rx="2"
+                  stroke="#2E7D32"
+                  stroke-width="2"
+                />
+                <circle cx="15" cy="30" r="3" fill="#2E7D32" />
+                <circle cx="33" cy="30" r="3" fill="#2E7D32" />
+              </svg>
+            </div>
+            <h3>Multi-tenant</h3>
+            <p>
+              Chaque client isolé, chaque agence cloisonnée. Sécurité et
+              confidentialité garanties.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Cas d'usage clients -->
+    <section class="clients" id="clients">
+      <div class="container">
+        <h2 class="section-title fade-in">Ils nous font confiance</h2>
+        <p class="section-subtitle fade-in">
+          SmartPointage s'adapte à votre structure : agences, régions, secteurs,
+          pépinières...
+        </p>
+        <div class="clients-grid">
+          <div class="client-card fade-in">
+            <div class="client-logo">
+              <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
+                <rect width="80" height="80" rx="12" fill="#E3F2FD" />
+                <text
+                  x="40"
+                  y="35"
+                  text-anchor="middle"
+                  fill="#1565C0"
+                  font-family="Inter"
+                  font-weight="700"
+                  font-size="16"
+                >
+                  PAMECAS
+                </text>
+                <text
+                  x="40"
+                  y="55"
+                  text-anchor="middle"
+                  fill="#1565C0"
+                  font-family="Inter"
+                  font-size="10"
+                >
+                  MICROFINANCE
+                </text>
+              </svg>
+            </div>
+            <h3>PAMECAS</h3>
+            <p class="client-details">10 agences • Dakar • Microfinance</p>
+            <p class="client-description">
+              Gestion centralisée des présences dans toutes les agences
+              sénégalaises.
+            </p>
+          </div>
+          <div class="client-card fade-in">
+            <div class="client-logo">
+              <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
+                <rect width="80" height="80" rx="12" fill="#E8F5E9" />
+                <path d="M25 55L40 30L55 55H25Z" fill="#2E7D32" />
+                <path d="M30 50L40 35L50 50H30Z" fill="#4CAF50" />
+                <circle cx="40" cy="25" r="5" fill="#2E7D32" />
+              </svg>
+            </div>
+            <h3>Grande Muraille Verte</h3>
+            <p class="client-details">
+              Régions Nord • Eaux et Forêts • Reforestation
+            </p>
+            <p class="client-description">
+              Suivi des jeunes Xëyu Ndaw Ñi dans les zones de reforestation.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tarifs -->
+    <section class="pricing" id="tarifs">
+      <div class="container">
+        <h2 class="section-title fade-in">Tarifs</h2>
+        <p class="section-subtitle fade-in">
+          Des forfaits adaptés à vos besoins
+        </p>
+        <div class="pricing-grid">
+          <div class="pricing-card fade-in">
+            <div class="pricing-header">
+              <h3>Pro</h3>
+              <div class="price">
+                <span class="amount">120 000</span>
+                <span class="currency">FCFA</span>
+                <span class="period">/mois/site</span>
+              </div>
+            </div>
+            <ul class="pricing-features">
+              <li class="feature-included">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                  <circle cx="10" cy="10" r="10" fill="#E8F5E9" />
+                  <path
+                    d="M6 10L9 13L14 7"
+                    stroke="#2E7D32"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+                Pointage QR + Manuel
+              </li>
+              <li class="feature-included">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                  <circle cx="10" cy="10" r="10" fill="#E8F5E9" />
+                  <path
+                    d="M6 10L9 13L14 7"
+                    stroke="#2E7D32"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+                Dashboard temps réel
+              </li>
+              <li class="feature-included">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                  <circle cx="10" cy="10" r="10" fill="#E8F5E9" />
+                  <path
+                    d="M6 10L9 13L14 7"
+                    stroke="#2E7D32"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+                Export Excel
+              </li>
+              <li class="feature-included">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                  <circle cx="10" cy="10" r="10" fill="#E8F5E9" />
+                  <path
+                    d="M6 10L9 13L14 7"
+                    stroke="#2E7D32"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+                Mode offline
+              </li>
+              <li class="feature-included">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                  <circle cx="10" cy="10" r="10" fill="#E8F5E9" />
+                  <path
+                    d="M6 10L9 13L14 7"
+                    stroke="#2E7D32"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+                Kiosque tablette
+              </li>
+              <li class="feature-included">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                  <circle cx="10" cy="10" r="10" fill="#E8F5E9" />
+                  <path
+                    d="M6 10L9 13L14 7"
+                    stroke="#2E7D32"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+                Rapport mensuel email
+              </li>
+              <li class="feature-included">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                  <circle cx="10" cy="10" r="10" fill="#E8F5E9" />
+                  <path
+                    d="M6 10L9 13L14 7"
+                    stroke="#2E7D32"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+                Support standard
+              </li>
+            </ul>
+            <a href="#contact" class="btn btn-outline btn-block">Choisir Pro</a>
+          </div>
+          <div class="pricing-card featured fade-in">
+            <div class="popular-badge">Populaire</div>
+            <div class="pricing-header">
+              <h3>Enterprise</h3>
+              <div class="price">
+                <span class="amount">180 000</span>
+                <span class="currency">FCFA</span>
+                <span class="period">/mois/site</span>
+              </div>
+            </div>
+            <ul class="pricing-features">
+              <li class="feature-included">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                  <circle cx="10" cy="10" r="10" fill="#E8F5E9" />
+                  <path
+                    d="M6 10L9 13L14 7"
+                    stroke="#2E7D32"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+                <strong>Tout Pro</strong> inclus
+              </li>
+              <li class="feature-included">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                  <circle cx="10" cy="10" r="10" fill="#E8F5E9" />
+                  <path
+                    d="M6 10L9 13L14 7"
+                    stroke="#2E7D32"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+                Multi-régions / Multi-sites
+              </li>
+              <li class="feature-included">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                  <circle cx="10" cy="10" r="10" fill="#E8F5E9" />
+                  <path
+                    d="M6 10L9 13L14 7"
+                    stroke="#2E7D32"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+                Import CSV agents
+              </li>
+              <li class="feature-included">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                  <circle cx="10" cy="10" r="10" fill="#E8F5E9" />
+                  <path
+                    d="M6 10L9 13L14 7"
+                    stroke="#2E7D32"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+                QR Cards imprimables
+              </li>
+              <li class="feature-included">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                  <circle cx="10" cy="10" r="10" fill="#E8F5E9" />
+                  <path
+                    d="M6 10L9 13L14 7"
+                    stroke="#2E7D32"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+                Alertes absences automatiques
+              </li>
+              <li class="feature-included">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                  <circle cx="10" cy="10" r="10" fill="#E8F5E9" />
+                  <path
+                    d="M6 10L9 13L14 7"
+                    stroke="#2E7D32"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+                Support prioritaire
+              </li>
+              <li class="feature-included">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                  <circle cx="10" cy="10" r="10" fill="#E8F5E9" />
+                  <path
+                    d="M6 10L9 13L14 7"
+                    stroke="#2E7D32"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+                Formation incluse
+              </li>
+            </ul>
+            <a href="#contact" class="btn btn-primary btn-block"
+              >Choisir Enterprise</a
+            >
+          </div>
+        </div>
+        <p class="pricing-note fade-in">
+          1er mois offert • Installation gratuite
+        </p>
+      </div>
+    </section>
+
+    <!-- Comment ça marche -->
+    <section class="how-it-works" id="how-it-works">
+      <div class="container">
+        <h2 class="section-title fade-in">Comment ça marche</h2>
+        <p class="section-subtitle fade-in">
+          Déployez SmartPointage en 3 étapes simples
+        </p>
+        <div class="steps-grid">
+          <div class="step-card fade-in">
+            <div class="step-number">1</div>
+            <h3>Nous configurons votre instance</h3>
+            <p>
+              En 24h, nous créons votre espace personnalisé avec vos sites et
+              paramètres.
+            </p>
+          </div>
+          <div class="step-card fade-in">
+            <div class="step-number">2</div>
+            <h3>Nous importons vos agents</h3>
+            <p>
+              Envoyez-nous votre liste, nous créons les comptes et imprimons les
+              QR codes.
+            </p>
+          </div>
+          <div class="step-card fade-in">
+            <div class="step-number">3</div>
+            <h3>Déployez le kiosque</h3>
+            <p>
+              Installez l'application sur votre tablette en 2 minutes. C'est
+              prêt !
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Formulaire de contact -->
+    <section class="contact" id="contact">
+      <div class="container">
+        <h2 class="section-title fade-in">Demandez une démo</h2>
+        <p class="section-subtitle fade-in">Nous vous répondons sous 24h</p>
+        <div class="contact-form-container fade-in">
+          <form id="contactForm" class="contact-form">
+            <div class="form-group">
+              <label for="nom">Nom complet</label>
+              <input
+                type="text"
+                id="nom"
+                name="nom"
+                required
+                placeholder="Votre nom"
+              />
+            </div>
+            <div class="form-group">
+              <label for="organisation">Organisation</label>
+              <input
+                type="text"
+                id="organisation"
+                name="organisation"
+                required
+                placeholder="Nom de votre organisation"
+              />
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="telephone">Téléphone</label>
+                <input
+                  type="tel"
+                  id="telephone"
+                  name="telephone"
+                  required
+                  placeholder="+221 77 123 45 67"
+                />
+              </div>
+              <div class="form-group">
+                <label for="email">Email</label>
+                <input
+                  type="email"
+                  id="email"
+                  name="email"
+                  required
+                  placeholder="votre@email.com"
+                />
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="message">Message</label>
+              <textarea
+                id="message"
+                name="message"
+                rows="4"
+                placeholder="Décrivez vos besoins (nombre d'agents, sites, etc.)"
+              ></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary btn-lg btn-block">
+              Envoyer la demande
+            </button>
+          </form>
+          <div id="formSuccess" class="form-success hidden">
+            <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+              <circle cx="32" cy="32" r="32" fill="#E8F5E9" />
+              <path
+                d="M20 32L28 40L44 24"
+                stroke="#2E7D32"
+                stroke-width="4"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+            <h3>Demande envoyée !</h3>
+            <p>Nous vous contacterons très prochainement.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <div class="container">
+        <div class="footer-content">
+          <div class="footer-brand">
+            <a href="/" class="logo">
+              <svg
+                class="logo-icon"
+                width="32"
+                height="32"
+                viewBox="0 0 40 40"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <rect width="40" height="40" rx="8" fill="#2E7D32" />
+                <path
+                  d="M12 20L17 25L28 14"
+                  stroke="white"
+                  stroke-width="3"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+              <span>SmartPointage</span>
+            </a>
+            <p class="tagline">Le pointage digital pour vos équipes terrain</p>
+          </div>
+          <div class="footer-links">
+            <a href="#">CGU</a>
+            <a href="#">Politique de confidentialité</a>
+            <a href="/admin" style="color:#aaa;font-size:0.78rem;">Espace partenaire</a>
+          </div>
+          <div class="footer-contact">
+            <a href="mailto:contact@smartpointage.sn"
+              >contact@smartpointage.sn</a
+            >
+          </div>
+        </div>
+        <div class="footer-bottom">
+          <p>&copy; 2026 SmartPointage. Tous droits réservés.</p>
+        </div>
+      </div>
+    </footer>
+
+    <script src="js/main.js"></script>
+  </body>
+</html>

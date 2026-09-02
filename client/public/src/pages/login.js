@@ -1,0 +1,635 @@
+import { post } from '../api.js';
+import { saveAuth } from '../store/indexedDB.js';
+import { showToast } from '../components/toast.js';
+
+// ─── Branding neutre (avant saisie / instance inconnue) ───────────
+const NEUTRAL_BRANDING = {
+  slug: 'neutral',
+  instance_label: '',
+  couleur_primaire: '#475569',
+  couleur_secondaire: '#334155',
+  couleur_accent: '#64748b',
+  bg_dark: '#0f172a',
+  mark_text: 'SP',
+  mark_color: '#475569',
+  mark_text_color: '#ffffff',
+  btn_gradient: 'linear-gradient(135deg, #475569, #64748b)',
+  btn_shadow: 'rgba(71,85,105,0.3)',
+  btn_shadow_hover: 'rgba(71,85,105,0.4)',
+  input_focus_color: '#475569',
+  input_focus_shadow: 'rgba(71,85,105,0.1)',
+  label_icon_color: '#475569',
+  feature_icon_color: '#94a3b8',
+  panel_bg: 'linear-gradient(160deg, #1e293b 0%, #334155 50%, #475569 100%)',
+  circle_color: '#64748b',
+};
+
+// ─── Branding par défaut (PAMECAS) ────────────────────────────────
+const DEFAULT_BRANDING = {
+  slug: 'pamecas',
+  instance_label: 'Instance PAMECAS',
+  couleur_primaire: '#2e7d32',
+  couleur_secondaire: '#1b5e20',
+  couleur_accent: '#4caf50',
+  bg_dark: '#0f2417',
+  mark_text: 'SP',
+  mark_color: '#2e7d32',
+  mark_text_color: '#ffffff',
+  btn_gradient: 'linear-gradient(135deg, #2e7d32, #43a047)',
+  btn_shadow: 'rgba(46,125,50,0.3)',
+  btn_shadow_hover: 'rgba(46,125,50,0.4)',
+  input_focus_color: '#2e7d32',
+  input_focus_shadow: 'rgba(46,125,50,0.1)',
+  label_icon_color: '#2e7d32',
+  feature_icon_color: '#a5d6a7',
+  panel_bg: 'linear-gradient(160deg, #1b5e20 0%, #2e7d32 50%, #388e3c 100%)',
+  circle_color: '#4CAF50',
+};
+
+// ─── Extraire le slug depuis le username ──────────────────────────
+// "admin.dg@cms" → "cms"   |   "admin.cms" → "cms"   |   "admin.dg" → "pamecas"
+const KNOWN_SLUGS = ['cms', 'pamecas', 'gds']; // étendre si besoin
+function extractSlug(username) {
+  const atMatch = username.match(/@([a-zA-Z0-9_-]+)$/);
+  if (atMatch) return atMatch[1].toLowerCase();
+
+  const dotMatch = username.match(/\.([a-zA-Z0-9_-]+)$/);
+  if (dotMatch) {
+    const candidate = dotMatch[1].toLowerCase();
+    if (KNOWN_SLUGS.includes(candidate)) return candidate;
+  }
+
+  return 'pamecas';
+}
+
+// ─── Fetch branding depuis l'API ──────────────────────────────────
+let brandingCache = {};
+async function fetchBranding(slug) {
+  if (brandingCache[slug]) return brandingCache[slug];
+  try {
+    const res = await fetch(`/api/auth/branding/${slug}`);
+    if (!res.ok) return DEFAULT_BRANDING;
+    const data = await res.json();
+    brandingCache[slug] = data;
+    return data;
+  } catch {
+    return DEFAULT_BRANDING;
+  }
+}
+
+// ─── Appliquer le branding sur la page login ──────────────────────
+function applyBranding(root, b) {
+  // Fond page
+  const page = root.querySelector('.sp-login-page');
+  if (page) page.style.background = b.bg_dark;
+
+  // Cercles de fond
+  root.querySelectorAll('.sp-bg-circle').forEach(el => {
+    el.style.background = b.circle_color;
+  });
+
+  // Panneau branding gauche
+  const panel = root.querySelector('.sp-brand-panel');
+  if (panel) panel.style.background = b.panel_bg;
+
+  // Mark logo (carré SP / CMS)
+  root.querySelectorAll('.sp-brand-mark').forEach(el => {
+    el.textContent = b.mark_text;
+    el.style.color = b.mark_color;
+    el.style.background = b.mark_text_color;
+  });
+
+  // Badge instance (masqué si aucune instance détectée)
+  root.querySelectorAll('.sp-brand-client').forEach(el => {
+    el.style.display = b.instance_label ? 'block' : 'none';
+  });
+  root.querySelectorAll('.sp-client-badge, .sp-mobile-sub').forEach(el => {
+    el.textContent = b.instance_label || '';
+  });
+
+  // Icônes features
+  root.querySelectorAll('.sp-feature i').forEach(el => {
+    el.style.color = b.feature_icon_color;
+  });
+
+  // Icônes labels formulaire
+  root.querySelectorAll('.sp-label i').forEach(el => {
+    el.style.color = b.label_icon_color;
+  });
+
+  // Mark mobile sm
+  const markSm = root.querySelector('.sp-brand-mark-sm');
+  if (markSm) {
+    markSm.style.background = b.couleur_primaire;
+    markSm.style.color = b.mark_text_color;
+    markSm.textContent = b.mark_text;
+  }
+
+  // Bouton login
+  const btn = root.querySelector('.sp-btn-login');
+  if (btn) {
+    btn.style.background = b.btn_gradient;
+    btn.style.boxShadow = `0 4px 14px ${b.btn_shadow}`;
+  }
+
+  // Stocker en localStorage pour l'app entière
+  localStorage.setItem('sp_branding', JSON.stringify(b));
+}
+
+// ─── Appliquer le focus dynamique via style injecté ───────────────
+function injectFocusStyle(root, b) {
+  const styleId = 'sp-branding-style';
+  let style = root.querySelector(`#${styleId}`) || document.getElementById(styleId);
+  if (!style) {
+    style = document.createElement('style');
+    style.id = styleId;
+    document.head.appendChild(style);
+  }
+  style.textContent = `
+    .sp-input:focus {
+      border-color: ${b.input_focus_color} !important;
+      box-shadow: 0 0 0 3px ${b.input_focus_shadow} !important;
+    }
+    .sp-pwd-toggle:hover { color: ${b.input_focus_color} !important; }
+    .sp-btn-login:hover {
+      box-shadow: 0 6px 20px ${b.btn_shadow_hover} !important;
+    }
+  `;
+}
+
+export function renderLogin(root) {
+  root.innerHTML = `
+    <div class="sp-login-page">
+
+      <!-- Fond avec motif geometrique -->
+      <div class="sp-bg">
+        <div class="sp-bg-circle sp-bg-circle-1"></div>
+        <div class="sp-bg-circle sp-bg-circle-2"></div>
+        <div class="sp-bg-circle sp-bg-circle-3"></div>
+      </div>
+
+      <div class="sp-login-wrap">
+
+        <!-- Panneau gauche branding (desktop) -->
+        <div class="sp-brand-panel">
+          <div class="sp-brand-logo">
+            <div class="sp-brand-mark">SP</div>
+          </div>
+          <h1 class="sp-brand-name">SmartPointage</h1>
+          <p class="sp-brand-tagline">Systeme de pointage digital<br>pour agences et entreprises</p>
+          <div class="sp-brand-features">
+            <div class="sp-feature"><i class="fa-solid fa-qrcode"></i> Pointage QR Code</div>
+            <div class="sp-feature"><i class="fa-solid fa-wifi"></i> Offline &amp; Online</div>
+            <div class="sp-feature"><i class="fa-solid fa-chart-bar"></i> Rapports Excel</div>
+            <div class="sp-feature"><i class="fa-solid fa-building"></i> Multi-agences</div>
+          </div>
+          <div class="sp-brand-client">
+            <div class="sp-client-badge">Instance PAMECAS</div>
+          </div>
+        </div>
+
+        <!-- Panneau droit formulaire -->
+        <div class="sp-form-panel">
+          <!-- Logo mobile uniquement -->
+          <div class="sp-mobile-logo">
+            <div class="sp-brand-mark sp-brand-mark-sm">SP</div>
+            <div>
+              <div class="sp-mobile-title">SmartPointage</div>
+              <div class="sp-mobile-sub">Instance PAMECAS</div>
+            </div>
+          </div>
+
+          <div class="sp-form-box">
+            <div class="sp-form-header">
+              <h2 class="sp-form-title">Connexion</h2>
+              <p class="sp-form-subtitle">Entrez vos identifiants pour acceder</p>
+            </div>
+
+            <div id="login-form" autocomplete="on">
+              <div class="sp-field">
+                <label class="sp-label" for="username">
+                  <i class="fa-solid fa-user"></i> Identifiant
+                </label>
+                <input
+                  id="username"
+                  name="username"
+                  type="text"
+                  class="sp-input"
+                  autocomplete="username"
+                  placeholder="votre identifiant"
+                  required
+                />
+              </div>
+
+              <div class="sp-field">
+                <label class="sp-label" for="password">
+                  <i class="fa-solid fa-lock"></i> Mot de passe
+                </label>
+                <div class="sp-input-wrap">
+                  <input
+                    id="password"
+                    name="password"
+                    type="password"
+                    class="sp-input"
+                    autocomplete="current-password"
+                    placeholder="••••••••"
+                    required
+                  />
+                  <button type="button" id="btn-toggle-pwd" class="sp-pwd-toggle" tabindex="-1">
+                    <i class="fa-regular fa-eye" id="pwd-icon"></i>
+                  </button>
+                </div>
+              </div>
+
+              <div id="login-error" class="sp-error" style="display:none;"></div>
+
+              <button id="btn-login" type="button" class="sp-btn-login">
+                <span id="btn-text"><i class="fa-solid fa-right-to-bracket"></i> Se connecter</span>
+                <span id="btn-loader" style="display:none;"><i class="fa-solid fa-spinner fa-spin"></i> Connexion...</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="sp-footer-note">
+            <a href="/" style="color:rgba(255,255,255,0.35);text-decoration:none;font-size:0.75rem;margin-right:12px;">
+              <i class="fa-solid fa-arrow-left" style="font-size:0.65rem;"></i> Site web
+            </a>
+            SmartPointage &copy; 2026 &mdash; Tous droits reserves
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <style>
+      .sp-login-page {
+        min-height: 100vh;
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #0f2417;
+        position: relative;
+        overflow: hidden;
+        font-family: 'Inter', sans-serif;
+        transition: background 0.4s ease;
+      }
+
+      /* Cercles de fond */
+      .sp-bg { position: absolute; inset: 0; pointer-events: none; }
+      .sp-bg-circle {
+        position: absolute;
+        border-radius: 50%;
+        opacity: 0.07;
+        background: #4CAF50;
+        transition: background 0.4s ease;
+      }
+      .sp-bg-circle-1 { width: 600px; height: 600px; top: -200px; left: -200px; }
+      .sp-bg-circle-2 { width: 400px; height: 400px; bottom: -100px; right: -100px; opacity: 0.05; }
+      .sp-bg-circle-3 { width: 200px; height: 200px; top: 40%; left: 40%; opacity: 0.04; }
+
+      /* Wrap principal */
+      .sp-login-wrap {
+        display: flex;
+        width: 100%;
+        max-width: 900px;
+        min-height: 560px;
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 24px 80px rgba(0,0,0,0.5);
+        position: relative;
+        z-index: 1;
+        margin: 16px;
+      }
+
+      /* Panneau branding gauche */
+      .sp-brand-panel {
+        flex: 1;
+        background: linear-gradient(160deg, #1b5e20 0%, #2e7d32 50%, #388e3c 100%);
+        padding: 48px 40px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        position: relative;
+        overflow: hidden;
+        transition: background 0.4s ease;
+      }
+      .sp-brand-panel::before {
+        content: '';
+        position: absolute;
+        width: 300px; height: 300px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.04);
+        top: -80px; right: -80px;
+      }
+      .sp-brand-panel::after {
+        content: '';
+        position: absolute;
+        width: 200px; height: 200px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.03);
+        bottom: -60px; left: -60px;
+      }
+
+      .sp-brand-logo { margin-bottom: 20px; }
+      .sp-brand-mark {
+        width: 56px; height: 56px;
+        background: white;
+        color: #2e7d32;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 800;
+        font-size: 1.1rem;
+        letter-spacing: -0.5px;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+        transition: color 0.4s ease;
+      }
+      .sp-brand-name {
+        font-size: 1.8rem;
+        font-weight: 800;
+        color: white;
+        margin-bottom: 8px;
+        letter-spacing: -0.5px;
+      }
+      .sp-brand-tagline {
+        font-size: 0.88rem;
+        color: rgba(255,255,255,0.7);
+        line-height: 1.6;
+        margin-bottom: 36px;
+      }
+      .sp-brand-features {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        margin-bottom: 40px;
+      }
+      .sp-feature {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: rgba(255,255,255,0.85);
+        font-size: 0.85rem;
+        font-weight: 500;
+      }
+      .sp-feature i {
+        width: 20px;
+        color: #a5d6a7;
+        font-size: 0.9rem;
+        transition: color 0.4s ease;
+      }
+      .sp-brand-client { margin-top: auto; }
+      .sp-client-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 6px 14px;
+        background: rgba(255,255,255,0.12);
+        border: 1px solid rgba(255,255,255,0.2);
+        border-radius: 20px;
+        color: rgba(255,255,255,0.9);
+        font-size: 0.78rem;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        transition: all 0.3s ease;
+      }
+
+      /* Panneau formulaire */
+      .sp-form-panel {
+        flex: 0 0 400px;
+        background: #ffffff;
+        padding: 48px 40px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
+
+      .sp-mobile-logo {
+        display: none;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 32px;
+      }
+      .sp-brand-mark-sm {
+        width: 44px; height: 44px;
+        font-size: 0.9rem;
+        border-radius: 10px;
+        background: #2e7d32;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 800;
+        transition: background 0.4s ease;
+      }
+      .sp-mobile-title { font-size: 1rem; font-weight: 700; color: #1f2933; }
+      .sp-mobile-sub { font-size: 0.75rem; color: #888; transition: all 0.3s ease; }
+
+      .sp-form-header { margin-bottom: 28px; }
+      .sp-form-title {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: #1f2933;
+        margin-bottom: 6px;
+      }
+      .sp-form-subtitle { font-size: 0.84rem; color: #888; }
+
+      .sp-field { margin-bottom: 18px; }
+      .sp-label {
+        display: block;
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: #555;
+        margin-bottom: 6px;
+      }
+      .sp-label i { color: #2e7d32; margin-right: 4px; transition: color 0.4s ease; }
+
+      .sp-input-wrap { position: relative; }
+      .sp-input {
+        width: 100%;
+        padding: 12px 14px;
+        border: 1.5px solid #e0e0e0;
+        border-radius: 10px;
+        font-size: 0.92rem;
+        font-family: inherit;
+        background: #fafafa;
+        transition: border-color 0.2s, box-shadow 0.2s;
+        box-sizing: border-box;
+      }
+      .sp-input:focus {
+        outline: none;
+        border-color: #2e7d32;
+        background: white;
+        box-shadow: 0 0 0 3px rgba(46,125,50,0.1);
+      }
+      .sp-input-wrap .sp-input { padding-right: 44px; }
+      .sp-pwd-toggle {
+        position: absolute;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: #aaa;
+        font-size: 0.9rem;
+        padding: 4px;
+      }
+      .sp-pwd-toggle:hover { color: #2e7d32; }
+
+      .sp-error {
+        background: #ffebee;
+        border: 1px solid #ffcdd2;
+        border-radius: 8px;
+        padding: 10px 12px;
+        font-size: 0.82rem;
+        color: #c62828;
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .sp-btn-login {
+        width: 100%;
+        padding: 13px;
+        background: linear-gradient(135deg, #2e7d32, #43a047);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        font-size: 0.95rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: transform 0.15s, box-shadow 0.15s, background 0.4s ease;
+        box-shadow: 0 4px 14px rgba(46,125,50,0.3);
+        font-family: inherit;
+        margin-top: 4px;
+      }
+      .sp-btn-login:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 20px rgba(46,125,50,0.4);
+      }
+      .sp-btn-login:active { transform: scale(0.98); }
+      .sp-btn-login:disabled { opacity: 0.7; cursor: not-allowed; transform: none; }
+
+      .sp-footer-note {
+        margin-top: 24px;
+        font-size: 0.72rem;
+        color: #bbb;
+        text-align: center;
+      }
+
+      /* MOBILE */
+      @media (max-width: 680px) {
+        .sp-login-wrap {
+          flex-direction: column;
+          margin: 0;
+          border-radius: 0;
+          min-height: 100vh;
+        }
+        .sp-brand-panel { display: none; }
+        .sp-form-panel {
+          flex: 1;
+          padding: 32px 24px;
+          justify-content: flex-start;
+          padding-top: 48px;
+        }
+        .sp-mobile-logo { display: flex; }
+      }
+    </style>
+  `;
+
+  // ─── Appliquer branding initial (depuis localStorage si déjà chargé) ──
+  const cachedBranding = (() => {
+    try { return JSON.parse(localStorage.getItem('sp_branding') || 'null'); } catch { return null; }
+  })();
+  // Reset au branding NEUTRE au chargement de la page login
+  // (on appliquera le bon branding une fois l'instance détectée via le username)
+  applyBranding(root, NEUTRAL_BRANDING);
+  injectFocusStyle(root, NEUTRAL_BRANDING);
+
+  // ─── Toggle password visibility ───────────────────────────────────
+  const btnToggle = root.querySelector('#btn-toggle-pwd');
+  const pwdInput = root.querySelector('#password');
+  const pwdIcon = root.querySelector('#pwd-icon');
+  btnToggle?.addEventListener('click', () => {
+    const isHidden = pwdInput.type === 'password';
+    pwdInput.type = isHidden ? 'text' : 'password';
+    pwdIcon.className = isHidden ? 'fa-regular fa-eye-slash' : 'fa-regular fa-eye';
+  });
+
+// ─── Détecter le slug pour l'affichage live (null = neutre) ───────
+function detectDisplaySlug(username) {
+  const atMatch = username.match(/@([a-zA-Z0-9_-]+)$/);
+  if (atMatch) return atMatch[1].toLowerCase();
+  const dotMatch = username.match(/\.([a-zA-Z0-9_-]+)$/);
+  if (dotMatch) {
+    const candidate = dotMatch[1].toLowerCase();
+    if (KNOWN_SLUGS.includes(candidate)) return candidate;
+  }
+  return null;
+}
+
+// ─── Détection live du slug via l'input username ──────────────────
+const usernameInput = root.querySelector('#username');
+let lastSlug = 'neutral';
+let brandingDebounce = null;
+
+usernameInput?.addEventListener('input', () => {
+  clearTimeout(brandingDebounce);
+  brandingDebounce = setTimeout(async () => {
+    const value = usernameInput.value.trim();
+    const detected = value ? detectDisplaySlug(value) : null;
+    const slug = detected || 'neutral';
+    if (slug !== lastSlug) {
+      lastSlug = slug;
+      const branding = slug === 'neutral' ? NEUTRAL_BRANDING : await fetchBranding(slug);
+      applyBranding(root, branding);
+      injectFocusStyle(root, branding);
+    }
+  }, 300); // debounce 300ms
+});
+
+  // ─── Soumission du formulaire ─────────────────────────────────────
+  const btn = root.querySelector('#btn-login');
+  const btnText = root.querySelector('#btn-text');
+  const btnLoader = root.querySelector('#btn-loader');
+  const errorDiv = root.querySelector('#login-error');
+
+  async function handleLogin() {
+    errorDiv.style.display = 'none';
+    btn.disabled = true;
+    btnText.style.display = 'none';
+    btnLoader.style.display = 'inline';
+
+    const username = usernameInput.value.trim();
+    const password = pwdInput.value;
+
+    try {
+      const result = await post('/api/auth/login', { username, password });
+      const { token, user } = result;
+      localStorage.setItem('pamecas_token', token);
+      localStorage.setItem('pamecas_user', JSON.stringify(user));
+      // Persister le branding de l'instance pour toute l'app
+      const branding = await fetchBranding(user.instance_slug || 'pamecas');
+      localStorage.setItem('sp_branding', JSON.stringify(branding));
+      await saveAuth(token, user);
+      showToast('Connexion reussie.', 'success');
+      window.location.hash = '#/dashboard';
+    } catch (err) {
+      const message = err?.message || 'Erreur lors de la connexion.';
+      errorDiv.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> ${message}`;
+      errorDiv.style.display = 'flex';
+    } finally {
+      btn.disabled = false;
+      btnText.style.display = 'inline';
+      btnLoader.style.display = 'none';
+    }
+  }
+
+  btn.addEventListener('click', handleLogin);
+
+  // Aussi sur Enter dans les inputs
+  root.querySelector('#login-form')?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') handleLogin();
+  });
+}
