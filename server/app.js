@@ -84,6 +84,7 @@ app.use(
         styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
         fontSrc: ["'self'", "https://fonts.gstatic.com"],
         imgSrc: ["'self'", "data:", "blob:", "https://tile.openstreetmap.org"],
+        mediaSrc: ["'self'", "data:"],
         connectSrc: [
           "'self'",
           "ws:",

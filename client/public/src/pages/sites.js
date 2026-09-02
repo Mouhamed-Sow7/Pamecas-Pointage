@@ -435,7 +435,12 @@ function openGeofenceModal(site, root) {
         </div>
         <div id="geo-map-wrap" style="border-radius:10px;overflow:hidden;border:1px solid #eee;position:relative;width:288px;height:288px;margin:0 auto;background:#eee;cursor:crosshair;">
           <div id="geo-map-mosaic" style="position:absolute;width:768px;height:768px;"></div>
+          <div id="geo-my-pos" style="display:none;position:absolute;width:14px;height:14px;border-radius:50%;background:#4285F4;border:2px solid white;box-shadow:0 0 0 2px rgba(66,133,244,0.35),0 0 0 8px rgba(66,133,244,0.15);transform:translate(-50%,-50%);pointer-events:none;"></div>
           <div id="geo-map-pin" style="position:absolute;width:14px;height:14px;border-radius:50%;background:#c62828;border:2px solid white;box-shadow:0 0 0 2px rgba(198,40,40,0.4);transform:translate(-50%,-50%);pointer-events:none;"></div>
+        </div>
+        <div style="font-size:0.72rem;color:#999;text-align:center;margin-top:4px;">
+          <span style="color:#c62828;">●</span> zone confirmée &nbsp;·&nbsp;
+          <span style="color:#4285F4;">●</span> ta position actuelle
         </div>
         <div style="font-size:0.72rem;color:#999;text-align:center;margin-top:4px;">Clique n'importe où sur la carte pour déplacer le point.</div>
       </div>
@@ -497,6 +502,7 @@ function openGeofenceModal(site, root) {
 
   let ZOOM = 16;
   let curLat = null, curLng = null;
+  let myLat = null, myLng = null; // position réelle détectée (ne bouge pas au clic)
   // Coin haut-gauche de la mosaïque 3x3 (en coordonnées de tuile, non arrondies)
   let originXTile = null, originYTile = null;
 
@@ -539,6 +545,16 @@ function openGeofenceModal(site, root) {
     mosaic.style.top = `${144 - pinPxY}px`;
     mapPin.style.left = "144px";
     mapPin.style.top = "144px";
+
+    // Marqueur bleu "ta position" — positionné selon sa vraie coordonnée,
+    // indépendamment du point rouge (qui peut avoir été déplacé manuellement)
+    const myPosEl = document.getElementById("geo-my-pos");
+    if (myLat !== null && myLng !== null) {
+      const my = lngLatToTileF(myLat, myLng, ZOOM);
+      myPosEl.style.left = `${144 - pinPxX + (my.xTileF - originXTile) * 256}px`;
+      myPosEl.style.top = `${144 - pinPxY + (my.yTileF - originYTile) * 256}px`;
+      myPosEl.style.display = "block";
+    }
   }
 
   function showPosition(lat, lng, label) {
@@ -627,7 +643,11 @@ function openGeofenceModal(site, root) {
     statusEl.innerHTML = `<i class="fa-solid fa-triangle-exclamation" style="color:#e65100;"></i> Géolocalisation non disponible sur cet appareil/navigateur.`;
   } else {
     navigator.geolocation.getCurrentPosition(
-      (pos) => showPosition(pos.coords.latitude, pos.coords.longitude, "Position actuelle détectée"),
+      (pos) => {
+        myLat = pos.coords.latitude;
+        myLng = pos.coords.longitude;
+        showPosition(myLat, myLng, "Position actuelle détectée");
+      },
       () => {
         statusEl.innerHTML = `<i class="fa-solid fa-triangle-exclamation" style="color:#c62828;"></i> Localisation refusée ou indisponible — saisis les coordonnées manuellement ci-dessous.`;
       },

@@ -200,8 +200,9 @@ router.delete(
   },
 );
 
-// PATCH /:id/coordonnees — Définir (ou retirer) la position GPS du site (geofencing kiosque)
-router.patch("/:id/coordonnees", authenticate, async (req, res) => {
+// PUT/PATCH /:id/coordonnees — Définir (ou retirer) la position GPS du site (geofencing kiosque)
+// PUT = confirmé via le modal admin (sites.js) ; PATCH = auto-set legacy au 1er lancement kiosk (kiosque.js)
+const setCoordonneesHandler = async (req, res) => {
   try {
     const { latitude, longitude, clear } = req.body;
 
@@ -228,7 +229,9 @@ router.patch("/:id/coordonnees", authenticate, async (req, res) => {
   } catch (err) {
     res.status(500).json({ message: "Erreur serveur" });
   }
-});
+};
+router.put("/:id/coordonnees", authenticate, setCoordonneesHandler);
+router.patch("/:id/coordonnees", authenticate, setCoordonneesHandler);
 
 // ── Helper PIN rotation ────────────────────────────────────────────
 function genererPin() {
