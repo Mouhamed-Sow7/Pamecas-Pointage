@@ -434,6 +434,26 @@ router.post("/conges", authenticateAgent, async (req, res) => {
   }
 });
 
+<<<<<<< HEAD
+=======
+// POST /logout — Libère la session côté serveur (session_token → null).
+// Indispensable après toute déconnexion volontaire (PIN, bouton "déconnexion"),
+// sinon le champ session_token reste actif en base et bloque toute
+// reconnexion ultérieure (même depuis le même appareil) avec SESSION_ACTIVE.
+router.post("/logout", authenticateAgent, async (req, res) => {
+  try {
+    await Agent.findByIdAndUpdate(req.agent._id, {
+      session_token: null,
+      session_device: null,
+    });
+    res.json({ message: "Session fermée." });
+  } catch (err) {
+    console.error("Erreur logout agent:", err);
+    res.status(500).json({ message: "Erreur serveur" });
+  }
+});
+
+>>>>>>> 9d39ba4421735024d54a4426359d6f12dd1c5698
 // POST /demande-deconnexion — Agent soumet une demande (sans être connecté)
 // Route publique (pas de middleware auth) — identifié par matricule
 router.post("/demande-deconnexion", async (req, res) => {

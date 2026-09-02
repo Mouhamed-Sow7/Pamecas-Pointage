@@ -83,7 +83,12 @@ app.use(
         scriptSrcAttr: ["'unsafe-inline'"],
         styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
         fontSrc: ["'self'", "https://fonts.gstatic.com"],
+<<<<<<< HEAD
         imgSrc: ["'self'", "data:", "blob:"],
+=======
+        imgSrc: ["'self'", "data:", "blob:", "https://tile.openstreetmap.org"],
+        mediaSrc: ["'self'", "data:"],
+>>>>>>> 9d39ba4421735024d54a4426359d6f12dd1c5698
         connectSrc: [
           "'self'",
           "ws:",

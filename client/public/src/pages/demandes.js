@@ -23,6 +23,7 @@ export async function renderDemandes(root, user) {
         <p style="font-size:0.82rem;color:#888;margin:0;">Traitez les demandes de vos agents en attente de validation.</p>
       </div>
 
+<<<<<<< HEAD
       <!-- Sous-onglets -->
       <div style="display:flex;gap:0;border-bottom:2px solid #f0f0f0;margin-bottom:16px;">
         <button id="tab-telephone" class="demandes-tab demandes-tab-active">
@@ -38,6 +39,9 @@ export async function renderDemandes(root, user) {
       </div>
 
       <!-- Panneau : Changement d'appareil -->
+=======
+      <!-- Panneau : Changement d'appareil (seul objet de cette page désormais — les congés ont leur propre menu "Congés") -->
+>>>>>>> 9d39ba4421735024d54a4426359d6f12dd1c5698
       <div id="panel-telephone">
         <div class="card" style="padding:0;overflow:hidden;">
           <div style="padding:14px 16px;border-bottom:1px solid #f5f5f5;background:#fff8f5;">
@@ -53,6 +57,7 @@ export async function renderDemandes(root, user) {
           </div>
         </div>
       </div>
+<<<<<<< HEAD
 
       <!-- Panneau : Congés -->
       <div id="panel-conges" style="display:none;">
@@ -134,10 +139,22 @@ export async function renderDemandes(root, user) {
   async function loadTelephone() {
     const list = root.querySelector("#list-telephone");
     const badge = root.querySelector("#badge-telephone");
+=======
+    </div>
+  `;
+
+  // ── Changement d'appareil : rendu silencieux (ne redessine que si les données changent) ──
+  let lastSignature = null;
+
+  async function loadTelephone({ silent = false } = {}) {
+    const list = root.querySelector("#list-telephone");
+    if (!list) return stopPolling(); // page quittée entre-temps
+>>>>>>> 9d39ba4421735024d54a4426359d6f12dd1c5698
     try {
       const res = await get("/api/agents/demandes-deconnexion");
       const demandes = res.data || [];
 
+<<<<<<< HEAD
       // Badge onglet
       if (demandes.length > 0) {
         badge.textContent = demandes.length > 9 ? "9+" : demandes.length;
@@ -145,6 +162,12 @@ export async function renderDemandes(root, user) {
       } else {
         badge.style.display = "none";
       }
+=======
+      // Évite tout re-rendu (donc tout "glitch" visuel) si rien n'a changé
+      const signature = JSON.stringify(demandes.map(d => d._id + (d.demande_deconnexion?.date_demande || "")));
+      if (silent && signature === lastSignature) return;
+      lastSignature = signature;
+>>>>>>> 9d39ba4421735024d54a4426359d6f12dd1c5698
 
       if (!demandes.length) {
         list.innerHTML = `
@@ -250,6 +273,7 @@ export async function renderDemandes(root, user) {
     }
   }
 
+<<<<<<< HEAD
   // ── Panel 2 : Congés ────────────────────────────────────────────────────────
   async function loadStats() {
     try {
@@ -398,4 +422,23 @@ export async function renderDemandes(root, user) {
   // ── Chargement initial ──────────────────────────────────────────────────────
   await loadTelephone();
   loadStats();
+=======
+  // ── Polling silencieux : le badge/liste se met à jour tout seul, sans refresh manuel ──
+  let pollHandle = null;
+  function stopPolling() {
+    if (pollHandle) { clearInterval(pollHandle); pollHandle = null; }
+    document.removeEventListener("visibilitychange", onVisibility);
+    window.removeEventListener("hashchange", stopPolling);
+  }
+  function onVisibility() {
+    if (!document.hidden) loadTelephone({ silent: true });
+  }
+
+  pollHandle = setInterval(() => loadTelephone({ silent: true }), 8000);
+  document.addEventListener("visibilitychange", onVisibility);
+  window.addEventListener("hashchange", stopPolling);
+
+  // ── Chargement initial ──────────────────────────────────────────────────────
+  await loadTelephone();
+>>>>>>> 9d39ba4421735024d54a4426359d6f12dd1c5698
 }

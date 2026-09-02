@@ -404,12 +404,274 @@ export async function renderSites(root, user) {
         showToast("Token kiosque manquant — clique d'abord sur 'Générer' pour ce site.", "error");
         return;
       }
+<<<<<<< HEAD
       // Utilise l'URL kiosque déjà générée côté serveur (#/kiosque?ktoken=...)
       // Le format /kiosk?site=... n'est pas compatible avec renderKiosque() qui lit le hash
       window.open(site.kiosque_url, "_blank");
+=======
+      openGeofenceModal(site, root);
+>>>>>>> 9d39ba4421735024d54a4426359d6f12dd1c5698
       return;
     }
   });
 
   fetchSites(root);
 }
+<<<<<<< HEAD
+=======
+
+// ─── Modal de confirmation geofencing avant déploiement kiosk ────────────────
+function openGeofenceModal(site, root) {
+  const existing = site.coordonnees?.latitude && site.coordonnees?.longitude ? site.coordonnees : null;
+
+  const content = `
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <p style="margin:0;color:#555;font-size:0.88rem;">
+        Le kiosque de <strong>${site.nom}</strong> ne pourra valider les pointages que dans un rayon de <strong>500 m</strong>
+        autour de la position confirmée ci-dessous.
+      </p>
+
+      <div id="geo-status" style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:#f5f5f5;border-radius:8px;font-size:0.85rem;color:#666;">
+        <i class="fa-solid fa-spinner fa-spin"></i> Localisation en cours...
+      </div>
+
+      <div id="geo-map-outer" style="display:none;">
+        <div style="display:flex;justify-content:center;gap:6px;margin-bottom:6px;">
+          <button id="geo-zoom-out" type="button" class="btn-icon-sm" style="width:28px;height:28px;border-radius:6px;border:1px solid #ddd;background:white;cursor:pointer;">−</button>
+          <span style="font-size:0.72rem;color:#999;align-self:center;">zoom</span>
+          <button id="geo-zoom-in" type="button" class="btn-icon-sm" style="width:28px;height:28px;border-radius:6px;border:1px solid #ddd;background:white;cursor:pointer;">+</button>
+        </div>
+        <div id="geo-map-wrap" style="border-radius:10px;overflow:hidden;border:1px solid #eee;position:relative;width:288px;height:288px;margin:0 auto;background:#eee;cursor:crosshair;">
+          <div id="geo-map-mosaic" style="position:absolute;width:768px;height:768px;"></div>
+          <div id="geo-my-pos" style="display:none;position:absolute;width:14px;height:14px;border-radius:50%;background:#4285F4;border:2px solid white;box-shadow:0 0 0 2px rgba(66,133,244,0.35),0 0 0 8px rgba(66,133,244,0.15);transform:translate(-50%,-50%);pointer-events:none;"></div>
+          <div id="geo-map-pin" style="position:absolute;width:14px;height:14px;border-radius:50%;background:#c62828;border:2px solid white;box-shadow:0 0 0 2px rgba(198,40,40,0.4);transform:translate(-50%,-50%);pointer-events:none;"></div>
+        </div>
+        <div style="font-size:0.72rem;color:#999;text-align:center;margin-top:4px;">
+          <span style="color:#c62828;">●</span> zone confirmée &nbsp;·&nbsp;
+          <span style="color:#4285F4;">●</span> ta position actuelle
+        </div>
+        <div style="font-size:0.72rem;color:#999;text-align:center;margin-top:4px;">Clique n'importe où sur la carte pour déplacer le point.</div>
+      </div>
+      <div id="geo-manual" style="display:none;font-size:0.78rem;color:#888;text-align:center;">
+        Ou saisis/colle les coordonnées exactes (décimal, "16°01'21.0"N", ou une paire "lat, lng") :
+      </div>
+      <div id="geo-manual-fields" style="display:none;gap:8px;align-items:center;">
+        <input id="geo-lat-input" type="text" inputmode="decimal" placeholder="Latitude" style="flex:1;padding:8px;border:1.5px solid #ddd;border-radius:8px;font-size:0.82rem;">
+        <input id="geo-lng-input" type="text" inputmode="decimal" placeholder="Longitude" style="flex:1;padding:8px;border:1.5px solid #ddd;border-radius:8px;font-size:0.82rem;">
+        <button id="geo-apply-manual" type="button" style="padding:8px 12px;font-size:0.78rem;white-space:nowrap;background:#0f5132;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600;">Valider</button>
+      </div>
+
+      ${existing ? `
+        <div style="font-size:0.78rem;color:#888;background:#fff8f5;border-radius:8px;padding:8px 10px;">
+          <i class="fa-solid fa-circle-info"></i> Ce site a déjà une position enregistrée
+          (${existing.latitude.toFixed(5)}, ${existing.longitude.toFixed(5)}).
+          Confirmer ci-dessous la remplacera par ta position actuelle.
+          <button id="btn-clear-geo" type="button" style="margin-left:6px;background:none;border:none;color:#c62828;text-decoration:underline;cursor:pointer;font-size:0.78rem;padding:0;">
+            Retirer le geofencing de ce site
+          </button>
+        </div>
+      ` : ""}
+    </div>
+  `;
+
+  showModal({
+    title: "Confirmer la zone de pointage",
+    content,
+    confirmText: "Confirmer et déployer",
+    cancelText: "Annuler",
+    onConfirm: async (close) => {
+      const lat = document.getElementById("geo-map-wrap")?.dataset.lat;
+      const lng = document.getElementById("geo-map-wrap")?.dataset.lng;
+      if (!lat || !lng) {
+        showToast("Position non disponible — réessaie ou vérifie l'autorisation de localisation.", "error");
+        return;
+      }
+      try {
+        await put(`/api/sites/${site._id}/coordonnees`, { latitude: parseFloat(lat), longitude: parseFloat(lng) });
+        showToast("Zone de pointage confirmée.", "success");
+        close();
+        window.open(site.kiosque_url, "_blank");
+        fetchSites(root);
+      } catch {
+        showToast("Erreur lors de l'enregistrement de la position.", "error");
+      }
+    },
+  });
+
+  const statusEl = document.getElementById("geo-status");
+  const mapOuter = document.getElementById("geo-map-outer");
+  const mapWrap = document.getElementById("geo-map-wrap");
+  const mosaic = document.getElementById("geo-map-mosaic");
+  const mapPin = document.getElementById("geo-map-pin");
+  const manualHint = document.getElementById("geo-manual");
+  const manualFields = document.getElementById("geo-manual-fields");
+  const latInput = document.getElementById("geo-lat-input");
+  const lngInput = document.getElementById("geo-lng-input");
+
+  let ZOOM = 16;
+  let curLat = null, curLng = null;
+  let myLat = null, myLng = null; // position réelle détectée (ne bouge pas au clic)
+  // Coin haut-gauche de la mosaïque 3x3 (en coordonnées de tuile, non arrondies)
+  let originXTile = null, originYTile = null;
+
+  function lngLatToTileF(lat, lng, zoom) {
+    const n = Math.pow(2, zoom);
+    const latRad = (lat * Math.PI) / 180;
+    return {
+      xTileF: ((lng + 180) / 360) * n,
+      yTileF: ((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2) * n,
+    };
+  }
+  function tileFToLatLng(xTileF, yTileF, zoom) {
+    const n = Math.pow(2, zoom);
+    const lng = (xTileF / n) * 360 - 180;
+    const latRad = Math.atan(Math.sinh(Math.PI * (1 - (2 * yTileF) / n)));
+    return { lat: (latRad * 180) / Math.PI, lng };
+  }
+
+  function renderMosaic() {
+    const { xTileF, yTileF } = lngLatToTileF(curLat, curLng, ZOOM);
+    const centerXTile = Math.floor(xTileF);
+    const centerYTile = Math.floor(yTileF);
+    originXTile = centerXTile - 1;
+    originYTile = centerYTile - 1;
+
+    mosaic.innerHTML = "";
+    for (let dy = 0; dy < 3; dy++) {
+      for (let dx = 0; dx < 3; dx++) {
+        const img = document.createElement("img");
+        img.width = 256; img.height = 256;
+        img.style.cssText = `position:absolute;left:${dx * 256}px;top:${dy * 256}px;pointer-events:none;`;
+        img.src = `https://tile.openstreetmap.org/${ZOOM}/${originXTile + dx}/${originYTile + dy}.png`;
+        mosaic.appendChild(img);
+      }
+    }
+    // Centrer visuellement la mosaïque 768px dans la fenêtre 288px, point sous le curseur
+    const pinPxX = (xTileF - originXTile) * 256;
+    const pinPxY = (yTileF - originYTile) * 256;
+    mosaic.style.left = `${144 - pinPxX}px`;
+    mosaic.style.top = `${144 - pinPxY}px`;
+    mapPin.style.left = "144px";
+    mapPin.style.top = "144px";
+
+    // Marqueur bleu "ta position" — positionné selon sa vraie coordonnée,
+    // indépendamment du point rouge (qui peut avoir été déplacé manuellement)
+    const myPosEl = document.getElementById("geo-my-pos");
+    if (myLat !== null && myLng !== null) {
+      const my = lngLatToTileF(myLat, myLng, ZOOM);
+      myPosEl.style.left = `${144 - pinPxX + (my.xTileF - originXTile) * 256}px`;
+      myPosEl.style.top = `${144 - pinPxY + (my.yTileF - originYTile) * 256}px`;
+      myPosEl.style.display = "block";
+    }
+  }
+
+  function showPosition(lat, lng, label) {
+    curLat = lat; curLng = lng;
+    mapWrap.dataset.lat = lat;
+    mapWrap.dataset.lng = lng;
+    mapOuter.style.display = "block";
+    manualHint.style.display = "block";
+    manualFields.style.display = "flex";
+    latInput.value = lat.toFixed(6);
+    lngInput.value = lng.toFixed(6);
+    statusEl.innerHTML = `<i class="fa-solid fa-location-crosshairs" style="color:#0f5132;"></i> ${label} : ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+    renderMosaic();
+  }
+
+  mapWrap.addEventListener("click", (e) => {
+    if (originXTile === null) return;
+    const rect = mapWrap.getBoundingClientRect();
+    const px = e.clientX - rect.left;
+    const py = e.clientY - rect.top;
+    // px/py sont dans le cadre visible (288); on retrouve la position dans la mosaïque via son offset courant
+    const mosaicLeft = parseFloat(mosaic.style.left);
+    const mosaicTop = parseFloat(mosaic.style.top);
+    const xTileF = originXTile + (px - mosaicLeft) / 256;
+    const yTileF = originYTile + (py - mosaicTop) / 256;
+    const { lat, lng } = tileFToLatLng(xTileF, yTileF, ZOOM);
+    showPosition(lat, lng, "Position ajustée manuellement (clic)");
+  });
+
+  document.getElementById("geo-zoom-in").addEventListener("click", () => {
+    if (ZOOM < 19) { ZOOM++; renderMosaic(); }
+  });
+  document.getElementById("geo-zoom-out").addEventListener("click", () => {
+    if (ZOOM > 3) { ZOOM--; renderMosaic(); }
+  });
+
+  // ── Parseur de coordonnées : décimal (point ou virgule), DMS ("16°01'21.0\"N"),
+  // ou une paire complète collée dans un seul champ ("16.022500, -16.491361") ──
+  function parseSingleCoord(raw) {
+    if (!raw) return NaN;
+    const str = String(raw).trim();
+    const dms = str.match(/(-?\d+(?:[.,]\d+)?)[°:\s]+(\d+(?:[.,]\d+)?)['\s]+(\d+(?:[.,]\d+)?)["\s]*([NSEW])?/i);
+    if (dms) {
+      const deg = parseFloat(dms[1].replace(",", "."));
+      const min = parseFloat(dms[2].replace(",", "."));
+      const sec = parseFloat(dms[3].replace(",", "."));
+      let val = Math.abs(deg) + min / 60 + sec / 3600;
+      if (deg < 0 || /[SW]/i.test(dms[4] || "")) val = -val;
+      return val;
+    }
+    // Décimal — virgule française acceptée uniquement si un seul groupe (pas une paire)
+    return parseFloat(str.replace(",", "."));
+  }
+
+  function tryParsePair(text) {
+    const m = String(text).match(/(-?\d{1,3}[.,]\d+)\s*[,;]\s*(-?\d{1,3}[.,]\d+)/);
+    if (!m) return null;
+    return { lat: parseFloat(m[1].replace(",", ".")), lng: parseFloat(m[2].replace(",", ".")) };
+  }
+
+  function applyManualInputs() {
+    // Une paire collée dans un seul des deux champs ?
+    const pairFromLat = tryParsePair(latInput.value);
+    const pairFromLng = tryParsePair(lngInput.value);
+    const pair = pairFromLat || pairFromLng;
+    if (pair && Number.isFinite(pair.lat) && Number.isFinite(pair.lng)) {
+      showPosition(pair.lat, pair.lng, "Position saisie manuellement");
+      return;
+    }
+    const lat = parseSingleCoord(latInput.value);
+    const lng = parseSingleCoord(lngInput.value);
+    if (Number.isFinite(lat) && Number.isFinite(lng)) {
+      showPosition(lat, lng, "Position saisie manuellement");
+    } else {
+      showToast("Coordonnées non reconnues — vérifie le format.", "error");
+    }
+  }
+  document.getElementById("geo-apply-manual").addEventListener("click", applyManualInputs);
+  [latInput, lngInput].forEach((input) => {
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") { e.preventDefault(); applyManualInputs(); }
+    });
+  });
+
+  if (!navigator.geolocation) {
+    statusEl.innerHTML = `<i class="fa-solid fa-triangle-exclamation" style="color:#e65100;"></i> Géolocalisation non disponible sur cet appareil/navigateur.`;
+  } else {
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        myLat = pos.coords.latitude;
+        myLng = pos.coords.longitude;
+        showPosition(myLat, myLng, "Position actuelle détectée");
+      },
+      () => {
+        statusEl.innerHTML = `<i class="fa-solid fa-triangle-exclamation" style="color:#c62828;"></i> Localisation refusée ou indisponible — saisis les coordonnées manuellement ci-dessous.`;
+      },
+      { enableHighAccuracy: true, timeout: 10000 },
+    );
+  }
+
+  document.getElementById("btn-clear-geo")?.addEventListener("click", async () => {
+    try {
+      await put(`/api/sites/${site._id}/coordonnees`, { clear: true });
+      showToast("Geofencing retiré pour ce site.", "success");
+      document.getElementById("gds-modal-overlay")?.remove();
+      fetchSites(root);
+    } catch {
+      showToast("Erreur lors du retrait du geofencing.", "error");
+    }
+  });
+}
+>>>>>>> 9d39ba4421735024d54a4426359d6f12dd1c5698

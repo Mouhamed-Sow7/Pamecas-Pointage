@@ -1278,7 +1278,11 @@
           if (activeTab === "badge") {
             if (typeof loadStats === "function") loadStats();
           } else if (activeTab === "conges") {
+<<<<<<< HEAD
             if (typeof loadConges === "function") loadConges();
+=======
+            if (typeof loadConges === "function") loadConges({ silent: true });
+>>>>>>> 9d39ba4421735024d54a4426359d6f12dd1c5698
           } else if (activeTab === "historique") {
             if (typeof loadHistorique === "function") loadHistorique();
           }
@@ -1471,16 +1475,38 @@
         }
       }
 
+<<<<<<< HEAD
       async function loadConges() {
         const list = $("conges-list");
         list.innerHTML =
           '<div class="loading"><div class="spinner"></div> Chargement...</div>';
+=======
+      let _congesSignature = null;
+
+      async function loadConges({ silent = false } = {}) {
+        const list = $("conges-list");
+        // Spinner uniquement au tout premier chargement — jamais lors du polling
+        // silencieux, sinon la liste "clignote" à chaque tick (10s).
+        if (!silent && !_congesSignature) {
+          list.innerHTML =
+            '<div class="loading"><div class="spinner"></div> Chargement...</div>';
+        }
+>>>>>>> 9d39ba4421735024d54a4426359d6f12dd1c5698
         try {
           const r = await apiFetch("/api/agent-portal/conges");
           if (!r) return; // handled by apiFetch
           if (!r.ok) throw new Error("Erreur " + r.status);
           const d = await r.json();
           const conges = d.conges || d.data || [];
+<<<<<<< HEAD
+=======
+
+          // Ne redessine que si les données ont réellement changé (évite le glitch)
+          const signature = JSON.stringify(conges.map((c) => c._id + c.statut));
+          if (signature === _congesSignature) return;
+          _congesSignature = signature;
+
+>>>>>>> 9d39ba4421735024d54a4426359d6f12dd1c5698
           if (!conges.length) {
             list.innerHTML =
               '<div class="empty-state"><svg viewBox="0 0 24 24"><path d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z"/></svg><p>Aucune demande de congé</p></div>';
@@ -1895,7 +1921,19 @@
             return;
           }
 
+<<<<<<< HEAD
           // ✅ PIN correct → déconnexion
+=======
+          // ✅ PIN correct → libérer la session côté serveur AVANT de nettoyer
+          // le local, sinon session_token reste actif en base et bloque toute
+          // reconnexion ultérieure (SESSION_ACTIVE), même depuis cet appareil.
+          try {
+            await apiFetch("/api/agent-portal/logout", { method: "POST" });
+          } catch (e) {
+            console.warn("Logout serveur échoué (on continue quand même) :", e);
+          }
+
+>>>>>>> 9d39ba4421735024d54a4426359d6f12dd1c5698
           $("modal-logout-pin").classList.remove("open");
           clearAuth();
           clearInterval(totpInterval);
