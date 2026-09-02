@@ -427,16 +427,25 @@ function openGeofenceModal(site, root) {
         <i class="fa-solid fa-spinner fa-spin"></i> Localisation en cours...
       </div>
 
-      <div id="geo-map-wrap" style="display:none;border-radius:10px;overflow:hidden;border:1px solid #eee;position:relative;width:256px;height:256px;margin:0 auto;background:#eee;cursor:crosshair;">
-        <img id="geo-map-tile" width="256" height="256" style="display:block;pointer-events:none;" />
-        <div id="geo-map-pin" style="position:absolute;width:14px;height:14px;border-radius:50%;background:#c62828;border:2px solid white;box-shadow:0 0 0 2px rgba(198,40,40,0.4);transform:translate(-50%,-50%);pointer-events:none;"></div>
+      <div id="geo-map-outer" style="display:none;">
+        <div style="display:flex;justify-content:center;gap:6px;margin-bottom:6px;">
+          <button id="geo-zoom-out" type="button" class="btn-icon-sm" style="width:28px;height:28px;border-radius:6px;border:1px solid #ddd;background:white;cursor:pointer;">−</button>
+          <span style="font-size:0.72rem;color:#999;align-self:center;">zoom</span>
+          <button id="geo-zoom-in" type="button" class="btn-icon-sm" style="width:28px;height:28px;border-radius:6px;border:1px solid #ddd;background:white;cursor:pointer;">+</button>
+        </div>
+        <div id="geo-map-wrap" style="border-radius:10px;overflow:hidden;border:1px solid #eee;position:relative;width:288px;height:288px;margin:0 auto;background:#eee;cursor:crosshair;">
+          <div id="geo-map-mosaic" style="position:absolute;width:768px;height:768px;"></div>
+          <div id="geo-map-pin" style="position:absolute;width:14px;height:14px;border-radius:50%;background:#c62828;border:2px solid white;box-shadow:0 0 0 2px rgba(198,40,40,0.4);transform:translate(-50%,-50%);pointer-events:none;"></div>
+        </div>
+        <div style="font-size:0.72rem;color:#999;text-align:center;margin-top:4px;">Clique n'importe où sur la carte pour déplacer le point.</div>
       </div>
       <div id="geo-manual" style="display:none;font-size:0.78rem;color:#888;text-align:center;">
-        Clique sur la carte pour ajuster précisément, ou saisis les coordonnées exactes :
+        Ou saisis/colle les coordonnées exactes (décimal, "16°01'21.0"N", ou une paire "lat, lng") :
       </div>
-      <div id="geo-manual-fields" style="display:none;gap:8px;">
-        <input id="geo-lat-input" type="number" step="0.00001" placeholder="Latitude" style="flex:1;padding:8px;border:1.5px solid #ddd;border-radius:8px;font-size:0.82rem;">
-        <input id="geo-lng-input" type="number" step="0.00001" placeholder="Longitude" style="flex:1;padding:8px;border:1.5px solid #ddd;border-radius:8px;font-size:0.82rem;">
+      <div id="geo-manual-fields" style="display:none;gap:8px;align-items:center;">
+        <input id="geo-lat-input" type="text" inputmode="decimal" placeholder="Latitude" style="flex:1;padding:8px;border:1.5px solid #ddd;border-radius:8px;font-size:0.82rem;">
+        <input id="geo-lng-input" type="text" inputmode="decimal" placeholder="Longitude" style="flex:1;padding:8px;border:1.5px solid #ddd;border-radius:8px;font-size:0.82rem;">
+        <button id="geo-apply-manual" type="button" style="padding:8px 12px;font-size:0.78rem;white-space:nowrap;background:#0f5132;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600;">Valider</button>
       </div>
 
       ${existing ? `
@@ -477,68 +486,142 @@ function openGeofenceModal(site, root) {
   });
 
   const statusEl = document.getElementById("geo-status");
+  const mapOuter = document.getElementById("geo-map-outer");
   const mapWrap = document.getElementById("geo-map-wrap");
-  const mapTile = document.getElementById("geo-map-tile");
+  const mosaic = document.getElementById("geo-map-mosaic");
   const mapPin = document.getElementById("geo-map-pin");
   const manualHint = document.getElementById("geo-manual");
   const manualFields = document.getElementById("geo-manual-fields");
   const latInput = document.getElementById("geo-lat-input");
   const lngInput = document.getElementById("geo-lng-input");
 
-  const ZOOM = 16;
-  let currentXTile = null;
-  let currentYTile = null;
+  let ZOOM = 16;
+  let curLat = null, curLng = null;
+  // Coin haut-gauche de la mosaïque 3x3 (en coordonnées de tuile, non arrondies)
+  let originXTile = null, originYTile = null;
 
-  function showPosition(lat, lng, label) {
-    mapWrap.dataset.lat = lat;
-    mapWrap.dataset.lng = lng;
-
-    // Formule standard slippy-map (OSM wiki) : tuile + position en pixel du point
-    const n = Math.pow(2, ZOOM);
+  function lngLatToTileF(lat, lng, zoom) {
+    const n = Math.pow(2, zoom);
     const latRad = (lat * Math.PI) / 180;
-    const xTileF = ((lng + 180) / 360) * n;
-    const yTileF = ((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2) * n;
-    currentXTile = Math.floor(xTileF);
-    currentYTile = Math.floor(yTileF);
-
-    mapTile.src = `https://tile.openstreetmap.org/${ZOOM}/${currentXTile}/${currentYTile}.png`;
-    mapPin.style.left = `${(xTileF - currentXTile) * 256}px`;
-    mapPin.style.top = `${(yTileF - currentYTile) * 256}px`;
-
-    mapWrap.style.display = "block";
-    manualHint.style.display = "block";
-    manualFields.style.display = "flex";
-    latInput.value = lat.toFixed(5);
-    lngInput.value = lng.toFixed(5);
-    statusEl.innerHTML = `<i class="fa-solid fa-location-crosshairs" style="color:var(--green);"></i> ${label} : ${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+    return {
+      xTileF: ((lng + 180) / 360) * n,
+      yTileF: ((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2) * n,
+    };
   }
-
-  // Formule inverse (pixel de tuile → lat/lng), pour le clic manuel sur la carte
-  function tileToLatLng(xTileF, yTileF) {
-    const n = Math.pow(2, ZOOM);
+  function tileFToLatLng(xTileF, yTileF, zoom) {
+    const n = Math.pow(2, zoom);
     const lng = (xTileF / n) * 360 - 180;
     const latRad = Math.atan(Math.sinh(Math.PI * (1 - (2 * yTileF) / n)));
     return { lat: (latRad * 180) / Math.PI, lng };
   }
 
+  function renderMosaic() {
+    const { xTileF, yTileF } = lngLatToTileF(curLat, curLng, ZOOM);
+    const centerXTile = Math.floor(xTileF);
+    const centerYTile = Math.floor(yTileF);
+    originXTile = centerXTile - 1;
+    originYTile = centerYTile - 1;
+
+    mosaic.innerHTML = "";
+    for (let dy = 0; dy < 3; dy++) {
+      for (let dx = 0; dx < 3; dx++) {
+        const img = document.createElement("img");
+        img.width = 256; img.height = 256;
+        img.style.cssText = `position:absolute;left:${dx * 256}px;top:${dy * 256}px;pointer-events:none;`;
+        img.src = `https://tile.openstreetmap.org/${ZOOM}/${originXTile + dx}/${originYTile + dy}.png`;
+        mosaic.appendChild(img);
+      }
+    }
+    // Centrer visuellement la mosaïque 768px dans la fenêtre 288px, point sous le curseur
+    const pinPxX = (xTileF - originXTile) * 256;
+    const pinPxY = (yTileF - originYTile) * 256;
+    mosaic.style.left = `${144 - pinPxX}px`;
+    mosaic.style.top = `${144 - pinPxY}px`;
+    mapPin.style.left = "144px";
+    mapPin.style.top = "144px";
+  }
+
+  function showPosition(lat, lng, label) {
+    curLat = lat; curLng = lng;
+    mapWrap.dataset.lat = lat;
+    mapWrap.dataset.lng = lng;
+    mapOuter.style.display = "block";
+    manualHint.style.display = "block";
+    manualFields.style.display = "flex";
+    latInput.value = lat.toFixed(6);
+    lngInput.value = lng.toFixed(6);
+    statusEl.innerHTML = `<i class="fa-solid fa-location-crosshairs" style="color:#0f5132;"></i> ${label} : ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+    renderMosaic();
+  }
+
   mapWrap.addEventListener("click", (e) => {
-    if (currentXTile === null) return;
+    if (originXTile === null) return;
     const rect = mapWrap.getBoundingClientRect();
     const px = e.clientX - rect.left;
     const py = e.clientY - rect.top;
-    const { lat, lng } = tileToLatLng(currentXTile + px / 256, currentYTile + py / 256);
+    // px/py sont dans le cadre visible (288); on retrouve la position dans la mosaïque via son offset courant
+    const mosaicLeft = parseFloat(mosaic.style.left);
+    const mosaicTop = parseFloat(mosaic.style.top);
+    const xTileF = originXTile + (px - mosaicLeft) / 256;
+    const yTileF = originYTile + (py - mosaicTop) / 256;
+    const { lat, lng } = tileFToLatLng(xTileF, yTileF, ZOOM);
     showPosition(lat, lng, "Position ajustée manuellement (clic)");
   });
 
+  document.getElementById("geo-zoom-in").addEventListener("click", () => {
+    if (ZOOM < 19) { ZOOM++; renderMosaic(); }
+  });
+  document.getElementById("geo-zoom-out").addEventListener("click", () => {
+    if (ZOOM > 3) { ZOOM--; renderMosaic(); }
+  });
+
+  // ── Parseur de coordonnées : décimal (point ou virgule), DMS ("16°01'21.0\"N"),
+  // ou une paire complète collée dans un seul champ ("16.022500, -16.491361") ──
+  function parseSingleCoord(raw) {
+    if (!raw) return NaN;
+    const str = String(raw).trim();
+    const dms = str.match(/(-?\d+(?:[.,]\d+)?)[°:\s]+(\d+(?:[.,]\d+)?)['\s]+(\d+(?:[.,]\d+)?)["\s]*([NSEW])?/i);
+    if (dms) {
+      const deg = parseFloat(dms[1].replace(",", "."));
+      const min = parseFloat(dms[2].replace(",", "."));
+      const sec = parseFloat(dms[3].replace(",", "."));
+      let val = Math.abs(deg) + min / 60 + sec / 3600;
+      if (deg < 0 || /[SW]/i.test(dms[4] || "")) val = -val;
+      return val;
+    }
+    // Décimal — virgule française acceptée uniquement si un seul groupe (pas une paire)
+    return parseFloat(str.replace(",", "."));
+  }
+
+  function tryParsePair(text) {
+    const m = String(text).match(/(-?\d{1,3}[.,]\d+)\s*[,;]\s*(-?\d{1,3}[.,]\d+)/);
+    if (!m) return null;
+    return { lat: parseFloat(m[1].replace(",", ".")), lng: parseFloat(m[2].replace(",", ".")) };
+  }
+
   function applyManualInputs() {
-    const lat = parseFloat(latInput.value);
-    const lng = parseFloat(lngInput.value);
+    // Une paire collée dans un seul des deux champs ?
+    const pairFromLat = tryParsePair(latInput.value);
+    const pairFromLng = tryParsePair(lngInput.value);
+    const pair = pairFromLat || pairFromLng;
+    if (pair && Number.isFinite(pair.lat) && Number.isFinite(pair.lng)) {
+      showPosition(pair.lat, pair.lng, "Position saisie manuellement");
+      return;
+    }
+    const lat = parseSingleCoord(latInput.value);
+    const lng = parseSingleCoord(lngInput.value);
     if (Number.isFinite(lat) && Number.isFinite(lng)) {
       showPosition(lat, lng, "Position saisie manuellement");
+    } else {
+      showToast("Coordonnées non reconnues — vérifie le format.", "error");
     }
   }
-  latInput.addEventListener("change", applyManualInputs);
-  lngInput.addEventListener("change", applyManualInputs);
+  document.getElementById("geo-apply-manual").addEventListener("click", applyManualInputs);
+  [latInput, lngInput].forEach((input) => {
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") { e.preventDefault(); applyManualInputs(); }
+    });
+  });
 
   if (!navigator.geolocation) {
     statusEl.innerHTML = `<i class="fa-solid fa-triangle-exclamation" style="color:#e65100;"></i> Géolocalisation non disponible sur cet appareil/navigateur.`;
@@ -546,7 +629,7 @@ function openGeofenceModal(site, root) {
     navigator.geolocation.getCurrentPosition(
       (pos) => showPosition(pos.coords.latitude, pos.coords.longitude, "Position actuelle détectée"),
       () => {
-        statusEl.innerHTML = `<i class="fa-solid fa-triangle-exclamation" style="color:#c62828;"></i> Localisation refusée ou indisponible — autorise l'accès à la position pour confirmer la zone.`;
+        statusEl.innerHTML = `<i class="fa-solid fa-triangle-exclamation" style="color:#c62828;"></i> Localisation refusée ou indisponible — saisis les coordonnées manuellement ci-dessous.`;
       },
       { enableHighAccuracy: true, timeout: 10000 },
     );
