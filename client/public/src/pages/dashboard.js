@@ -80,7 +80,7 @@ export function renderDashboard(root, user) {
       <div id="dashboard-content" style="display:none;">
         <div class="kpi-grid" style="margin-bottom:16px;">
           <div class="kpi-card">
-            <div class="kpi-label"><i class="fa-solid fa-circle-check" style="color:#2e7d32;"></i> Presents</div>
+            <div class="kpi-label"><i class="fa-solid fa-circle-check" style="color:var(--sp-accent);"></i> Presents</div>
             <div id="kpi-present" class="kpi-value green">0</div>
           </div>
           <div class="kpi-card">
@@ -88,11 +88,11 @@ export function renderDashboard(root, user) {
             <div id="kpi-absent" class="kpi-value red">0</div>
           </div>
           <div class="kpi-card">
-            <div class="kpi-label"><i class="fa-solid fa-clock" style="color:#e65100;"></i> Retards</div>
+            <div class="kpi-label"><i class="fa-solid fa-clock" style="color:var(--sp-warning);"></i> Retards</div>
             <div id="kpi-retard" class="kpi-value orange">0</div>
           </div>
           <div class="kpi-card">
-            <div class="kpi-label"><i class="fa-solid fa-chart-pie" style="color:#1565c0;"></i> Taux presence</div>
+            <div class="kpi-label"><i class="fa-solid fa-chart-pie" style="color:var(--sp-accent);"></i> Taux presence</div>
             <div id="kpi-taux" class="kpi-value blue">0%</div>
           </div>
         </div>
@@ -101,7 +101,7 @@ export function renderDashboard(root, user) {
         <div class="card" style="padding:0;overflow:hidden;">
           <div style="padding:14px 16px;border-bottom:1px solid #f0f0f0;display:flex;justify-content:space-between;align-items:center;">
             <h2 style="font-size:0.95rem;font-weight:600;">
-              <i class="fa-solid fa-building" style="color:#2e7d32;margin-right:6px;"></i>Recapitulatif par agence
+              <i class="fa-solid fa-building" style="color:var(--sp-accent);margin-right:6px;"></i>Recapitulatif par agence
             </h2>
             <span id="recap-date" style="font-size:0.75rem;color:#aaa;"></span>
           </div>
@@ -110,10 +110,10 @@ export function renderDashboard(root, user) {
               <thead>
                 <tr style="background:#f7faf7;">
                   <th style="padding:10px 14px;text-align:left;font-weight:600;color:#555;border-bottom:1.5px solid #eee;">Agence</th>
-                  <th style="padding:10px 14px;text-align:center;font-weight:600;color:#2e7d32;border-bottom:1.5px solid #eee;">Presents</th>
+                  <th style="padding:10px 14px;text-align:center;font-weight:600;color:var(--sp-accent);border-bottom:1.5px solid #eee;">Presents</th>
                   <th style="padding:10px 14px;text-align:center;font-weight:600;color:#c62828;border-bottom:1.5px solid #eee;">Absents</th>
-                  <th style="padding:10px 14px;text-align:center;font-weight:600;color:#e65100;border-bottom:1.5px solid #eee;">Retards</th>
-                  <th style="padding:10px 14px;text-align:center;font-weight:600;color:#1565c0;border-bottom:1.5px solid #eee;">Taux</th>
+                  <th style="padding:10px 14px;text-align:center;font-weight:600;color:var(--sp-warning);border-bottom:1.5px solid #eee;">Retards</th>
+                  <th style="padding:10px 14px;text-align:center;font-weight:600;color:var(--sp-accent);border-bottom:1.5px solid #eee;">Taux</th>
                 </tr>
               </thead>
               <tbody id="table-sites-body"></tbody>
@@ -164,7 +164,7 @@ export function renderDashboard(root, user) {
           const nom = s.site || s.nom || "Agence inconnue";
           const tauxSite = s.taux ?? 0;
           const tauxColor =
-            tauxSite >= 80 ? "#2e7d32" : tauxSite >= 50 ? "#e65100" : "#c62828";
+            tauxSite >= 80 ? "var(--sp-accent)" : tauxSite >= 50 ? "var(--sp-warning)" : "#c62828";
 
           const tr = document.createElement("tr");
           tr.style.cssText = "transition:background 0.15s;";
@@ -173,13 +173,13 @@ export function renderDashboard(root, user) {
           tr.innerHTML = `
             <td style="padding:10px 14px;border-bottom:1px solid #f5f5f5;font-weight:500;">${nom}</td>
             <td style="padding:10px 14px;border-bottom:1px solid #f5f5f5;text-align:center;">
-              <span style="color:#2e7d32;font-weight:600;">${s.presents ?? 0}</span>
+              <span style="color:var(--sp-accent);font-weight:600;">${s.presents ?? 0}</span>
             </td>
             <td style="padding:10px 14px;border-bottom:1px solid #f5f5f5;text-align:center;">
               <span style="color:#c62828;font-weight:600;">${s.absents ?? 0}</span>
             </td>
             <td style="padding:10px 14px;border-bottom:1px solid #f5f5f5;text-align:center;">
-              <span style="color:#e65100;font-weight:600;">${s.retards ?? 0}</span>
+              <span style="color:var(--sp-warning);font-weight:600;">${s.retards ?? 0}</span>
             </td>
             <td style="padding:10px 14px;border-bottom:1px solid #f5f5f5;text-align:center;">
               <span style="font-weight:700;color:${tauxColor};">${tauxSite}%</span>
