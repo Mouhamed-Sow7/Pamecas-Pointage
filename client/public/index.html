@@ -54,7 +54,14 @@
         --topbar-h: 56px;
         --radius: 10px;
         --shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        --sp-sidebar-bg: #1a2e35;
+        --sp-accent: #0f6e56;
+        --sp-accent-active-bg: #0c443c;
+        --sp-warning: #854f0b;
+        --sp-success: #3b6d11;
       }
+      [data-tenant="cms"] { --sp-sidebar-bg: #1c2b45; --sp-accent: #185fa5; --sp-accent-active-bg: #0c447c; --sp-warning: #854f0b; --sp-success: #3b6d11; }
+      [data-tenant="gmv"] { --sp-sidebar-bg: #2c3e1f; --sp-accent: #639922; --sp-accent-active-bg: #27500a; --sp-warning: #854f0b; --sp-success: #3b6d11; }
       #app {
         min-height: 100vh;
       }
@@ -82,7 +89,7 @@
         left: 0;
         right: 0;
         height: 52px;
-        background: var(--green);
+        background: var(--sp-sidebar-bg);
         color: white;
         align-items: center;
         justify-content: space-between;
@@ -144,7 +151,7 @@
       /* ── SIDEBAR ──────────────────────────────────────────── */
       .sidebar {
         width: 220px;
-        background: var(--green);
+        background: var(--sp-sidebar-bg);
         color: white;
         display: flex;
         flex-direction: column;
@@ -206,7 +213,7 @@
         width: 32px;
         height: 32px;
         background: white;
-        color: var(--green);
+        color: var(--sp-accent);
         border-radius: 7px;
         display: flex;
         align-items: center;
@@ -259,7 +266,7 @@
         color: white;
       }
       .nav-link-active {
-        background: rgba(255, 255, 255, 0.18) !important;
+        background: var(--sp-accent-active-bg) !important;
         color: white !important;
         font-weight: 500;
       }
@@ -270,7 +277,7 @@
         display: flex;
         flex-direction: column;
         gap: 8px;
-        background: var(--green);
+        background: var(--sp-sidebar-bg);
       }
       .status-row {
         display: flex;
@@ -375,16 +382,16 @@
         line-height: 1;
       }
       .kpi-value.green {
-        color: var(--green);
+        color: var(--sp-accent);
       }
       .kpi-value.red {
         color: #c62828;
       }
       .kpi-value.orange {
-        color: #e65100;
+        color: var(--sp-warning);
       }
       .kpi-value.blue {
-        color: #1565c0;
+        color: var(--sp-accent);
       }
       .btn-primary {
         display: inline-flex;

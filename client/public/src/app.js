@@ -32,6 +32,13 @@ function applyBrandingCSS() {
   if (branding.couleur_accent) root.style.setProperty("--green-light", branding.couleur_accent);
   if (branding.couleur_secondaire) root.style.setProperty("--green-dark", branding.couleur_secondaire);
 
+  // Nouveau système de thème — data-tenant + variables dédiées
+  if (branding.slug) {
+    root.setAttribute("data-tenant", branding.slug);
+  }
+  // Les valeurs des variables --sp-* sont définies dans le CSS via [data-tenant],
+  // donc on n'a pas besoin de les setter en JS — le sélecteur d'attribut fait le travail.
+
   document.querySelectorAll(".logo-mark").forEach((el) => {
     if (branding.mark_text) el.textContent = branding.mark_text;
     if (branding.mark_color) el.style.background = branding.mark_color;

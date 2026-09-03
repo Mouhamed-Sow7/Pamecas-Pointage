@@ -79,6 +79,13 @@ async function fetchBranding(slug) {
 
 // ─── Appliquer le branding sur la page login ──────────────────────
 function applyBranding(root, b) {
+  // data-tenant sur <html> pour le thème CSS
+  if (b.slug && b.slug !== 'neutral') {
+    document.documentElement.setAttribute('data-tenant', b.slug);
+  } else {
+    document.documentElement.removeAttribute('data-tenant');
+  }
+
   // Fond page
   const page = root.querySelector('.sp-login-page');
   if (page) page.style.background = b.bg_dark;
