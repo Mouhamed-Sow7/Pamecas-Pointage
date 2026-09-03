@@ -65,31 +65,22 @@ export async function renderConges(root, user) {
     } catch { /* silencieux */ }
   }
 
-<<<<<<< HEAD
-  async function loadConges() {
-    const statut = document.getElementById("filtre-statut-conge")?.value ?? "en_attente";
-    const list = document.getElementById("conges-list");
-=======
   let lastSignature = null;
 
   async function loadConges({ silent = false } = {}) {
     const statut = document.getElementById("filtre-statut-conge")?.value ?? "en_attente";
     const list = document.getElementById("conges-list");
     if (!list) return stopPolling(); // page quittée
->>>>>>> 9d39ba4421735024d54a4426359d6f12dd1c5698
 
     try {
       const url = `/api/conges${statut ? `?statut=${statut}` : ""}`;
       const res = await get(url);
       const conges = res.data || [];
 
-<<<<<<< HEAD
-=======
       const signature = JSON.stringify(conges.map((c) => c._id + c.statut));
       if (silent && signature === lastSignature) return;
       lastSignature = signature;
 
->>>>>>> 9d39ba4421735024d54a4426359d6f12dd1c5698
       if (!conges.length) {
         list.innerHTML = `<div style="text-align:center;padding:32px;color:#bbb;">Aucune demande</div>`;
         return;
@@ -213,9 +204,6 @@ export async function renderConges(root, user) {
 
   document
     .getElementById("filtre-statut-conge")
-<<<<<<< HEAD
-    ?.addEventListener("change", loadConges);
-=======
     ?.addEventListener("change", () => loadConges());
 
   let pollHandle = setInterval(() => { loadConges({ silent: true }); loadStats(); }, 8000);
@@ -225,7 +213,6 @@ export async function renderConges(root, user) {
   }
   window.addEventListener("hashchange", stopPolling);
 
->>>>>>> 9d39ba4421735024d54a4426359d6f12dd1c5698
   await loadConges();
   await loadStats();
 }

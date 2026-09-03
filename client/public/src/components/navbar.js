@@ -87,23 +87,13 @@ export async function renderNavbar(container, currentRoute, user) {
     });
   }
 
-<<<<<<< HEAD
-  // Demandes RH — section centralisée (admin/superadmin/DR)
-  if (user && ["superadmin", "admin", "directeur_regional"].includes(user.role)) {
-    const totalDemandes = nbDemandesDeco + nbCongesAttente;
-=======
   // Demandes RH — changement d'appareil uniquement (les congés ont leur propre menu ci-dessous)
   if (user && ["superadmin", "admin", "directeur_regional"].includes(user.role)) {
->>>>>>> 9d39ba4421735024d54a4426359d6f12dd1c5698
     links.push({
       path: "#/demandes",
       label: "Demandes",
       icon: '<i class="fa-solid fa-inbox"></i>',
-<<<<<<< HEAD
-      badge: totalDemandes > 0 ? totalDemandes : 0,
-=======
       badge: nbDemandesDeco > 0 ? nbDemandesDeco : 0,
->>>>>>> 9d39ba4421735024d54a4426359d6f12dd1c5698
     });
   }
 
@@ -128,10 +118,7 @@ export async function renderNavbar(container, currentRoute, user) {
       path: "#/conges",
       label: "Congés",
       icon: '<i class="fa-solid fa-calendar-days"></i>',
-<<<<<<< HEAD
-=======
       badge: nbCongesAttente > 0 ? nbCongesAttente : 0,
->>>>>>> 9d39ba4421735024d54a4426359d6f12dd1c5698
     });
   }
 
@@ -230,8 +217,6 @@ export async function renderNavbar(container, currentRoute, user) {
   container
     .querySelector("#sidebar-collapse-btn")
     ?.addEventListener("click", toggleSidebar);
-<<<<<<< HEAD
-=======
 
   startBadgePolling(container, user);
 }
@@ -289,5 +274,4 @@ function patchBadge(sidebar, path, count) {
   } else if (badge) {
     badge.remove();
   }
->>>>>>> 9d39ba4421735024d54a4426359d6f12dd1c5698
 }

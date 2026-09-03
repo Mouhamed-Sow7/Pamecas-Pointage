@@ -404,21 +404,13 @@ export async function renderSites(root, user) {
         showToast("Token kiosque manquant — clique d'abord sur 'Générer' pour ce site.", "error");
         return;
       }
-<<<<<<< HEAD
-      // Utilise l'URL kiosque déjà générée côté serveur (#/kiosque?ktoken=...)
-      // Le format /kiosk?site=... n'est pas compatible avec renderKiosque() qui lit le hash
-      window.open(site.kiosque_url, "_blank");
-=======
       openGeofenceModal(site, root);
->>>>>>> 9d39ba4421735024d54a4426359d6f12dd1c5698
       return;
     }
   });
 
   fetchSites(root);
 }
-<<<<<<< HEAD
-=======
 
 // ─── Modal de confirmation geofencing avant déploiement kiosk ────────────────
 function openGeofenceModal(site, root) {
@@ -674,4 +666,3 @@ function openGeofenceModal(site, root) {
     }
   });
 }
->>>>>>> 9d39ba4421735024d54a4426359d6f12dd1c5698
