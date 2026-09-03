@@ -31,18 +31,24 @@ export async function syncPending() {
       throw new Error("Sync Ã©chouÃ©e");
     }
 
-    const localIds = pending.map((p) => p.local_id);
-    await clearSynced(localIds);
+    const data = await response.json();
+    const confirmedIds = Array.isArray(data.synced) ? data.synced : [];
+
+    if (!confirmedIds.length) {
+      return 0;
+    }
+
+    await clearSynced(confirmedIds);
 
     syncCallbacks.forEach((cb) => {
       try {
-        cb(localIds.length);
+        cb(confirmedIds.length);
       } catch (e) {
         // ignore callback error
       }
     });
 
-    return localIds.length;
+    return confirmedIds.length;
   } catch (err) {
     console.error("Erreur lors de la synchronisation des pointages:", err);
     return 0;
