@@ -1,1 +1,388 @@
-/** * Seed GMV / ASERGMV - Grande Muraille Verte * Instance spécifique pour le suivi des jeunes Xëyu Ndaw Ñi * * Terminologie GMV: * - Agence → Zone / Secteur * - Agents → Jeunes Xëyu Ndaw Ñi * - Pointeur → Chef de secteur * - Directeur Rég. → Inspecteur régional * - Admin → Coordinateur zone * - Superadmin → Direction ASERGMV */ const dotenv = require('dotenv'); dotenv.config(); const { v4: uuidv4 } = require('uuid'); const { connectDB, mongoose } = require('./config/db'); const Site = require('./models/Site'); const User = require('./models/User'); const Agent = require('./models/Agent'); const Pointage = require('./models/Pointage'); // ─── Zones GMV ───────────────────────────────────────────────────── const zonesGMV = [ { code: 'GMV-SL-RAO', nom: 'Zone Rao', region: 'Saint-Louis', telephone: '77 001 01 01', adresse: 'Village de Rao, Commune de Rao', config: { heure_debut: '07:00', heure_retard: '07:15', weekend_actif: false } }, { code: 'GMV-SL-BANGO', nom: 'Zone Bango', region: 'Saint-Louis', telephone: '77 001 02 02', adresse: 'Village de Bango', config: { heure_debut: '07:00', heure_retard: '07:15', weekend_actif: false } }, { code: 'GMV-SL-PODOR', nom: 'Pépinière Podor', region: 'Saint-Louis', telephone: '77 001 03 03', adresse: 'Podor, Département de Podor', config: { heure_debut: '07:00', heure_retard: '07:15', weekend_actif: false } }, { code: 'GMV-LG-WIDOU', nom: 'Zone Widou', region: 'Louga', telephone: '77 001 04 04', adresse: 'Widou, Commune de Thiékène', config: { heure_debut: '07:00', heure_retard: '07:15', weekend_actif: false } }, { code: 'GMV-LG-LOMPOUL', nom: 'Zone Lompoul', region: 'Louga', telephone: '77 001 05 05', adresse: 'Lompoul, Commune de Kambeng', config: { heure_debut: '07:00', heure_retard: '07:15', weekend_actif: false } }, { code: 'GMV-TB-BAKEL', nom: 'Zone Bakel', region: 'Tambacounda', telephone: '77 001 06 06', adresse: 'Bakel, Département de Bakel', config: { heure_debut: '07:00', heure_retard: '07:15', weekend_actif: false } }, { code: 'GMV-TB-GOUDIRY', nom: 'Zone Goudiry', region: 'Tambacounda', telephone: '77 001 07 07', adresse: 'Goudiry, Département de Bakel', config: { heure_debut: '07:00', heure_retard: '07:15', weekend_actif: false } }, { code: 'GMV-DG', nom: 'Direction Nationale', region: 'Dakar', telephone: '77 001 00 00', adresse: 'Dakar, Siège ASERGMV', config: { heure_debut: '08:00', heure_retard: '08:15', weekend_actif: false } }, ]; // ─── Jeunes Xëyu Ndaw Ñi par zone ────────────────────────────────── const jeunesParZone = { 'GMV-SL-RAO': [ { nom: 'Sow', prenom: 'Moussa', type_contrat: 'CVD', poste: 'Jeune Xëyu Ndaw Ñi' }, { nom: 'Diop', prenom: 'Amadou', type_contrat: 'CVD', poste: 'Jeune Xëyu Ndaw Ñi' }, { nom: 'Ndiaye', prenom: 'Fatou', type_contrat: 'CVD', poste: 'Jeune Xëyu Ndaw Ñi' }, { nom: 'Fall', prenom: 'Cheikh', type_contrat: 'CVD', poste: 'Jeune Xëyu Ndaw Ñi' }, { nom: 'Ba', prenom: 'Ibrahima', type_contrat: 'CVD', poste: 'Jeune Xëyu Ndaw Ñi' }, { nom: 'Gueye', prenom: 'Mariama', type_contrat: 'CVD', poste: 'Jeune Xëyu Ndaw Ñi' }, { nom: 'Mbaye', prenom: 'Ousmane', type_contrat: 'CVD', poste: 'Jeune Xëyu Ndaw Ñi' }, { nom: 'Diallo', prenom: 'Aissatou', type_contrat: 'CVD', poste: 'Jeune Xëyu Ndaw Ñi' }, ], 'GMV-SL-BANGO': [ { nom: 'Thiam', prenom: 'Modou', type_contrat: 'CVD', poste: 'Jeune Xëyu Ndaw Ñi' }, { nom: 'Sy', prenom: 'Bineta', type_contrat: 'CVD', poste: 'Jeune Xëyu Ndaw Ñi' }, { nom: 'Faye', prenom: 'Lamine', type_contrat: 'CVD', poste: 'Jeune Xëyu Ndaw Ñi' }, { nom: 'Kane', prenom: 'Aminata', type_contrat: 'CVD', poste: 'Jeune Xëyu Ndaw Ñi' }, { nom: 'Diouf', prenom: 'Serigne', type_contrat: 'CVD', poste: 'Jeune Xëyu Ndaw Ñi' }, { nom: 'Niang', prenom: 'Coumba', type_contrat: 'CVD', poste: 'Jeune Xëyu Ndaw Ñi' }, ], 'GMV-SL-PODOR': [ { nom: 'Toure', prenom: 'Seydou', type_contrat: 'CVD', poste: 'Jeune Xëyu Ndaw Ñi' }, { nom: 'Traore', prenom: 'Fatou', type_contrat: 'CVD', poste: 'Jeune Xëyu Ndaw Ñi' }, { nom: 'Coulibaly', prenom: 'Moussa', type_contrat: 'CVD', poste: 'Jeune Xëyu Ndaw Ñi' }, { nom: 'Kone', prenom: 'Aminata', type_contrat: 'CVD', poste: 'Jeune Xëyu Ndaw Ñi' }, { nom: 'Diarra', prenom: 'Ibrahima', type_contrat: 'CVD', poste: 'Jeune Xëyu Ndaw Ñi' }, ], 'GMV-LG-WIDOU': [ { nom: 'Cisse', prenom: 'Mamadou', type_contrat: 'CVD', poste: 'Jeune Xëyu Ndaw Ñi' }, { nom: 'Diallo', prenom: 'Fatoumata', type_contrat: 'CVD', poste: 'Jeune Xëyu Ndaw Ñi' }, { nom: 'Sow', prenom: 'Amadou', type_contrat: 'CVD', poste: 'Jeune Xëyu Ndaw Ñi' }, { nom: 'Ba', prenom: 'Awa', type_contrat: 'CVD', poste: 'Jeune Xëyu Ndaw Ñi' }, { nom: 'Ndiaye', prenom: 'Pape', type_contrat: 'CVD', poste: 'Jeune Xëyu Ndaw Ñi' }, { nom: 'Fall', prenom: 'Ndèye', type_contrat: 'CVD', poste: 'Jeune Xëyu Ndaw Ñi' }, ], 'GMV-LG-LOMPOUL': [ { nom: 'Mendy', prenom: 'Jean', type_contrat: 'CVD', poste: 'Jeune Xëyu Ndaw Ñi' }, { nom: 'Badji', prenom: 'Marie', type_contrat: 'CVD', poste: 'Jeune Xëyu Ndaw Ñi' }, { nom: 'Diatta', prenom: 'Serigne', type_contrat: 'CVD', poste: 'Jeune Xëyu Ndaw Ñi' }, { nom: 'Senghor', prenom: 'Fatou', type_contrat: 'CVD', poste: 'Jeune Xëyu Ndaw Ñi' }, { nom: 'Niang', prenom: 'Modou', type_contrat: 'CVD', poste: 'Jeune Xëyu Ndaw Ñi' }, ], 'GMV-TB-BAKEL': [ { nom: 'Dramé', prenom: 'Moussa', type_contrat: 'CVD', poste: 'Jeune Xëyu Ndaw Ñi' }, { nom: 'Sakho', prenom: 'Fatou', type_contrat: 'CVD', poste: 'Jeune Xëyu Ndaw Ñi' }, { nom: 'Niane', prenom: 'Amadou', type_contrat: 'CVD', poste: 'Jeune Xëyu Ndaw Ñi' }, { nom: 'Keita', prenom: 'Aissata', type_contrat: 'CVD', poste: 'Jeune Xëyu Ndaw Ñi' }, { nom: 'Diallo', prenom: 'Boubacar', type_contrat: 'CVD', poste: 'Jeune Xëyu Ndaw Ñi' }, { nom: 'Sy', prenom: 'Oumou', type_contrat: 'CVD', poste: 'Jeune Xëyu Ndaw Ñi' }, ], 'GMV-TB-GOUDIRY': [ { nom: 'Balde', prenom: 'Seydou', type_contrat: 'CVD', poste: 'Jeune Xëyu Ndaw Ñi' }, { nom: 'Barry', prenom: 'Fatoumata', type_contrat: 'CVD', poste: 'Jeune Xëyu Ndaw Ñi' }, { nom: 'Diallo', prenom: 'Mamadou', type_contrat: 'CVD', poste: 'Jeune Xëyu Ndaw Ñi' }, { nom: 'Bah', prenom: 'Aminata', type_contrat: 'CVD', poste: 'Jeune Xëyu Ndaw Ñi' }, { nom: 'Sow', prenom: 'Ibrahima', type_contrat: 'CVD', poste: 'Jeune Xëyu Ndaw Ñi' }, ], 'GMV-DG': [ { nom: 'Ndiaye', prenom: 'Mamadou', type_contrat: 'CDI', poste: 'Coordinateur National' }, { nom: 'Diop', prenom: 'Fatou', type_contrat: 'CDI', poste: 'Responsable Administratif' }, { nom: 'Fall', prenom: 'Serigne', type_contrat: 'CDI', poste: 'Responsable Technique' }, { nom: 'Sow', prenom: 'Aminata', type_contrat: 'CDI', poste: 'Comptable' }, ], }; // ─── Comptes utilisateurs GMV ─────────────────────────────────────── const usersGMV = [ { username: 'directeur.gmv', password: 'gmv2024!', role: 'superadmin', nom_complet: 'Directeur ASERGMV', agenceCode: 'GMV-DG' }, { username: 'inspecteur.sl', password: 'gmv2024!', role: 'directeur_regional', nom_complet: 'Inspecteur Saint-Louis', sitesCodes: ['GMV-SL-RAO', 'GMV-SL-BANGO', 'GMV-SL-PODOR'] }, { username: 'inspecteur.lg', password: 'gmv2024!', role: 'directeur_regional', nom_complet: 'Inspecteur Louga', sitesCodes: ['GMV-LG-WIDOU', 'GMV-LG-LOMPOUL'] }, { username: 'inspecteur.tb', password: 'gmv2024!', role: 'directeur_regional', nom_complet: 'Inspecteur Tambacounda', sitesCodes: ['GMV-TB-BAKEL', 'GMV-TB-GOUDIRY'] }, { username: 'chef.rao', password: 'gmv2024!', role: 'admin', nom_complet: 'Chef Zone Rao', agenceCode: 'GMV-SL-RAO' }, { username: 'chef.bango', password: 'gmv2024!', role: 'admin', nom_complet: 'Chef Zone Bango', agenceCode: 'GMV-SL-BANGO' }, { username: 'chef.podor', password: 'gmv2024!', role: 'admin', nom_complet: 'Chef Pépinière Podor', agenceCode: 'GMV-SL-PODOR' }, { username: 'chef.widou', password: 'gmv2024!', role: 'admin', nom_complet: 'Chef Zone Widou', agenceCode: 'GMV-LG-WIDOU' }, { username: 'chef.lompoul', password: 'gmv2024!', role: 'admin', nom_complet: 'Chef Zone Lompoul', agenceCode: 'GMV-LG-LOMPOUL' }, { username: 'chef.bakel', password: 'gmv2024!', role: 'admin', nom_complet: 'Chef Zone Bakel', agenceCode: 'GMV-TB-BAKEL' }, { username: 'chef.goudiry', password: 'gmv2024!', role: 'admin', nom_complet: 'Chef Zone Goudiry', agenceCode: 'GMV-TB-GOUDIRY' }, { username: 'pointeur.rao', password: 'gmv2024!', role: 'pointeur', nom_complet: 'Pointeur Rao', agenceCode: 'GMV-SL-RAO' }, { username: 'pointeur.bango', password: 'gmv2024!', role: 'pointeur', nom_complet: 'Pointeur Bango', agenceCode: 'GMV-SL-BANGO' }, { username: 'pointeur.widou', password: 'gmv2024!', role: 'pointeur', nom_complet: 'Pointeur Widou', agenceCode: 'GMV-LG-WIDOU' }, { username: 'pointeur.bakel', password: 'gmv2024!', role: 'pointeur', nom_complet: 'Pointeur Bakel', agenceCode: 'GMV-TB-BAKEL' }, ]; // ─── Helpers ───────────────────────────────────────────────────────── function heure(h, m) { return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`; } function rand(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; } async function genererPointagesSemaine(agents, siteId, superviseurId) { const pointages = []; for (let offset = -6; offset <= 0; offset++) { const d = new Date(); d.setDate(d.getDate() + offset); const jourSemaine = d.getDay(); if (jourSemaine === 0 || jourSemaine === 6) continue; // skip weekend const dateString = d.toISOString().slice(0, 10); for (const agent of agents) { const roll = Math.random(); let heureArrivee, heureDepart, statut; if (roll < 0.80) { // Present à l'heure (travail agricole commence tôt) heureArrivee = heure(6, rand(45, 59)); if (parseInt(heureArrivee.split(':')[1]) >= 55) { heureArrivee = heure(7, rand(0, 10)); } statut = 'present'; heureDepart = heure(16, rand(0, 30)); } else if (roll < 0.92) { // Retard heureArrivee = heure(7, rand(16, 45)); statut = 'retard'; heureDepart = heure(16, rand(0, 30)); } else { // Absent statut = 'absent'; heureArrivee = null; heureDepart = null; } let duree = null; if (heureArrivee && heureDepart) { const [h1, m1] = heureArrivee.split(':').map(Number); const [h2, m2] = heureDepart.split(':').map(Number); duree = (h2 * 60 + m2) - (h1 * 60 + m1); } try { await Pointage.findOneAndUpdate( { agent_id: agent._id, site_id: siteId, date: dateString }, { agent_id: agent._id, site_id: siteId, date: dateString, heure_arrivee: heureArrivee, heure_depart: heureDepart, duree_minutes: duree, statut, methode: Math.random() > 0.5 ? 'qr_code' : 'manuel', superviseur_id: superviseurId, note: statut === 'absent' && Math.random() > 0.5 ? 'Absence justifiée' : '', sync_status: 'synced', synced_at: new Date() }, { upsert: true, new: true } ); pointages.push(`${dateString} - ${agent.nom} ${statut}`); } catch (e) { // Ignore duplicates } } } return pointages; } // ─── Seed GMV ───────────────────────────────────────────────────────── async function seedGMV() { try { await connectDB(); await new Promise((resolve, reject) => { const conn = mongoose.connection; if (conn.readyState === 1) return resolve(); conn.once('connected', resolve); conn.once('error', reject); }); console.log('Connexion DB établie...'); console.log(''); console.log('=== SEED GMV / ASERGMV - Grande Muraille Verte ==='); console.log(''); // 1. Zones (Sites) const sitesMap = {}; for (const zone of zonesGMV) { const existing = await Site.findOne({ code: zone.code }); const updateData = { ...zone, actif: true, tenant: 'gmv' // Multi-tenant identifier }; if (existing?.kiosque_token) { delete updateData.kiosque_token; delete updateData.kiosque_token_created_at; } else { updateData.kiosque_token = uuidv4(); updateData.kiosque_token_created_at = new Date(); } const site = await Site.findOneAndUpdate( { code: zone.code }, updateData, { upsert: true, new: true } ); sitesMap[zone.code] = site; } console.log(`${zonesGMV.length} zones GMV initialisées`); // 2. Superadmin (Direction ASERGMV) let superadmin = await User.findOne({ username: 'directeur.gmv' }); if (!superadmin) { superadmin = new User({ username: 'directeur.gmv', password: 'gmv2024!', role: 'superadmin', nom_complet: 'Directeur ASERGMV', actif: true, tenant: 'gmv' }); await superadmin.save(); console.log('Directeur ASERGMV créé'); } // 3. Inspecteurs régionaux for (const ud of usersGMV.filter(u => u.role === 'directeur_regional')) { const existing = await User.findOne({ username: ud.username }); if (!existing) { const sitesIds = ud.sitesCodes .map(code => sitesMap[code]?._id) .filter(Boolean); const user = new User({ username: ud.username, password: ud.password, role: 'directeur_regional', nom_complet: ud.nom_complet, sites_ids: sitesIds, actif: true, tenant: 'gmv' }); await user.save(); console.log(`Inspecteur créé: ${ud.username}`); } } // 4. Chefs de zone et pointeurs for (const ud of usersGMV.filter(u => u.role === 'admin' || u.role === 'pointeur')) { const site = sitesMap[ud.agenceCode]; if (!site) continue; const existing = await User.findOne({ username: ud.username }); if (!existing) { const user = new User({ username: ud.username, password: ud.password, role: ud.role, nom_complet: ud.nom_complet, site_id: site._id, actif: true, tenant: 'gmv' }); await user.save(); console.log(`${ud.role === 'admin' ? 'Chef zone' : 'Pointeur'} créé: ${ud.username}`); } } // 5. Jeunes Xëyu Ndaw Ñi + pointages let totalJeunes = 0; let totalPointages = 0; for (const [zoneCode, jeunesData] of Object.entries(jeunesParZone)) { const site = sitesMap[zoneCode]; if (!site) continue; const jeunesInseres = []; for (const jd of jeunesData) { const existing = await Agent.findOne({ nom: jd.nom, prenom: jd.prenom, site_id: site._id }); if (!existing) { const agent = new Agent({ nom: jd.nom, prenom: jd.prenom, type_contrat: jd.type_contrat, poste: jd.poste, site_id: site._id, actif: true, tenant: 'gmv' }); await agent.save(); jeunesInseres.push(agent); totalJeunes++; } else { jeunesInseres.push(existing); } } // Pointages sur 7 jours const pointages = await genererPointagesSemaine(jeunesInseres, site._id, superadmin._id); totalPointages += pointages.length; console.log(`${zoneCode}: ${jeunesInseres.length} jeunes, ${pointages.length} pointages`); } console.log(''); console.log('=== SEED GMV TERMINÉ ==='); console.log(`Zones : ${zonesGMV.length}`); console.log(`Jeunes Xëyu Ndaw Ñi : ${totalJeunes} nouveaux`); console.log(`Pointages : ${totalPointages} sur 7 jours`); console.log(''); console.log('=== COMPTES DE CONNEXION GMV ==='); console.log('Directeur ASERGMV : directeur.gmv / gmv2024!'); console.log('Inspecteur Saint-Louis : inspecteur.sl / gmv2024!'); console.log('Inspecteur Louga : inspecteur.lg / gmv2024!'); console.log('Inspecteur Tambacounda : inspecteur.tb / gmv2024!'); console.log('Chef Zone Rao : chef.rao / gmv2024!'); console.log('Pointeur Rao : pointeur.rao / gmv2024!'); console.log(''); } catch (err) { console.error('Erreur seed GMV:', err); } finally { await mongoose.disconnect(); process.exit(0); } } seedGMV();
+/**
+ * Seed GMV / ASERGMV - Grande Muraille Verte
+ * Instance spécifique pour le suivi des jeunes Xëyu Ndaw Ñi
+ *
+ * Terminologie GMV:
+ * - Agence → Zone / Secteur
+ * - Agents → Jeunes Xëyu Ndaw Ñi
+ * - Pointeur → Chef de secteur
+ * - Directeur Rég. → Inspecteur régional
+ * - Admin → Coordinateur zone
+ * - Superadmin → Direction ASERGMV
+ */
+
+const dotenv = require("dotenv");
+dotenv.config();
+const { v4: uuidv4 } = require("uuid");
+const { connectDB, mongoose } = require("./config/db");
+const Site = require("./models/Site");
+const User = require("./models/User");
+const Agent = require("./models/Agent");
+const Pointage = require("./models/Pointage");
+
+// ─── Zones GMV ─────────────────────────────────────────────────────
+const zonesGMV = [
+  {
+    code: "GMV-SL-RAO",
+    nom: "Zone Rao",
+    region: "Saint-Louis",
+    telephone: "77 001 01 01",
+    adresse: "Village de Rao, Commune de Rao",
+    config: { heure_debut: "07:00", heure_retard: "07:15", weekend_actif: false },
+  },
+  {
+    code: "GMV-SL-BANGO",
+    nom: "Zone Bango",
+    region: "Saint-Louis",
+    telephone: "77 001 02 02",
+    adresse: "Village de Bango",
+    config: { heure_debut: "07:00", heure_retard: "07:15", weekend_actif: false },
+  },
+  {
+    code: "GMV-SL-PODOR",
+    nom: "Pépinière Podor",
+    region: "Saint-Louis",
+    telephone: "77 001 03 03",
+    adresse: "Podor, Département de Podor",
+    config: { heure_debut: "07:00", heure_retard: "07:15", weekend_actif: false },
+  },
+  {
+    code: "GMV-LG-WIDOU",
+    nom: "Zone Widou",
+    region: "Louga",
+    telephone: "77 001 04 04",
+    adresse: "Widou, Commune de Thiékène",
+    config: { heure_debut: "07:00", heure_retard: "07:15", weekend_actif: false },
+  },
+  {
+    code: "GMV-LG-LOMPOUL",
+    nom: "Zone Lompoul",
+    region: "Louga",
+    telephone: "77 001 05 05",
+    adresse: "Lompoul, Commune de Kambeng",
+    config: { heure_debut: "07:00", heure_retard: "07:15", weekend_actif: false },
+  },
+  {
+    code: "GMV-TB-BAKEL",
+    nom: "Zone Bakel",
+    region: "Tambacounda",
+    telephone: "77 001 06 06",
+    adresse: "Bakel, Département de Bakel",
+    config: { heure_debut: "07:00", heure_retard: "07:15", weekend_actif: false },
+  },
+  {
+    code: "GMV-TB-GOUDIRY",
+    nom: "Zone Goudiry",
+    region: "Tambacounda",
+    telephone: "77 001 07 07",
+    adresse: "Goudiry, Département de Bakel",
+    config: { heure_debut: "07:00", heure_retard: "07:15", weekend_actif: false },
+  },
+  {
+    code: "GMV-DG",
+    nom: "Direction Nationale",
+    region: "Dakar",
+    telephone: "77 001 00 00",
+    adresse: "Dakar, Siège ASERGMV",
+    config: { heure_debut: "08:00", heure_retard: "08:15", weekend_actif: false },
+  },
+];
+
+// ─── Jeunes Xëyu Ndaw Ñi par zone ──────────────────────────────────
+const jeunesParZone = {
+  "GMV-SL-RAO": [
+    { nom: "Sow", prenom: "Moussa", type_contrat: "CVD", poste: "Jeune Xëyu Ndaw Ñi" },
+    { nom: "Diop", prenom: "Amadou", type_contrat: "CVD", poste: "Jeune Xëyu Ndaw Ñi" },
+    { nom: "Ndiaye", prenom: "Fatou", type_contrat: "CVD", poste: "Jeune Xëyu Ndaw Ñi" },
+    { nom: "Fall", prenom: "Cheikh", type_contrat: "CVD", poste: "Jeune Xëyu Ndaw Ñi" },
+    { nom: "Ba", prenom: "Ibrahima", type_contrat: "CVD", poste: "Jeune Xëyu Ndaw Ñi" },
+    { nom: "Gueye", prenom: "Mariama", type_contrat: "CVD", poste: "Jeune Xëyu Ndaw Ñi" },
+    { nom: "Mbaye", prenom: "Ousmane", type_contrat: "CVD", poste: "Jeune Xëyu Ndaw Ñi" },
+    { nom: "Diallo", prenom: "Aissatou", type_contrat: "CVD", poste: "Jeune Xëyu Ndaw Ñi" },
+  ],
+  "GMV-SL-BANGO": [
+    { nom: "Thiam", prenom: "Modou", type_contrat: "CVD", poste: "Jeune Xëyu Ndaw Ñi" },
+    { nom: "Sy", prenom: "Bineta", type_contrat: "CVD", poste: "Jeune Xëyu Ndaw Ñi" },
+    { nom: "Faye", prenom: "Lamine", type_contrat: "CVD", poste: "Jeune Xëyu Ndaw Ñi" },
+    { nom: "Kane", prenom: "Aminata", type_contrat: "CVD", poste: "Jeune Xëyu Ndaw Ñi" },
+    { nom: "Diouf", prenom: "Serigne", type_contrat: "CVD", poste: "Jeune Xëyu Ndaw Ñi" },
+    { nom: "Niang", prenom: "Coumba", type_contrat: "CVD", poste: "Jeune Xëyu Ndaw Ñi" },
+  ],
+  "GMV-SL-PODOR": [
+    { nom: "Toure", prenom: "Seydou", type_contrat: "CVD", poste: "Jeune Xëyu Ndaw Ñi" },
+    { nom: "Traore", prenom: "Fatou", type_contrat: "CVD", poste: "Jeune Xëyu Ndaw Ñi" },
+    { nom: "Coulibaly", prenom: "Moussa", type_contrat: "CVD", poste: "Jeune Xëyu Ndaw Ñi" },
+    { nom: "Kone", prenom: "Aminata", type_contrat: "CVD", poste: "Jeune Xëyu Ndaw Ñi" },
+    { nom: "Diarra", prenom: "Ibrahima", type_contrat: "CVD", poste: "Jeune Xëyu Ndaw Ñi" },
+  ],
+  "GMV-LG-WIDOU": [
+    { nom: "Cisse", prenom: "Mamadou", type_contrat: "CVD", poste: "Jeune Xëyu Ndaw Ñi" },
+    { nom: "Diallo", prenom: "Fatoumata", type_contrat: "CVD", poste: "Jeune Xëyu Ndaw Ñi" },
+    { nom: "Sow", prenom: "Amadou", type_contrat: "CVD", poste: "Jeune Xëyu Ndaw Ñi" },
+    { nom: "Ba", prenom: "Awa", type_contrat: "CVD", poste: "Jeune Xëyu Ndaw Ñi" },
+    { nom: "Ndiaye", prenom: "Pape", type_contrat: "CVD", poste: "Jeune Xëyu Ndaw Ñi" },
+    { nom: "Fall", prenom: "Ndèye", type_contrat: "CVD", poste: "Jeune Xëyu Ndaw Ñi" },
+  ],
+  "GMV-LG-LOMPOUL": [
+    { nom: "Mendy", prenom: "Jean", type_contrat: "CVD", poste: "Jeune Xëyu Ndaw Ñi" },
+    { nom: "Badji", prenom: "Marie", type_contrat: "CVD", poste: "Jeune Xëyu Ndaw Ñi" },
+    { nom: "Diatta", prenom: "Serigne", type_contrat: "CVD", poste: "Jeune Xëyu Ndaw Ñi" },
+    { nom: "Senghor", prenom: "Fatou", type_contrat: "CVD", poste: "Jeune Xëyu Ndaw Ñi" },
+    { nom: "Niang", prenom: "Modou", type_contrat: "CVD", poste: "Jeune Xëyu Ndaw Ñi" },
+  ],
+  "GMV-TB-BAKEL": [
+    { nom: "Dramé", prenom: "Moussa", type_contrat: "CVD", poste: "Jeune Xëyu Ndaw Ñi" },
+    { nom: "Sakho", prenom: "Fatou", type_contrat: "CVD", poste: "Jeune Xëyu Ndaw Ñi" },
+    { nom: "Niane", prenom: "Amadou", type_contrat: "CVD", poste: "Jeune Xëyu Ndaw Ñi" },
+    { nom: "Keita", prenom: "Aissata", type_contrat: "CVD", poste: "Jeune Xëyu Ndaw Ñi" },
+    { nom: "Diallo", prenom: "Boubacar", type_contrat: "CVD", poste: "Jeune Xëyu Ndaw Ñi" },
+    { nom: "Sy", prenom: "Oumou", type_contrat: "CVD", poste: "Jeune Xëyu Ndaw Ñi" },
+  ],
+  "GMV-TB-GOUDIRY": [
+    { nom: "Balde", prenom: "Seydou", type_contrat: "CVD", poste: "Jeune Xëyu Ndaw Ñi" },
+    { nom: "Barry", prenom: "Fatoumata", type_contrat: "CVD", poste: "Jeune Xëyu Ndaw Ñi" },
+    { nom: "Diallo", prenom: "Mamadou", type_contrat: "CVD", poste: "Jeune Xëyu Ndaw Ñi" },
+    { nom: "Bah", prenom: "Aminata", type_contrat: "CVD", poste: "Jeune Xëyu Ndaw Ñi" },
+    { nom: "Sow", prenom: "Ibrahima", type_contrat: "CVD", poste: "Jeune Xëyu Ndaw Ñi" },
+  ],
+  "GMV-DG": [
+    { nom: "Ndiaye", prenom: "Mamadou", type_contrat: "CDI", poste: "Coordinateur National" },
+    { nom: "Diop", prenom: "Fatou", type_contrat: "CDI", poste: "Responsable Administratif" },
+    { nom: "Fall", prenom: "Serigne", type_contrat: "CDI", poste: "Responsable Technique" },
+    { nom: "Sow", prenom: "Aminata", type_contrat: "CDI", poste: "Comptable" },
+  ],
+};
+
+// ─── Comptes utilisateurs GMV ───────────────────────────────────────
+const usersGMV = [
+  { username: "directeur.gmv", password: "gmv2024!", role: "superadmin", nom_complet: "Directeur ASERGMV", agenceCode: "GMV-DG" },
+  { username: "inspecteur.sl", password: "gmv2024!", role: "directeur_regional", nom_complet: "Inspecteur Saint-Louis", sitesCodes: ["GMV-SL-RAO", "GMV-SL-BANGO", "GMV-SL-PODOR"] },
+  { username: "inspecteur.lg", password: "gmv2024!", role: "directeur_regional", nom_complet: "Inspecteur Louga", sitesCodes: ["GMV-LG-WIDOU", "GMV-LG-LOMPOUL"] },
+  { username: "inspecteur.tb", password: "gmv2024!", role: "directeur_regional", nom_complet: "Inspecteur Tambacounda", sitesCodes: ["GMV-TB-BAKEL", "GMV-TB-GOUDIRY"] },
+  { username: "chef.rao", password: "gmv2024!", role: "admin", nom_complet: "Chef Zone Rao", agenceCode: "GMV-SL-RAO" },
+  { username: "chef.bango", password: "gmv2024!", role: "admin", nom_complet: "Chef Zone Bango", agenceCode: "GMV-SL-BANGO" },
+  { username: "chef.podor", password: "gmv2024!", role: "admin", nom_complet: "Chef Pépinière Podor", agenceCode: "GMV-SL-PODOR" },
+  { username: "chef.widou", password: "gmv2024!", role: "admin", nom_complet: "Chef Zone Widou", agenceCode: "GMV-LG-WIDOU" },
+  { username: "chef.lompoul", password: "gmv2024!", role: "admin", nom_complet: "Chef Zone Lompoul", agenceCode: "GMV-LG-LOMPOUL" },
+  { username: "chef.bakel", password: "gmv2024!", role: "admin", nom_complet: "Chef Zone Bakel", agenceCode: "GMV-TB-BAKEL" },
+  { username: "chef.goudiry", password: "gmv2024!", role: "admin", nom_complet: "Chef Zone Goudiry", agenceCode: "GMV-TB-GOUDIRY" },
+  { username: "pointeur.rao", password: "gmv2024!", role: "pointeur", nom_complet: "Pointeur Rao", agenceCode: "GMV-SL-RAO" },
+  { username: "pointeur.bango", password: "gmv2024!", role: "pointeur", nom_complet: "Pointeur Bango", agenceCode: "GMV-SL-BANGO" },
+  { username: "pointeur.widou", password: "gmv2024!", role: "pointeur", nom_complet: "Pointeur Widou", agenceCode: "GMV-LG-WIDOU" },
+  { username: "pointeur.bakel", password: "gmv2024!", role: "pointeur", nom_complet: "Pointeur Bakel", agenceCode: "GMV-TB-BAKEL" },
+];
+
+// ─── Helpers ─────────────────────────────────────────────────────────
+function heure(h, m) {
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+}
+
+function rand(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+async function genererPointagesSemaine(agents, siteId, superviseurId) {
+  const pointages = [];
+  for (let offset = -6; offset <= 0; offset++) {
+    const d = new Date();
+    d.setDate(d.getDate() + offset);
+    const jourSemaine = d.getDay();
+    if (jourSemaine === 0 || jourSemaine === 6) continue; // skip weekend
+    const dateString = d.toISOString().slice(0, 10);
+    for (const agent of agents) {
+      const roll = Math.random();
+      let heureArrivee, heureDepart, statut;
+      if (roll < 0.8) {
+        // Present à l'heure (travail agricole commence tôt)
+        const m = rand(45, 59);
+        heureArrivee = m >= 55 ? heure(7, rand(0, 10)) : heure(6, m);
+        statut = "present";
+        heureDepart = heure(16, rand(0, 30));
+      } else if (roll < 0.92) {
+        // Retard
+        heureArrivee = heure(7, rand(16, 45));
+        statut = "retard";
+        heureDepart = heure(16, rand(0, 30));
+      } else {
+        // Absent
+        statut = "absent";
+        heureArrivee = null;
+        heureDepart = null;
+      }
+      let duree = null;
+      if (heureArrivee && heureDepart) {
+        const [h1, m1] = heureArrivee.split(":").map(Number);
+        const [h2, m2] = heureDepart.split(":").map(Number);
+        duree = h2 * 60 + m2 - (h1 * 60 + m1);
+      }
+      try {
+        await Pointage.findOneAndUpdate(
+          { agent_id: agent._id, site_id: siteId, date: dateString },
+          {
+            agent_id: agent._id,
+            site_id: siteId,
+            date: dateString,
+            heure_arrivee: heureArrivee,
+            heure_depart: heureDepart,
+            duree_minutes: duree,
+            statut,
+            methode: Math.random() > 0.5 ? "qr_code" : "manuel",
+            superviseur_id: superviseurId,
+            note: statut === "absent" && Math.random() > 0.5 ? "Absence justifiée" : "",
+            sync_status: "synced",
+            synced_at: new Date(),
+            instance_slug: "gmv",
+          },
+          { upsert: true, new: true },
+        );
+        pointages.push(`${dateString} - ${agent.nom} ${statut}`);
+      } catch (e) {
+        // Ignore duplicates
+      }
+    }
+  }
+  return pointages;
+}
+
+// ─── Seed GMV ─────────────────────────────────────────────────────────
+async function seedGMV() {
+  try {
+    await connectDB();
+    await new Promise((resolve, reject) => {
+      const conn = mongoose.connection;
+      if (conn.readyState === 1) return resolve();
+      conn.once("connected", resolve);
+      conn.once("error", reject);
+    });
+
+    console.log("Connexion DB établie...");
+    console.log("\n=== SEED GMV / ASERGMV - Grande Muraille Verte ===\n");
+
+    // 1. Zones (Sites)
+    const sitesMap = {};
+    for (const zone of zonesGMV) {
+      const existing = await Site.findOne({ code: zone.code });
+      const updateData = { ...zone, actif: true, instance_slug: "gmv" };
+      if (existing?.kiosque_token) {
+        delete updateData.kiosque_token;
+        delete updateData.kiosque_token_created_at;
+      } else {
+        updateData.kiosque_token = uuidv4();
+        updateData.kiosque_token_created_at = new Date();
+      }
+      const site = await Site.findOneAndUpdate({ code: zone.code }, updateData, {
+        upsert: true,
+        new: true,
+      });
+      sitesMap[zone.code] = site;
+    }
+    console.log(`${zonesGMV.length} zones GMV initialisées`);
+
+    // 2. Superadmin (Direction ASERGMV)
+    let superadmin = await User.findOne({ username: "directeur.gmv" });
+    if (!superadmin) {
+      superadmin = new User({
+        username: "directeur.gmv",
+        password: "gmv2024!",
+        role: "superadmin",
+        nom_complet: "Directeur ASERGMV",
+        actif: true,
+        instance_slug: "gmv",
+      });
+      await superadmin.save();
+      console.log("Directeur ASERGMV créé");
+    }
+
+    // 3. Inspecteurs régionaux
+    for (const ud of usersGMV.filter((u) => u.role === "directeur_regional")) {
+      const existing = await User.findOne({ username: ud.username });
+      if (!existing) {
+        const sitesIds = ud.sitesCodes.map((code) => sitesMap[code]?._id).filter(Boolean);
+        const user = new User({
+          username: ud.username,
+          password: ud.password,
+          role: "directeur_regional",
+          nom_complet: ud.nom_complet,
+          sites_ids: sitesIds,
+          actif: true,
+          instance_slug: "gmv",
+        });
+        await user.save();
+        console.log(`Inspecteur créé: ${ud.username}`);
+      }
+    }
+
+    // 4. Chefs de zone et pointeurs
+    for (const ud of usersGMV.filter((u) => u.role === "admin" || u.role === "pointeur")) {
+      const site = sitesMap[ud.agenceCode];
+      if (!site) continue;
+      const existing = await User.findOne({ username: ud.username });
+      if (!existing) {
+        const user = new User({
+          username: ud.username,
+          password: ud.password,
+          role: ud.role,
+          nom_complet: ud.nom_complet,
+          site_id: site._id,
+          actif: true,
+          instance_slug: "gmv",
+        });
+        await user.save();
+        console.log(`${ud.role === "admin" ? "Chef zone" : "Pointeur"} créé: ${ud.username}`);
+      }
+    }
+
+    // 5. Jeunes Xëyu Ndaw Ñi + pointages
+    let totalJeunes = 0;
+    let totalPointages = 0;
+    for (const [zoneCode, jeunesData] of Object.entries(jeunesParZone)) {
+      const site = sitesMap[zoneCode];
+      if (!site) continue;
+      const jeunesInseres = [];
+      for (const jd of jeunesData) {
+        const existing = await Agent.findOne({ nom: jd.nom, prenom: jd.prenom, site_id: site._id });
+        if (!existing) {
+          const agent = new Agent({
+            nom: jd.nom,
+            prenom: jd.prenom,
+            type_contrat: jd.type_contrat,
+            poste: jd.poste,
+            site_id: site._id,
+            actif: true,
+            instance_slug: "gmv",
+          });
+          await agent.save();
+          jeunesInseres.push(agent);
+          totalJeunes++;
+        } else {
+          jeunesInseres.push(existing);
+        }
+      }
+
+      // Pointages sur 7 jours
+      const pointages = await genererPointagesSemaine(jeunesInseres, site._id, superadmin._id);
+      totalPointages += pointages.length;
+      console.log(`${zoneCode}: ${jeunesInseres.length} jeunes, ${pointages.length} pointages`);
+    }
+
+    console.log("\n=== SEED GMV TERMINÉ ===");
+    console.log(`Zones                : ${zonesGMV.length}`);
+    console.log(`Jeunes Xëyu Ndaw Ñi  : ${totalJeunes} nouveaux`);
+    console.log(`Pointages            : ${totalPointages} sur 7 jours`);
+    console.log("\n=== COMPTES DE CONNEXION GMV ===");
+    console.log("Directeur ASERGMV    : directeur.gmv / gmv2024!");
+    console.log("Inspecteur St-Louis  : inspecteur.sl / gmv2024!");
+    console.log("Inspecteur Louga     : inspecteur.lg / gmv2024!");
+    console.log("Inspecteur Tamba.    : inspecteur.tb / gmv2024!");
+    console.log("Chef Zone Rao        : chef.rao / gmv2024!");
+    console.log("Pointeur Rao         : pointeur.rao / gmv2024!");
+    console.log("");
+  } catch (err) {
+    console.error("Erreur seed GMV:", err);
+  } finally {
+    await mongoose.disconnect();
+    process.exit(0);
+  }
+}
+
+seedGMV();
