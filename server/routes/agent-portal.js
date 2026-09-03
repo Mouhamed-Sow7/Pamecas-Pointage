@@ -434,8 +434,6 @@ router.post("/conges", authenticateAgent, async (req, res) => {
   }
 });
 
-<<<<<<< HEAD
-=======
 // POST /logout — Libère la session côté serveur (session_token → null).
 // Indispensable après toute déconnexion volontaire (PIN, bouton "déconnexion"),
 // sinon le champ session_token reste actif en base et bloque toute
@@ -453,7 +451,6 @@ router.post("/logout", authenticateAgent, async (req, res) => {
   }
 });
 
->>>>>>> 9d39ba4421735024d54a4426359d6f12dd1c5698
 // POST /demande-deconnexion — Agent soumet une demande (sans être connecté)
 // Route publique (pas de middleware auth) — identifié par matricule
 router.post("/demande-deconnexion", async (req, res) => {

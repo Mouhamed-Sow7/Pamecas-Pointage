@@ -200,12 +200,6 @@ router.delete(
   },
 );
 
-<<<<<<< HEAD
-// PATCH /:id/coordonnees — Mise à jour coordonnées GPS du site (kiosque)
-router.patch("/:id/coordonnees", authenticate, async (req, res) => {
-  try {
-    const { latitude, longitude } = req.body;
-=======
 // PUT/PATCH /:id/coordonnees — Définir (ou retirer) la position GPS du site (geofencing kiosque)
 // PUT = confirmé via le modal admin (sites.js) ; PATCH = auto-set legacy au 1er lancement kiosk (kiosque.js)
 const setCoordonneesHandler = async (req, res) => {
@@ -222,7 +216,6 @@ const setCoordonneesHandler = async (req, res) => {
       return res.json({ message: "Geofencing retiré — ce site n'a plus de zone de pointage restreinte.", site });
     }
 
->>>>>>> 9d39ba4421735024d54a4426359d6f12dd1c5698
     if (!latitude || !longitude) {
       return res.status(400).json({ message: "latitude et longitude requis" });
     }
@@ -236,13 +229,9 @@ const setCoordonneesHandler = async (req, res) => {
   } catch (err) {
     res.status(500).json({ message: "Erreur serveur" });
   }
-<<<<<<< HEAD
-});
-=======
 };
 router.put("/:id/coordonnees", authenticate, setCoordonneesHandler);
 router.patch("/:id/coordonnees", authenticate, setCoordonneesHandler);
->>>>>>> 9d39ba4421735024d54a4426359d6f12dd1c5698
 
 // ── Helper PIN rotation ────────────────────────────────────────────
 function genererPin() {
