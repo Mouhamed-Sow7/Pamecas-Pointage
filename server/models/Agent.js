@@ -37,7 +37,7 @@ const AgentSchema = new Schema(
     },
     type_contrat: {
       type: String,
-      enum: ["CDI", "CDD", "stage", "prestataire"],
+      enum: ["CDI", "CDD", "CVD", "stage", "prestataire"],
       required: true,
       index: true,
     },

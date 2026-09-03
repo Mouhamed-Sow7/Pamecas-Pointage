@@ -342,3 +342,7 @@ node server/seed.js
 ---
 
 *Document généré le 16 juin 2026 — Session v6 SmartPointage*
+
+---
+
+> **📌 Voir aussi** [`DEMO_SCENARIO.md`](./DEMO_SCENARIO.md) — scénario de démonstration structuré (20 min) couvrant client existant + prospect, avec données réalistes générées via `npm run seed:demo`.

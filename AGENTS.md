@@ -12,6 +12,7 @@ cp .env.example .env  # Edit MONGODB_URI, JWT_SECRET, etc.
 npm run seed          # Seed PAMECAS instance
 npm run seed:cms      # Seed CMS instance
 npm run seed:gmv      # Seed GMV instance
+npm run seed:demo     # Seed données démo (pointages + congés)
 npm run dev           # Start with nodemon on :3000
 ```
 
@@ -73,6 +74,7 @@ The `instance_slug` field (default: `"pamecas"`) scopes data per tenant. Every m
 | `npm run seed` | Seed PAMECAS (sites, users, agents, pointages) |
 | `npm run seed:cms` | Seed CMS tenant |
 | `npm run seed:gmv` | Seed GMV tenant |
+| `npm run seed:demo` | Seed données démo (pointages 30j + congés réalistes) |
 | `npm run migrate` | Run `server/scripts/migrate_matricules.js` |
 | `npm run reset:passwords` | Reset all demo passwords to defaults |
 | `npm test` | Jest (setup exists but no tests written yet) |

@@ -32,7 +32,11 @@ if (CONFIRMER_PURGE) {
   print("  pointages : " + db.pointages.countDocuments());
   print("  conges    : " + db.conges.countDocuments());
   print("  users     : " + db.users.countDocuments());
-  print("\n➡️  Prochaine étape : node server/seed.js");
+  print("  1. node server/seed.js");
+  print("  2. node server/seed-cms.js");
+  print("  3. node server/seed-gmv.js");
+  print("  4. node server/seed-demo.js");
+  print("\n➡️  Ou : npm run seed && npm run seed:cms && npm run seed:gmv && npm run seed:demo");
 } else {
   print("\n⚠️ Purge NON exécutée — CONFIRMER_PURGE est à false.");
 }
