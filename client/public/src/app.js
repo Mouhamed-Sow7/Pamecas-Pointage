@@ -1,4 +1,5 @@
 import { renderLogin } from "./pages/login.js";
+import { renderRegister } from "./pages/register.js";
 import { renderDashboard } from "./pages/dashboard.js";
 import { renderPointage } from "./pages/pointage.js";
 import { renderAgents } from "./pages/agents.js";
@@ -119,6 +120,13 @@ function mountLayout(route, user, queryParams = {}) {
     return;
   }
 
+  if (route === "/register") {
+    app.className = "";
+    app.innerHTML = "";
+    renderRegister(app);
+    return;
+  }
+
   // ── Construire le layout UNE SEULE FOIS — évite le glitch de rechargement ──
   const layoutExists = app.classList.contains("layout-with-sidebar") &&
     document.getElementById("main-content") &&
@@ -207,6 +215,11 @@ async function router() {
 
   // Kiosque — pas besoin d'authentification
   if (route.startsWith("/kiosque")) {
+    mountLayout(route, null);
+    return;
+  }
+
+  if (route === "/register") {
     mountLayout(route, null);
     return;
   }

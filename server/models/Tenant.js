@@ -19,6 +19,13 @@ const tenantSchema = new mongoose.Schema({
     required: true
   },
   
+  // Modele d'organisation — determine les modules/UI actives pour ce tenant
+  mode: {
+    type: String,
+    enum: ['agence', 'terrain', 'hybride'],
+    default: 'agence'
+  },
+
   // Plan et statut
   plan: {
     type: String,

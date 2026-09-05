@@ -254,6 +254,12 @@ export function renderLogin(root) {
                 <span id="btn-text"><i class="fa-solid fa-right-to-bracket"></i> Se connecter</span>
                 <span id="btn-loader" style="display:none;"><i class="fa-solid fa-spinner fa-spin"></i> Connexion...</span>
               </button>
+
+              <div class="sp-register-link" style="text-align:center;margin-top:16px;font-size:0.85rem;">
+                <a href="#/register" style="color:rgba(255,255,255,0.55);text-decoration:none;">
+                  <i class="fa-solid fa-user-plus"></i> Creer un compte entreprise
+                </a>
+              </div>
             </div>
           </div>
 
