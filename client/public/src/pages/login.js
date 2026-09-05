@@ -48,7 +48,7 @@ const DEFAULT_BRANDING = {
 
 // ─── Extraire le slug depuis le username ──────────────────────────
 // "admin.dg@cms" → "cms"   |   "admin.cms" → "cms"   |   "admin.dg" → "pamecas"
-const KNOWN_SLUGS = ['cms', 'pamecas', 'gds']; // étendre si besoin
+const KNOWN_SLUGS = ['cms', 'pamecas', 'gmv']; // étendre si besoin
 function extractSlug(username) {
   const atMatch = username.match(/@([a-zA-Z0-9_-]+)$/);
   if (atMatch) return atMatch[1].toLowerCase();

@@ -19,6 +19,7 @@ const Site = require("./models/Site");
 const User = require("./models/User");
 const Agent = require("./models/Agent");
 const Pointage = require("./models/Pointage");
+const Tenant = require("./models/Tenant");
 
 // ─── Zones GMV ─────────────────────────────────────────────────────
 const zonesGMV = [
@@ -257,6 +258,42 @@ async function seedGMV() {
 
     console.log("Connexion DB établie...");
     console.log("\n=== SEED GMV / ASERGMV - Grande Muraille Verte ===\n");
+
+    // 0. Upsert du Tenant GMV — sans ce document, /api/auth/branding/gmv
+    // retombe silencieusement sur le branding PAMECAS par défaut (bug critique
+    // découvert avant l'entretien client : le tenant GMV n'existait pas du tout).
+    // Couleur de marque tirée du logo ASERGMV (vert forêt profond, distinct du
+    // vert PAMECAS #2e7d32 pour rester lisible en démo live).
+    let tenantGMV = await Tenant.findOne({ slug: "gmv" });
+    if (!tenantGMV) {
+      tenantGMV = new Tenant({
+        nom: "ASERGMV — Agence Sénégalaise de la Reforestation et de la Grande Muraille Verte",
+        slug: "gmv",
+        url: "https://smartpointage.digitalesf.com",
+        plan: "enterprise",
+        statut: "actif",
+        contact: {
+          nom: "Direction ASERGMV",
+          email: "contact@asergmv.sn",
+          telephone: "77 001 00 00",
+        },
+        configuration: {
+          couleur_theme: "#14532D",
+          instance_name: "ASERGMV",
+        },
+        tarif_mensuel: 180000,
+        nb_sites: zonesGMV.length,
+      });
+      await tenantGMV.save();
+      console.log("✅ Tenant GMV créé");
+    } else {
+      tenantGMV.configuration.couleur_theme = "#14532D";
+      tenantGMV.configuration.instance_name = "ASERGMV";
+      tenantGMV.statut = "actif";
+      tenantGMV.nb_sites = zonesGMV.length;
+      await tenantGMV.save();
+      console.log("✅ Tenant GMV mis à jour");
+    }
 
     // 1. Zones (Sites)
     const sitesMap = {};
