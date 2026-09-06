@@ -264,10 +264,12 @@ export function renderLogin(root) {
           </div>
 
           <div class="sp-footer-note">
-            <a href="/" style="color:rgba(255,255,255,0.35);text-decoration:none;font-size:0.75rem;margin-right:12px;">
-              <i class="fa-solid fa-arrow-left" style="font-size:0.65rem;"></i> Site web
-            </a>
-            SmartPointage &copy; 2026 &mdash; Tous droits reserves
+            <div class="sp-footer-links">
+              <a href="/"><i class="fa-solid fa-arrow-left"></i> Site web</a>
+              <span class="sp-footer-sep">&middot;</span>
+              <a href="#/register"><i class="fa-solid fa-user-plus"></i> Creer un compte</a>
+            </div>
+            <div class="sp-footer-copy">SmartPointage &copy; 2026 &mdash; Tous droits reserves</div>
           </div>
         </div>
       </div>
@@ -529,6 +531,24 @@ export function renderLogin(root) {
         font-size: 0.72rem;
         color: #bbb;
         text-align: center;
+      }
+      .sp-footer-links {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        margin-bottom: 6px;
+        font-size: 0.75rem;
+      }
+      .sp-footer-links a {
+        color: rgba(255,255,255,0.4);
+        text-decoration: none;
+      }
+      .sp-footer-links a:hover {
+        color: rgba(255,255,255,0.7);
+      }
+      .sp-footer-sep {
+        color: rgba(255,255,255,0.2);
       }
 
       /* MOBILE */
