@@ -4,9 +4,35 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const Site = require('../models/Site');
 const Tenant = require('../models/Tenant');
+const TerrainGroup = require('../models/TerrainGroup');
 const { authenticate } = require('../middleware/auth');
 
 const router = express.Router();
+
+// ─── Helpers inscription ───────────────────────────────────────────
+function slugify(str) {
+  return (str || '')
+    .toString()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // accents
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '')
+    .slice(0, 40) || 'tenant';
+}
+
+async function generateUniqueSlug(baseName) {
+  const base = slugify(baseName);
+  let slug = base;
+  let i = 1;
+  // Evite les collisions avec un tenant existant ou avec 'pamecas' (reserve)
+  while (slug === 'pamecas' || (await Tenant.findOne({ slug }))) {
+    i += 1;
+    slug = `${base}-${i}`;
+  }
+  return slug;
+}
 
 // ─── Config branding par défaut (PAMECAS) ────────────────────────
 const DEFAULT_BRANDING = {
@@ -239,6 +265,133 @@ router.post('/godmode', async (req, res) => {
 
   } catch (err) {
     return res.status(500).json({ message: 'Erreur.' });
+  }
+});
+
+// ─── Liste des regions (pour le formulaire d'inscription) ─────────
+router.get('/regions', (req, res) => {
+  return res.json({ regions: Site.REGIONS_SENEGAL });
+});
+
+// ─── Inscription d'un nouveau tenant ───────────────────────────────
+// Cree le Tenant, ses sites et/ou groupes terrain selon le mode
+// d'organisation choisi, et le compte administrateur initial.
+router.post('/register', async (req, res) => {
+  try {
+    const { entreprise, mode, sites, groupes, admin } = req.body || {};
+
+    // ─ Validation de base ─
+    if (!entreprise || !entreprise.nom || !entreprise.email) {
+      return res.status(400).json({ message: "Le nom et l'email de l'entreprise sont requis." });
+    }
+    if (!['agence', 'terrain', 'hybride'].includes(mode)) {
+      return res.status(400).json({ message: 'Mode d\'organisation invalide.' });
+    }
+    if (!admin || !admin.username || !admin.password) {
+      return res.status(400).json({ message: "Un identifiant et un mot de passe administrateur sont requis." });
+    }
+    if (admin.password.length < 6) {
+      return res.status(400).json({ message: 'Le mot de passe doit contenir au moins 6 caracteres.' });
+    }
+
+    const needsSites = mode === 'agence' || mode === 'hybride';
+    const needsGroupes = mode === 'terrain' || mode === 'hybride';
+
+    if (needsSites && (!Array.isArray(sites) || sites.length === 0)) {
+      return res.status(400).json({ message: 'Au moins une agence/un site est requis pour ce mode.' });
+    }
+    if (needsGroupes && (!Array.isArray(groupes) || groupes.length === 0)) {
+      return res.status(400).json({ message: 'Au moins un groupe terrain est requis pour ce mode.' });
+    }
+
+    const existingUser = await User.findOne({ username: admin.username.toLowerCase() });
+    if (existingUser) {
+      return res.status(409).json({ message: 'Cet identifiant administrateur est deja utilise.' });
+    }
+
+    // ─ Tenant ─
+    const slug = await generateUniqueSlug(entreprise.nom);
+    const now = new Date();
+    const trialEnd = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
+
+    const tenant = await Tenant.create({
+      nom: entreprise.nom,
+      slug,
+      url: `${slug}.smartpointage.digitalesf.com`,
+      mode,
+      statut: 'trial',
+      date_fin_trial: trialEnd,
+      contact: {
+        nom: entreprise.contact_nom || '',
+        email: entreprise.email,
+        telephone: entreprise.telephone || ''
+      },
+      nb_sites: needsSites ? sites.length : 0
+    });
+
+    // ─ Sites (mode agence / hybride) ─
+    const createdSites = [];
+    if (needsSites) {
+      let idx = 0;
+      for (const s of sites) {
+        idx += 1;
+        if (!s || !s.nom || !s.region) {
+          continue;
+        }
+        const site = await Site.create({
+          instance_slug: slug,
+          code: `${slug.toUpperCase()}-S${idx}`,
+          nom: s.nom,
+          region: s.region
+        });
+        createdSites.push(site);
+      }
+      if (createdSites.length === 0) {
+        return res.status(400).json({ message: 'Chaque site doit avoir un nom et une region.' });
+      }
+    }
+
+    // ─ Groupes terrain (mode terrain / hybride) ─
+    const createdGroupes = [];
+    if (needsGroupes) {
+      let idx = 0;
+      for (const g of groupes) {
+        idx += 1;
+        if (!g || !g.nom) {
+          continue;
+        }
+        const groupe = await TerrainGroup.create({
+          instance_slug: slug,
+          code: `${slug.toUpperCase()}-G${idx}`,
+          nom: g.nom,
+          site_id: mode === 'hybride' && createdSites[0] ? createdSites[0]._id : null
+        });
+        createdGroupes.push(groupe);
+      }
+      if (createdGroupes.length === 0) {
+        return res.status(400).json({ message: 'Chaque groupe terrain doit avoir un nom.' });
+      }
+    }
+
+    // ─ Compte administrateur ─
+    const adminUser = await User.create({
+      username: admin.username.toLowerCase(),
+      password: admin.password,
+      role: 'admin',
+      nom_complet: admin.nom_complet || '',
+      site_id: createdSites[0] ? createdSites[0]._id : null,
+      sites_ids: createdSites.map((s) => s._id),
+      instance_slug: slug
+    });
+
+    return res.status(201).json({
+      message: 'Compte cree avec succes.',
+      tenant: { slug: tenant.slug, nom: tenant.nom, mode: tenant.mode },
+      admin: { username: adminUser.username }
+    });
+  } catch (err) {
+    console.error('Erreur inscription:', err);
+    return res.status(500).json({ message: "Une erreur est survenue lors de l'inscription." });
   }
 });
 
