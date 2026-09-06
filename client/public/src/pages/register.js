@@ -79,7 +79,7 @@ function showError(root, msg) {
     return;
   }
   box.textContent = msg;
-  box.style.display = 'block';
+  box.style.display = 'flex';
 }
 
 function validateStep() {
@@ -87,12 +87,12 @@ function validateStep() {
     if (!state.entreprise.nom) return "Le nom de l'entreprise est requis.";
     if (!state.entreprise.email || !state.entreprise.email.includes('@')) return 'Un email valide est requis.';
   } else if (state.step === 2) {
-    if (!state.mode) return "Choisissez comment votre organisation fonctionne.";
+    if (!state.mode) return 'Choisissez comment votre organisation fonctionne.';
   } else if (state.step === 3) {
-    if ((state.mode === 'agence' || state.mode === 'hybride')) {
+    if (state.mode === 'agence' || state.mode === 'hybride') {
       if (state.sites.some((s) => !s.nom || !s.region)) return 'Chaque agence doit avoir un nom et une region.';
     }
-    if ((state.mode === 'terrain' || state.mode === 'hybride')) {
+    if (state.mode === 'terrain' || state.mode === 'hybride') {
       if (state.groupes.some((g) => !g.nom)) return 'Chaque groupe terrain doit avoir un nom.';
     }
   } else if (state.step === 4) {
@@ -274,11 +274,11 @@ function renderStep4() {
     </div>
     <div class="sp-field">
       <label class="sp-label" for="reg-password"><i class="fa-solid fa-lock"></i> Mot de passe</label>
-      <input id="reg-password" class="sp-input" type="password" placeholder="••••••••" value="${state.admin.password}" required />
+      <input id="reg-password" class="sp-input" type="password" placeholder="********" value="${state.admin.password}" required />
     </div>
     <div class="sp-field">
       <label class="sp-label" for="reg-password2"><i class="fa-solid fa-lock"></i> Confirmer le mot de passe</label>
-      <input id="reg-password2" class="sp-input" type="password" placeholder="••••••••" value="${state.admin.password2}" required />
+      <input id="reg-password2" class="sp-input" type="password" placeholder="********" value="${state.admin.password2}" required />
     </div>
   `;
 }
@@ -289,7 +289,7 @@ function renderSuccess() {
       <i class="fa-solid fa-circle-check"></i>
       <h3>Compte cree avec succes</h3>
       <p>Votre espace SmartPointage est pret. Connectez-vous avec l'identifiant <strong>${state.createdUsername}</strong>.</p>
-      <a href="#/login" class="sp-btn-login" style="display:inline-flex;text-decoration:none;">
+      <a href="#/login" class="sp-btn-login" style="display:flex;text-decoration:none;">
         <i class="fa-solid fa-right-to-bracket"></i> Aller a la connexion
       </a>
     </div>
@@ -300,96 +300,297 @@ async function renderStep(root) {
   const isFinal = state.step === 5;
 
   root.innerHTML = `
-    <div class="sp-login-page reg-page">
+    <div class="sp-login-page">
+
+      <!-- Fond avec motif geometrique -->
       <div class="sp-bg">
         <div class="sp-bg-circle sp-bg-circle-1"></div>
         <div class="sp-bg-circle sp-bg-circle-2"></div>
+        <div class="sp-bg-circle sp-bg-circle-3"></div>
       </div>
-      <div class="reg-wrap">
-        <div class="reg-form-box">
-          ${
-            isFinal
-              ? ''
-              : `
-            <div class="sp-form-header">
-              <h2 class="sp-form-title">Creer votre espace SmartPointage</h2>
-              <p class="sp-form-subtitle">Quelques informations pour configurer votre instance</p>
-            </div>
-            ${stepIndicator()}
-          `
-          }
 
-          <div id="reg-step-content"></div>
+      <div class="sp-login-wrap">
 
-          <div id="reg-error" class="sp-error" style="display:none;"></div>
+        <!-- Panneau gauche branding (desktop) -->
+        <div class="sp-brand-panel">
+          <div class="sp-brand-logo">
+            <div class="sp-brand-mark">SP</div>
+          </div>
+          <h1 class="sp-brand-name">SmartPointage</h1>
+          <p class="sp-brand-tagline">Systeme de pointage digital<br>pour agences et entreprises</p>
+          <div class="sp-brand-features">
+            <div class="sp-feature"><i class="fa-solid fa-fingerprint"></i> Pointage QR Code</div>
+            <div class="sp-feature"><i class="fa-solid fa-wifi"></i> Offline &amp; Online</div>
+            <div class="sp-feature"><i class="fa-solid fa-chart-bar"></i> Rapports Excel</div>
+            <div class="sp-feature"><i class="fa-solid fa-building"></i> Multi-agences</div>
+          </div>
+          <div class="sp-brand-client">
+            <div class="sp-client-badge"><i class="fa-solid fa-sparkles" style="margin-right:6px;"></i> Nouvel espace client</div>
+          </div>
+        </div>
 
-          ${
-            isFinal
-              ? renderSuccess()
-              : `
-            <div class="reg-actions">
-              ${state.step > 1 ? '<button type="button" id="reg-btn-prev" class="reg-btn-secondary"><i class="fa-solid fa-arrow-left"></i> Retour</button>' : '<span></span>'}
-              <button type="button" id="reg-btn-submit" class="sp-btn-login">
-                <span id="reg-btn-text">${state.step === 4 ? 'Creer mon compte' : 'Continuer'} <i class="fa-solid fa-arrow-right"></i></span>
-                <span id="reg-btn-loader" style="display:none;"><i class="fa-solid fa-spinner fa-spin"></i> Creation...</span>
-              </button>
+        <!-- Panneau droit formulaire -->
+        <div class="sp-form-panel">
+          <!-- Logo mobile uniquement -->
+          <div class="sp-mobile-logo">
+            <div class="sp-brand-mark sp-brand-mark-sm">SP</div>
+            <div>
+              <div class="sp-mobile-title">SmartPointage</div>
+              <div class="sp-mobile-sub">Nouvel espace client</div>
             </div>
-            <div class="sp-footer-note">
-              Deja un compte ? <a href="#/login" style="color:#94a3b8;">Se connecter</a>
+          </div>
+
+          <div class="sp-form-box">
+            ${
+              isFinal
+                ? ''
+                : `
+              <div class="sp-form-header">
+                <h2 class="sp-form-title">Creer votre espace</h2>
+                <p class="sp-form-subtitle">Quelques informations pour configurer votre instance</p>
+              </div>
+              ${stepIndicator()}
+            `
+            }
+
+            <div id="reg-step-content"></div>
+
+            <div id="reg-error" class="sp-error" style="display:none;"></div>
+
+            ${
+              isFinal
+                ? renderSuccess()
+                : `
+              <div class="reg-actions">
+                ${state.step > 1 ? '<button type="button" id="reg-btn-prev" class="reg-btn-secondary"><i class="fa-solid fa-arrow-left"></i> Retour</button>' : '<span></span>'}
+                <button type="button" id="reg-btn-submit" class="sp-btn-login">
+                  <span id="reg-btn-text">${state.step === 4 ? 'Creer mon compte' : 'Continuer'} <i class="fa-solid fa-arrow-right"></i></span>
+                  <span id="reg-btn-loader" style="display:none;"><i class="fa-solid fa-spinner fa-spin"></i> Creation...</span>
+                </button>
+              </div>
+            `
+            }
+          </div>
+
+          <div class="sp-footer-note">
+            <div class="sp-footer-links">
+              <a href="/"><i class="fa-solid fa-arrow-left"></i> Site web</a>
+              <span class="sp-footer-sep">&middot;</span>
+              <a href="#/login"><i class="fa-solid fa-right-to-bracket"></i> Deja un compte ? Se connecter</a>
             </div>
-          `
-          }
+            <div class="sp-footer-copy">SmartPointage &copy; 2026 &mdash; Tous droits reserves</div>
+          </div>
         </div>
       </div>
     </div>
 
     <style>
-      .reg-page { background: #0f172a; }
-      .reg-wrap { width: 100%; max-width: 560px; padding: 24px; z-index: 1; }
-      .reg-form-box { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 32px; }
-      .sp-form-title { color: #fff; margin: 0 0 4px; font-size: 1.4rem; }
-      .sp-form-subtitle { color: #94a3b8; margin: 0 0 24px; font-size: 0.9rem; }
-      .sp-label { display:flex; align-items:center; gap:8px; color:#cbd5e1; font-size:0.85rem; margin-bottom:6px; }
+      /* -- Chrome partage avec login.js (memes classes sp-*) ----- */
+      .sp-login-page {
+        min-height: 100vh;
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #0f2417;
+        position: relative;
+        overflow: hidden;
+        font-family: 'Inter', sans-serif;
+      }
+      .sp-bg { position: absolute; inset: 0; pointer-events: none; }
+      .sp-bg-circle { position: absolute; border-radius: 50%; opacity: 0.07; background: #4CAF50; }
+      .sp-bg-circle-1 { width: 600px; height: 600px; top: -200px; left: -200px; }
+      .sp-bg-circle-2 { width: 400px; height: 400px; bottom: -100px; right: -100px; opacity: 0.05; }
+      .sp-bg-circle-3 { width: 200px; height: 200px; top: 40%; left: 40%; opacity: 0.04; }
+
+      .sp-login-wrap {
+        display: flex;
+        width: 100%;
+        max-width: 900px;
+        min-height: 560px;
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 24px 80px rgba(0,0,0,0.5);
+        position: relative;
+        z-index: 1;
+        margin: 16px;
+      }
+
+      .sp-brand-panel {
+        flex: 1;
+        background: linear-gradient(160deg, #1b5e20 0%, #2e7d32 50%, #388e3c 100%);
+        padding: 48px 40px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        position: relative;
+        overflow: hidden;
+      }
+      .sp-brand-panel::before {
+        content: '';
+        position: absolute;
+        width: 300px; height: 300px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.04);
+        top: -80px; right: -80px;
+      }
+      .sp-brand-panel::after {
+        content: '';
+        position: absolute;
+        width: 200px; height: 200px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.03);
+        bottom: -60px; left: -60px;
+      }
+      .sp-brand-logo { margin-bottom: 20px; }
+      .sp-brand-mark {
+        width: 56px; height: 56px;
+        background: white;
+        color: #2e7d32;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 800;
+        font-size: 1.1rem;
+        letter-spacing: -0.5px;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+      }
+      .sp-brand-name { font-size: 1.8rem; font-weight: 800; color: white; margin-bottom: 8px; letter-spacing: -0.5px; }
+      .sp-brand-tagline { font-size: 0.88rem; color: rgba(255,255,255,0.7); line-height: 1.6; margin-bottom: 36px; }
+      .sp-brand-features { display: flex; flex-direction: column; gap: 12px; margin-bottom: 40px; }
+      .sp-feature { display: flex; align-items: center; gap: 10px; color: rgba(255,255,255,0.85); font-size: 0.85rem; font-weight: 500; }
+      .sp-feature i { width: 20px; color: #a5d6a7; font-size: 0.9rem; }
+      .sp-brand-client { margin-top: auto; }
+      .sp-client-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 6px 14px;
+        background: rgba(255,255,255,0.12);
+        border: 1px solid rgba(255,255,255,0.2);
+        border-radius: 20px;
+        color: rgba(255,255,255,0.9);
+        font-size: 0.78rem;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+      }
+
+      .sp-form-panel {
+        flex: 0 0 420px;
+        background: #ffffff;
+        padding: 40px 40px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        max-height: 90vh;
+        overflow-y: auto;
+      }
+      .sp-mobile-logo { display: none; align-items: center; gap: 12px; margin-bottom: 32px; }
+      .sp-brand-mark-sm {
+        width: 44px; height: 44px; font-size: 0.9rem; border-radius: 10px;
+        background: #2e7d32; color: white; display: flex; align-items: center;
+        justify-content: center; font-weight: 800;
+      }
+      .sp-mobile-title { font-size: 1rem; font-weight: 700; color: #1f2933; }
+      .sp-mobile-sub { font-size: 0.75rem; color: #888; }
+
+      .sp-form-header { margin-bottom: 22px; }
+      .sp-form-title { font-size: 1.4rem; font-weight: 700; color: #1f2933; margin-bottom: 6px; }
+      .sp-form-subtitle { font-size: 0.84rem; color: #888; }
+
       .sp-field { margin-bottom: 16px; }
-      .sp-input { width:100%; box-sizing:border-box; padding:11px 14px; border-radius:10px; border:1px solid rgba(255,255,255,0.12); background:rgba(255,255,255,0.05); color:#fff; font-size:0.95rem; }
-      .sp-input::placeholder { color:#64748b; }
-      .sp-error { background: rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.3); color:#fca5a5; padding:10px 14px; border-radius:10px; font-size:0.85rem; margin-bottom:16px; }
-      .sp-btn-login { width:100%; padding:12px; border:none; border-radius:10px; background:linear-gradient(135deg,#334155,#475569); color:#fff; font-size:0.95rem; font-weight:600; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; }
-      .sp-btn-login:disabled { opacity:0.6; cursor:default; }
-      .sp-footer-note { text-align:center; margin-top:16px; color:#64748b; font-size:0.8rem; }
+      .sp-label { display: block; font-size: 0.8rem; font-weight: 600; color: #555; margin-bottom: 6px; }
+      .sp-label i { color: #2e7d32; margin-right: 4px; }
+      .sp-input {
+        width: 100%;
+        padding: 11px 14px;
+        border: 1.5px solid #e0e0e0;
+        border-radius: 10px;
+        font-size: 0.92rem;
+        font-family: inherit;
+        background: #fafafa;
+        transition: border-color 0.2s, box-shadow 0.2s;
+        box-sizing: border-box;
+      }
+      .sp-input:focus { outline: none; border-color: #2e7d32; background: white; box-shadow: 0 0 0 3px rgba(46,125,50,0.1); }
 
-      .reg-steps { display:flex; justify-content:space-between; margin-bottom:28px; gap:4px; }
+      .sp-error {
+        background: #ffebee; border: 1px solid #ffcdd2; border-radius: 8px;
+        padding: 10px 12px; font-size: 0.82rem; color: #c62828; margin-bottom: 16px;
+        align-items: center; gap: 6px;
+      }
+
+      .sp-btn-login {
+        width: 100%;
+        padding: 13px;
+        background: linear-gradient(135deg, #2e7d32, #43a047);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        font-size: 0.95rem;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        transition: transform 0.15s, box-shadow 0.15s;
+        box-shadow: 0 4px 14px rgba(46,125,50,0.3);
+        font-family: inherit;
+      }
+      .sp-btn-login:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(46,125,50,0.4); }
+      .sp-btn-login:disabled { opacity: 0.7; cursor: not-allowed; transform: none; }
+
+      .sp-footer-note { margin-top: 20px; font-size: 0.72rem; color: #bbb; text-align: center; }
+      .sp-footer-links { display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 6px; font-size: 0.75rem; }
+      .sp-footer-links a { color: rgba(255,255,255,0.45); text-decoration: none; }
+      .sp-footer-links a:hover { color: rgba(255,255,255,0.75); }
+      .sp-footer-sep { color: rgba(255,255,255,0.2); }
+
+      @media (max-width: 680px) {
+        .sp-login-wrap { flex-direction: column; margin: 0; border-radius: 0; min-height: 100vh; max-width: 100%; }
+        .sp-brand-panel { display: none; }
+        .sp-form-panel { flex: 1; max-height: none; }
+        .sp-mobile-logo { display: flex; }
+      }
+
+      /* -- Specifique au wizard register -------------------------- */
+      .reg-steps { display:flex; justify-content:space-between; margin-bottom:24px; gap:4px; }
       .reg-step { display:flex; flex-direction:column; align-items:center; gap:6px; flex:1; }
-      .reg-step-dot { width:26px; height:26px; border-radius:50%; background:rgba(255,255,255,0.08); color:#94a3b8; display:flex; align-items:center; justify-content:center; font-size:0.75rem; }
-      .reg-step.active .reg-step-dot { background:#475569; color:#fff; }
-      .reg-step.done .reg-step-dot { background:#22c55e; color:#fff; }
-      .reg-step-label { font-size:0.65rem; color:#64748b; text-align:center; }
-      .reg-step.active .reg-step-label { color:#cbd5e1; }
+      .reg-step-dot { width:26px; height:26px; border-radius:50%; background:#f0f0f0; color:#999; display:flex; align-items:center; justify-content:center; font-size:0.75rem; font-weight:600; }
+      .reg-step.active .reg-step-dot { background:#2e7d32; color:#fff; }
+      .reg-step.done .reg-step-dot { background:#a5d6a7; color:#1b5e20; }
+      .reg-step-label { font-size:0.65rem; color:#aaa; text-align:center; }
+      .reg-step.active .reg-step-label { color:#2e7d32; font-weight:600; }
 
-      .reg-step2-intro { color:#cbd5e1; margin:0 0 16px; font-size:0.9rem; }
-      .reg-mode-grid { display:flex; flex-direction:column; gap:12px; margin-bottom:8px; }
-      .reg-mode-card { display:flex; flex-direction:column; align-items:flex-start; gap:6px; padding:16px; border-radius:12px; border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.03); color:#fff; cursor:pointer; text-align:left; }
-      .reg-mode-card i { font-size:1.2rem; color:#94a3b8; }
-      .reg-mode-card.selected { border-color:#475569; background:rgba(71,85,105,0.25); }
-      .reg-mode-card.selected i { color:#cbd5e1; }
-      .reg-mode-titre { font-weight:600; font-size:0.95rem; }
-      .reg-mode-desc { font-size:0.8rem; color:#94a3b8; }
+      .reg-step2-intro { color:#555; margin:0 0 14px; font-size:0.88rem; }
+      .reg-mode-grid { display:flex; flex-direction:column; gap:10px; margin-bottom:4px; }
+      .reg-mode-card { display:flex; flex-direction:column; align-items:flex-start; gap:4px; padding:14px; border-radius:10px; border:1.5px solid #e0e0e0; background:#fafafa; cursor:pointer; text-align:left; font-family:inherit; }
+      .reg-mode-card i { font-size:1.1rem; color:#888; margin-bottom:2px; }
+      .reg-mode-card.selected { border-color:#2e7d32; background:rgba(46,125,50,0.06); }
+      .reg-mode-card.selected i { color:#2e7d32; }
+      .reg-mode-titre { font-weight:700; font-size:0.9rem; color:#1f2933; }
+      .reg-mode-desc { font-size:0.78rem; color:#888; }
 
-      .reg-subsection { margin-bottom:20px; }
-      .reg-subsection-title { color:#cbd5e1; font-size:0.85rem; margin-bottom:10px; display:flex; align-items:center; gap:8px; }
+      .reg-subsection { margin-bottom:18px; }
+      .reg-subsection-title { color:#555; font-size:0.82rem; font-weight:600; margin-bottom:8px; display:flex; align-items:center; gap:8px; }
+      .reg-subsection-title i { color:#2e7d32; }
       .reg-row { display:flex; gap:8px; margin-bottom:8px; }
       .reg-row .sp-input { margin-bottom:0; }
-      .reg-row-remove { background:none; border:none; color:#94a3b8; cursor:pointer; font-size:0.9rem; padding:0 6px; }
-      .reg-row-add { background:none; border:1px dashed rgba(255,255,255,0.2); color:#94a3b8; border-radius:8px; padding:8px 12px; font-size:0.8rem; cursor:pointer; width:100%; }
+      .reg-row-remove { background:none; border:none; color:#bbb; cursor:pointer; font-size:0.9rem; padding:0 6px; }
+      .reg-row-remove:hover { color:#c62828; }
+      .reg-row-add { background:none; border:1.5px dashed #d0d0d0; color:#888; border-radius:8px; padding:8px 12px; font-size:0.8rem; cursor:pointer; width:100%; font-family:inherit; }
+      .reg-row-add:hover { border-color:#2e7d32; color:#2e7d32; }
 
-      .reg-actions { display:flex; align-items:center; gap:12px; margin-top:8px; }
+      .reg-actions { display:flex; align-items:center; gap:12px; margin-top:6px; }
       .reg-actions .sp-btn-login { flex:1; }
-      .reg-btn-secondary { background:none; border:1px solid rgba(255,255,255,0.15); color:#cbd5e1; padding:12px 16px; border-radius:10px; cursor:pointer; font-size:0.9rem; }
+      .reg-btn-secondary { background:none; border:1.5px solid #e0e0e0; color:#666; padding:12px 16px; border-radius:10px; cursor:pointer; font-size:0.88rem; font-family:inherit; }
+      .reg-btn-secondary:hover { border-color:#bbb; }
 
-      .reg-success { text-align:center; padding:16px 0; }
-      .reg-success i { font-size:2.5rem; color:#22c55e; margin-bottom:12px; }
-      .reg-success h3 { color:#fff; margin:0 0 8px; }
-      .reg-success p { color:#94a3b8; font-size:0.9rem; margin:0 0 20px; }
+      .reg-success { text-align:center; padding:8px 0; }
+      .reg-success i { font-size:2.5rem; color:#2e7d32; margin-bottom:12px; }
+      .reg-success h3 { color:#1f2933; margin:0 0 8px; }
+      .reg-success p { color:#888; font-size:0.88rem; margin:0 0 20px; }
     </style>
   `;
 
