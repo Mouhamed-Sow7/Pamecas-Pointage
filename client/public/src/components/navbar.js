@@ -5,8 +5,20 @@ export function toggleSidebar() {
   const main = document.getElementById("main-content");
   if (!sidebar) return;
   if (window.innerWidth >= 1025) {
-    sidebar.classList.toggle("collapsed");
-    if (main) main.classList.toggle("sidebar-collapsed");
+    const collapsed = sidebar.classList.toggle("collapsed");
+    if (main) main.classList.toggle("sidebar-collapsed", collapsed);
+    localStorage.setItem("sp_sidebar_collapsed", collapsed ? "1" : "0");
+  }
+}
+
+export function restoreSidebarState() {
+  if (window.innerWidth < 1025) return;
+  const sidebar = document.getElementById("sidebar");
+  const main = document.getElementById("main-content");
+  if (!sidebar) return;
+  if (localStorage.getItem("sp_sidebar_collapsed") === "1") {
+    sidebar.classList.add("collapsed");
+    if (main) main.classList.add("sidebar-collapsed");
   }
 }
 

@@ -14,6 +14,7 @@ import {
   initResponsiveSidebar,
   openSidebar,
   closeSidebar,
+  restoreSidebarState,
 } from "./components/navbar.js";
 import { startAutoSync, onSyncComplete } from "./store/syncManager.js";
 import { showToast } from "./components/toast.js";
@@ -46,16 +47,18 @@ function applyBrandingCSS() {
   if (branding.couleur_primaire) {
     root.style.setProperty("--sp-accent", branding.couleur_primaire);
     root.style.setProperty("--sp-primary", branding.couleur_primaire);
+    // L'item de nav actif doit ressortir sur le fond de sidebar : on utilise la
+    // couleur de marque (plus vive) plutot qu'un ton proche du fond.
+    root.style.setProperty("--sp-accent-active-bg", branding.couleur_primaire);
   }
   if (branding.couleur_accent) root.style.setProperty("--sp-accent-light", branding.couleur_accent);
   if (branding.couleur_secondaire) {
     root.style.setProperty("--sp-secondary", branding.couleur_secondaire);
-    root.style.setProperty("--sp-accent-active-bg", branding.couleur_secondaire);
+    // --sp-sidebar-bg : couleur_secondaire (ex: #1b5e20 pour pamecas) — plus clair
+    // et lisible que bg_dark (#0f2417, quasi noir), et plus sombre que la couleur
+    // de marque pour laisser l'item actif se distinguer par-dessus.
+    root.style.setProperty("--sp-sidebar-bg", branding.couleur_secondaire);
   }
-  // --sp-sidebar-bg n'avait pas de regle [data-tenant="pamecas"] en CSS (seulement
-  // cms/gmv) et retombait donc sur le defaut non-brande — on le pose ici depuis
-  // bg_dark, deja calcule cote serveur pour n'importe quel tenant.
-  if (branding.bg_dark) root.style.setProperty("--sp-sidebar-bg", branding.bg_dark);
   // --sp-warning et --sp-danger restent semantiques (memes partout, cf. global.css) —
   // un retard ou une erreur ne doit pas prendre la couleur de marque du tenant.
 
@@ -167,6 +170,7 @@ function mountLayout(route, user, queryParams = {}) {
       <main class="main-content" id="main-content"></main>
     `;
     applyBrandingCSS();
+    restoreSidebarState();
   }
 
   const sidebar = document.getElementById("sidebar");
