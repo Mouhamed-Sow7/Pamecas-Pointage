@@ -80,20 +80,24 @@ export function renderDashboard(root, user) {
       <div id="dashboard-content" style="display:none;">
         <div class="kpi-grid" style="margin-bottom:16px;">
           <div class="kpi-card">
-            <div class="kpi-label"><i class="fa-solid fa-circle-check" style="color:var(--sp-accent);"></i> Presents</div>
+            <div class="kpi-icon-badge green"><i class="fa-solid fa-circle-check"></i></div>
             <div id="kpi-present" class="kpi-value green">0</div>
+            <div class="kpi-label">Presents</div>
           </div>
           <div class="kpi-card">
-            <div class="kpi-label"><i class="fa-solid fa-circle-xmark" style="color:#c62828;"></i> Absents</div>
+            <div class="kpi-icon-badge red"><i class="fa-solid fa-circle-xmark"></i></div>
             <div id="kpi-absent" class="kpi-value red">0</div>
+            <div class="kpi-label">Absents</div>
           </div>
           <div class="kpi-card">
-            <div class="kpi-label"><i class="fa-solid fa-clock" style="color:var(--sp-warning);"></i> Retards</div>
+            <div class="kpi-icon-badge orange"><i class="fa-solid fa-clock"></i></div>
             <div id="kpi-retard" class="kpi-value orange">0</div>
+            <div class="kpi-label">Retards</div>
           </div>
           <div class="kpi-card">
-            <div class="kpi-label"><i class="fa-solid fa-chart-pie" style="color:var(--sp-accent);"></i> Taux presence</div>
+            <div class="kpi-icon-badge blue"><i class="fa-solid fa-chart-pie"></i></div>
             <div id="kpi-taux" class="kpi-value blue">0%</div>
+            <div class="kpi-label">Taux presence</div>
           </div>
         </div>
 
