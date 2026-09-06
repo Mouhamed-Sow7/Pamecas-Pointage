@@ -119,11 +119,11 @@ export async function renderConges(root, user) {
                   <div style="display:flex;gap:5px;">
                     <button class="btn-approuver" data-id="${c._id}"
                       style="padding:5px 10px;background:#2e7d32;color:white;border:none;border-radius:6px;font-size:0.72rem;cursor:pointer;">
-                      ✅ Approuver
+                      <i class="fa-solid fa-check"></i> Approuver
                     </button>
                     <button class="btn-refuser" data-id="${c._id}"
                       style="padding:5px 10px;background:#c62828;color:white;border:none;border-radius:6px;font-size:0.72rem;cursor:pointer;">
-                      ❌ Refuser
+                      <i class="fa-solid fa-xmark"></i> Refuser
                     </button>
                   </div>
                 `

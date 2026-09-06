@@ -341,7 +341,7 @@ export async function renderRapports(root, user) {
       const params = new URLSearchParams({ date_debut: debut, date_fin: fin, format: 'excel' });
       if (site) params.append('site_code', site);
 
-      // ✅ Téléchargement direct via fetch + blob
+      // Téléchargement direct via fetch + blob
       const res = await fetch(`/api/rapports/export?${params}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -360,7 +360,7 @@ export async function renderRapports(root, user) {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      showToast('✅ Rapport Excel téléchargé !', 'success');
+      showToast('Rapport Excel téléchargé.', 'success');
     } catch (err) {
       showToast(`Erreur : ${err.message}`, 'error');
     } finally {

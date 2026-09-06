@@ -33,12 +33,24 @@ function applyBrandingCSS() {
   if (branding.couleur_accent) root.style.setProperty("--green-light", branding.couleur_accent);
   if (branding.couleur_secondaire) root.style.setProperty("--green-dark", branding.couleur_secondaire);
 
-  // Nouveau système de thème — data-tenant + variables dédiées
+  // Nouveau système de thème — data-tenant + variables --sp-*
+  // Le branding (couleur_primaire/secondaire/accent) est deja calcule
+  // cote serveur pour n'importe quel tenant (branding par defaut pour
+  // pamecas, ou derive de Tenant.configuration.couleur_theme sinon),
+  // donc on pose directement les tokens ici plutot que de coder une
+  // regle CSS par slug — ca marche automatiquement pour tout nouveau
+  // tenant cree via la page register.
   if (branding.slug) {
     root.setAttribute("data-tenant", branding.slug);
   }
-  // Les valeurs des variables --sp-* sont définies dans le CSS via [data-tenant],
-  // donc on n'a pas besoin de les setter en JS — le sélecteur d'attribut fait le travail.
+  if (branding.couleur_primaire) {
+    root.style.setProperty("--sp-accent", branding.couleur_primaire);
+    root.style.setProperty("--sp-primary", branding.couleur_primaire);
+  }
+  if (branding.couleur_accent) root.style.setProperty("--sp-accent-light", branding.couleur_accent);
+  if (branding.couleur_secondaire) root.style.setProperty("--sp-secondary", branding.couleur_secondaire);
+  // --sp-warning et --sp-danger restent semantiques (memes partout, cf. global.css) —
+  // un retard ou une erreur ne doit pas prendre la couleur de marque du tenant.
 
   document.querySelectorAll(".logo-mark").forEach((el) => {
     if (branding.mark_text) el.textContent = branding.mark_text;

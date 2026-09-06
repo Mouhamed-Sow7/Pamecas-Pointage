@@ -459,7 +459,7 @@ export async function renderKiosque(root) {
     root.innerHTML = `
       <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0f2417;color:white;text-align:center;padding:20px;">
         <div>
-          <div style="font-size:3rem;margin-bottom:16px;">⚠️</div>
+          <div style="font-size:3rem;margin-bottom:16px;"><i class="fa-solid fa-triangle-exclamation"></i></div>
           <div style="font-size:1.2rem;font-weight:600;margin-bottom:8px;">Kiosque non configure</div>
           <div style="color:rgba(255,255,255,0.6);font-size:0.85rem;">Site manquant dans la configuration</div>
         </div>

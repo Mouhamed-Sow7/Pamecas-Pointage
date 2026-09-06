@@ -68,10 +68,10 @@ export async function renderDemandes(root, user) {
 
       list.innerHTML = demandes.map(a => {
         const motifLabel = {
-          telephone_vole: "📵 Téléphone volé",
-          telephone_perdu: "🔍 Téléphone perdu",
-          telephone_detruit: "💥 Téléphone détruit / HS",
-          autre: "❓ Autre"
+          telephone_vole: '<i class="fa-solid fa-mobile-screen-button"></i> Téléphone volé',
+          telephone_perdu: '<i class="fa-solid fa-magnifying-glass"></i> Téléphone perdu',
+          telephone_detruit: '<i class="fa-solid fa-triangle-exclamation"></i> Téléphone détruit / HS',
+          autre: '<i class="fa-solid fa-circle-question"></i> Autre'
         }[a.demande_deconnexion?.motif] || a.demande_deconnexion?.motif || "—";
 
         const dateDemande = a.demande_deconnexion?.date_demande

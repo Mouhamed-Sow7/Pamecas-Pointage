@@ -247,7 +247,7 @@ function openAgentModal(mode, agent, sites) {
                   <input id="agent-portal-pwd" type="password" placeholder="Définir ou changer le mot de passe" ${disabledAttr} style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;" />
                 </div>
                 <div style="display:flex;gap:8px;align-items:center;">
-                  <span id="totp-indicator" style="font-size:13px;color:${agent.totp_enabled ? "#2e7d32" : "#888"};">${agent.totp_enabled ? "🔄 QR Dynamique activé" : "⚠️ QR Statique"}</span>
+                  <span id="totp-indicator" style="font-size:13px;color:${agent.totp_enabled ? "#2e7d32" : "#888"};">${agent.totp_enabled ? '<i class="fa-solid fa-rotate"></i> QR Dynamique activé' : '<i class="fa-solid fa-triangle-exclamation"></i> QR Statique'}</span>
                   ${!agent.totp_enabled ? `<button id="btn-activer-totp" type="button" style="padding:6px 12px;background:#0f5132;color:white;border:none;border-radius:8px;cursor:pointer;">Activer QR Dynamique</button>` : ""}
                 </div>
               </div>
