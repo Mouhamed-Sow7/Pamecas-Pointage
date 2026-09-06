@@ -60,6 +60,12 @@
         --sp-warning: #854f0b;
         --sp-success: #3b6d11;
       }
+      /* Pas de bloc [data-tenant="pamecas"] ici par choix : applyBrandingCSS()
+         dans app.js pose --sp-accent/--sp-sidebar-bg/--sp-accent-active-bg en
+         inline depuis le branding calcule cote serveur pour CE tenant precis —
+         ca marche pour pamecas ET pour tout tenant cree via /register, sans
+         jamais avoir a ajouter un bloc ici. Les blocs cms/gmv ci-dessous sont
+         un filet de securite CSS, mais le JS les recouvre de toute facon. */
       [data-tenant="cms"] { --sp-sidebar-bg: #1c2b45; --sp-accent: #185fa5; --sp-accent-active-bg: #0c447c; --sp-warning: #854f0b; --sp-success: #3b6d11; }
       [data-tenant="gmv"] { --sp-sidebar-bg: #2c3e1f; --sp-accent: #639922; --sp-accent-active-bg: #27500a; --sp-warning: #854f0b; --sp-success: #3b6d11; }
       #app {

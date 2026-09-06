@@ -899,13 +899,14 @@ async function seed() {
 
     // 2. Superadmin
     const superadminData = {
-      username: "admin",
+      username: "admin.pamecas",
       password: "pamecas2024!",
       role: "superadmin",
       nom_complet: "Super Administrateur SmartPointage",
+      instance_slug: "pamecas",
       actif: true,
     };
-    let superadmin = await User.findOne({ username: "admin" });
+    let superadmin = await User.findOne({ username: "admin.pamecas" });
     if (!superadmin) {
       superadmin = new User(superadminData);
       await superadmin.save();

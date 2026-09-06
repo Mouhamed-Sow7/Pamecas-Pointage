@@ -48,7 +48,14 @@ function applyBrandingCSS() {
     root.style.setProperty("--sp-primary", branding.couleur_primaire);
   }
   if (branding.couleur_accent) root.style.setProperty("--sp-accent-light", branding.couleur_accent);
-  if (branding.couleur_secondaire) root.style.setProperty("--sp-secondary", branding.couleur_secondaire);
+  if (branding.couleur_secondaire) {
+    root.style.setProperty("--sp-secondary", branding.couleur_secondaire);
+    root.style.setProperty("--sp-accent-active-bg", branding.couleur_secondaire);
+  }
+  // --sp-sidebar-bg n'avait pas de regle [data-tenant="pamecas"] en CSS (seulement
+  // cms/gmv) et retombait donc sur le defaut non-brande — on le pose ici depuis
+  // bg_dark, deja calcule cote serveur pour n'importe quel tenant.
+  if (branding.bg_dark) root.style.setProperty("--sp-sidebar-bg", branding.bg_dark);
   // --sp-warning et --sp-danger restent semantiques (memes partout, cf. global.css) —
   // un retard ou une erreur ne doit pas prendre la couleur de marque du tenant.
 
