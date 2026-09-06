@@ -206,7 +206,10 @@ export async function renderConges(root, user) {
     .getElementById("filtre-statut-conge")
     ?.addEventListener("change", () => loadConges());
 
-  let pollHandle = setInterval(() => { loadConges({ silent: true }); loadStats(); }, 8000);
+  let pollHandle = setInterval(() => {
+    if (!root.isConnected) { stopPolling(); return; }
+    loadConges({ silent: true }); loadStats();
+  }, 8000);
   function stopPolling() {
     if (pollHandle) { clearInterval(pollHandle); pollHandle = null; }
     window.removeEventListener("hashchange", stopPolling);

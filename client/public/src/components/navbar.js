@@ -255,21 +255,30 @@ function startBadgePolling(container, user) {
     const sidebar = document.getElementById("sidebar") || container;
     if (!sidebar.isConnected) { clearInterval(_badgePollHandle); return; }
 
+    // Évite le doublon de requêtes : si l'admin est déjà sur la page
+    // Demandes/Congés, cette page a son propre polling live pour sa liste —
+    // inutile (et couteux offline) de refaire le même fetch ici en parallèle.
+    const currentRoute = (window.location.hash || "").replace("#", "").split("?")[0];
+    const onDemandesPage = currentRoute === "/demandes";
+    const onCongesPage = currentRoute === "/conges";
+
     const token = localStorage.getItem("pamecas_token");
-    let nbDeco = 0, nbConges = 0;
+    let nbDeco = null, nbConges = null;
     try {
-      if (user.role === "admin" || user.role === "superadmin") {
+      if (!onDemandesPage && (user.role === "admin" || user.role === "superadmin")) {
         const r = await fetch("/api/agents/demandes-deconnexion", { headers: { Authorization: "Bearer " + token } });
         if (r.ok) nbDeco = ((await r.json()).data || []).length;
       }
     } catch { /* silencieux */ }
     try {
-      const r = await fetch("/api/conges?statut=en_attente", { headers: { Authorization: "Bearer " + token } });
-      if (r.ok) nbConges = ((await r.json()).data || []).length;
+      if (!onCongesPage) {
+        const r = await fetch("/api/conges?statut=en_attente", { headers: { Authorization: "Bearer " + token } });
+        if (r.ok) nbConges = ((await r.json()).data || []).length;
+      }
     } catch { /* silencieux */ }
 
-    patchBadge(sidebar, "#/demandes", nbDeco);
-    patchBadge(sidebar, "#/conges", nbConges);
+    if (nbDeco !== null) patchBadge(sidebar, "#/demandes", nbDeco);
+    if (nbConges !== null) patchBadge(sidebar, "#/conges", nbConges);
   };
 
   _badgePollHandle = setInterval(tick, 8000);

@@ -172,7 +172,10 @@ export async function renderDemandes(root, user) {
     if (!document.hidden) loadTelephone({ silent: true });
   }
 
-  pollHandle = setInterval(() => loadTelephone({ silent: true }), 8000);
+  pollHandle = setInterval(() => {
+    if (!root.isConnected) { stopPolling(); return; }
+    loadTelephone({ silent: true });
+  }, 8000);
   document.addEventListener("visibilitychange", onVisibility);
   window.addEventListener("hashchange", stopPolling);
 
