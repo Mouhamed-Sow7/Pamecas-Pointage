@@ -782,6 +782,16 @@
           justify-content: center;
           padding: 10px 8px;
         }
+        .sidebar.collapsed .nav-footer {
+          align-items: center;
+          padding: 12px 8px;
+        }
+        .sidebar.collapsed .status-row {
+          justify-content: center;
+        }
+        .sidebar.collapsed .status-row:has(.badge-pending) {
+          display: none;
+        }
         .main-content {
           margin-left: 220px;
         }

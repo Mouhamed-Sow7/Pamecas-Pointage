@@ -319,7 +319,7 @@ async function renderStep(root) {
           <h1 class="sp-brand-name">SmartPointage</h1>
           <p class="sp-brand-tagline">Systeme de pointage digital<br>pour agences et entreprises</p>
           <div class="sp-brand-features">
-            <div class="sp-feature"><i class="fa-solid fa-fingerprint"></i> Pointage QR Code</div>
+            <div class="sp-feature"><i class="fa-solid fa-qrcode"></i> Pointage QR Code</div>
             <div class="sp-feature"><i class="fa-solid fa-wifi"></i> Offline &amp; Online</div>
             <div class="sp-feature"><i class="fa-solid fa-chart-bar"></i> Rapports Excel</div>
             <div class="sp-feature"><i class="fa-solid fa-building"></i> Multi-agences</div>

@@ -1,5 +1,5 @@
 ﻿// Version du cache â€” incrementer a chaque deploiement majeur
-const CACHE_VERSION = "smartpointage-v11";
+const CACHE_VERSION = "smartpointage-v12";
 const CACHE_NAME = CACHE_VERSION;
 
 const STATIC_ASSETS = [
