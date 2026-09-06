@@ -215,6 +215,7 @@ export function renderDashboard(root, user) {
   loadData();
 
   // ── Tuiles de notification (admin/superadmin/DR) ──────────────────────────
+  let notifIntervalId;
   if (isManager) {
     async function loadNotifications() {
       try {
@@ -264,7 +265,10 @@ export function renderDashboard(root, user) {
     }
 
     loadNotifications();
-    setInterval(loadNotifications, 60000);
+    notifIntervalId = setInterval(() => {
+      if (!root.isConnected) { clearInterval(notifIntervalId); return; }
+      loadNotifications();
+    }, 60000);
   }
 
   // Polling données KPI
@@ -278,10 +282,12 @@ export function renderDashboard(root, user) {
 
     window.addEventListener("hashchange", () => {
       if (intervalId) clearInterval(intervalId);
+      if (notifIntervalId) clearInterval(notifIntervalId);
     }, { once: true });
   }
 
   root._cleanup = () => {
     if (intervalId) clearInterval(intervalId);
+    if (notifIntervalId) clearInterval(notifIntervalId);
   };
 }
