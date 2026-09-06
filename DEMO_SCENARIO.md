@@ -3,6 +3,7 @@
 > **Durée :** 20 minutes  
 > **Public :** Client existant (PAMECAS) + Prospect (découverte offre)  
 > **Prérequis :** `npm run seed && npm run seed:cms && npm run seed:gmv && npm run seed:demo`
+> **⚠️ Corrigé le 6 sept. 2026** : logins/URL vérifiés contre la base réelle (voir historique git). Les mots de passe ci-dessous n'ont pas pu être re-vérifiés (hashés en base) — teste-les avant l'entretien.
 
 ---
 
@@ -13,7 +14,7 @@
 | Action | Résultat attendu |
 |--------|------------------|
 | Ouvrir `http://localhost:3000/app` | Page de login SmartPointage |
-| Login : `admin` / `pamecas2024!` | Dashboard multi-agences PAMECAS |
+| Login : `admin.pamecas` / `pamecas2024!` | Dashboard multi-agences PAMECAS |
 | Observer les graphiques | Pointages du jour, taux de présence, retard, absentéisme |
 
 **🎯 À montrer :**
@@ -152,14 +153,14 @@ location.reload();
 
 | Élément | Détail |
 |---------|--------|
-| **Plan Pro** | 120 000 FCFA/mois — jusqu'à 10 agences |
-| **Plan Enterprise** | 180 000 FCFA/mois — agences illimitées, rapports avancés |
+| **Plan Essentiel** | 2 500 FCFA/agent/mois — structures mono-agence ou terrain |
+| **Plan Pro** | 3 500 FCFA/agent/mois — structures multi-agences |
 | **Inclus** | QR dynamique TOTP, géofencing, kiosque, portail agent, congés, rapports Excel |
 | **Options** | WebAuthn passkey, SMS OTP, email automatique, support prioritaire |
 | **Déploiement** | SaaS (hébergé) ou On-Premise (chez le client) |
 
 **💬 À dire prospect :**
-> "Trois formules : Pro pour les PME, Enterprise pour les grands réseaux. Tout est inclus : QR dynamique, géofencing, kiosque, portail agent. Déploiement en 48h."
+> "Tarification à l'agent, pas au forfait : vous ne payez que pour vos agents actifs. 2 500 FCFA par agent et par mois en Essentiel, 3 500 FCFA en Pro pour les structures multi-agences."
 
 ---
 
@@ -212,10 +213,9 @@ location.reload();
 
 | Compte | Login | Mot de passe | Rôle |
 |--------|-------|-------------|------|
-| Superadmin | `admin` | `pamecas2024!` | Tous sites |
+| Superadmin | `admin.pamecas` | `pamecas2024!` | Tous sites |
 | Admin DG | `admin.dg` | `pamecas2024!` | Direction Générale |
-| Admin Saint-Louis | `admin.stl` | `pamecas2024!` | Agence Saint-Louis |
-| Pointeur DG | `point.dg` | `point2024!` | Scan DG |
+| Directeur régional | `directeur.dakar` | *(à vérifier)* | Région Dakar |
 | Agent | `SMP-0001` | `0001` | Mamadou Diallo (DG) |
 
 ### Prospect — voir les 3 tenants (CMS, GMV)
@@ -233,7 +233,7 @@ location.reload();
 - [ ] Démarrer le serveur : `npm run dev`
 - [ ] Ouvrir le dashboard admin : `http://localhost:3000/app`
 - [ ] Ouvrir le portail agent sur mobile : `http://localhost:3000/agent`
-- [ ] Ouvrir le kiosque : `http://localhost:3000/kiosk`
+- [ ] Ouvrir le kiosque : `http://localhost:3000/app/#/kiosque` (et non `/kiosk` — route corrigee)
 - [ ] Vérifier que les 3 tenants sont accessibles
 - [ ] Vérifier les pointages des 30 derniers jours
 - [ ] Vérifier les congés en attente
