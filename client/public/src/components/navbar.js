@@ -117,7 +117,7 @@ export async function renderNavbar(container, currentRoute, user) {
     links.push({
       path: "#/rapports",
       label: "Rapports",
-      icon: '<i class="fa-regular fa-file-alt"></i>',
+      icon: '<i class="fa-regular fa-file-lines"></i>',
     });
   }
 
@@ -129,7 +129,7 @@ export async function renderNavbar(container, currentRoute, user) {
     links.push({
       path: "#/conges",
       label: "Congés",
-      icon: '<i class="fa-solid fa-calendar-days"></i>',
+      icon: '<i class="fa-regular fa-calendar-days"></i>',
       badge: nbCongesAttente > 0 ? nbCongesAttente : 0,
     });
   }
@@ -177,7 +177,7 @@ export async function renderNavbar(container, currentRoute, user) {
       <button class="sidebar-collapse-btn" id="sidebar-collapse-btn" type="button" title="Reduire">
         <i class="fa-solid fa-bars"></i>
       </button>
-      <div class="logo">
+      <div class="logo" id="sidebar-logo-toggle" style="cursor:pointer;" title="Réduire / agrandir">
         <div class="logo-mark">SP</div>
         <div class="logo-text">
           <div class="title">SmartPointage</div>
@@ -203,7 +203,7 @@ export async function renderNavbar(container, currentRoute, user) {
           : ""
       }
       <div class="status-row" style="overflow:hidden;">
-        <i class="fa-solid fa-user" style="font-size:0.7rem;flex-shrink:0;color:rgba(255,255,255,0.6);"></i>
+        <i class="fa-regular fa-user" style="font-size:0.7rem;flex-shrink:0;color:rgba(255,255,255,0.6);"></i>
         <span class="status-text">${user?.username || ""} · ${user?.role || ""}</span>
       </div>
       <button id="btn-logout" class="btn-logout">
@@ -229,6 +229,12 @@ export async function renderNavbar(container, currentRoute, user) {
   container
     .querySelector("#sidebar-collapse-btn")
     ?.addEventListener("click", toggleSidebar);
+
+  container
+    .querySelector("#sidebar-logo-toggle")
+    ?.addEventListener("click", () => {
+      if (window.innerWidth >= 1025) toggleSidebar();
+    });
 
   startBadgePolling(container, user);
 }
