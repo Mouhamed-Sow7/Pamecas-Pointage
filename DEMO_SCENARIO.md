@@ -215,6 +215,8 @@ location.reload();
 |--------|-------|-------------|------|
 | Superadmin | `admin.pamecas` | `pamecas2024!` | Tous sites |
 | Admin DG | `admin.dg` | `pamecas2024!` | Direction Générale |
+| Admin Saint-Louis | `admin.stl` | *(à vérifier)* | Agence Saint-Louis |
+| Pointeur DG | `point.dg` | *(à vérifier)* | Scan DG |
 | Directeur régional | `directeur.dakar` | *(à vérifier)* | Région Dakar |
 | Agent | `SMP-0001` | `0001` | Mamadou Diallo (DG) |
 

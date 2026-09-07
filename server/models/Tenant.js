@@ -115,9 +115,12 @@ tenantSchema.index({ statut: 1 });
 tenantSchema.index({ plan: 1 });
 
 // Méthode pour calculer le revenu mensuel
+// Tarification reelle (landing page /tarifs) : par AGENT, pas par site.
+// enum plan 'pro' = tier "Essentiel" (2500 FCFA/agent/mois),
+// enum plan 'enterprise' = tier "Pro" multi-agences (3500 FCFA/agent/mois).
 tenantSchema.methods.getRevenuMensuel = function() {
-  const basePrice = this.plan === 'enterprise' ? 180000 : 120000;
-  return this.nb_sites * basePrice;
+  const prixParAgent = this.plan === 'enterprise' ? 3500 : 2500;
+  return (this.stats?.nb_agents || 0) * prixParAgent;
 };
 
 // Méthode pour vérifier si le trial est expiré

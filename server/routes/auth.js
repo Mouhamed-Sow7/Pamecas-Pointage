@@ -374,10 +374,15 @@ router.post('/register', async (req, res) => {
     }
 
     // ─ Compte administrateur ─
+    // role: 'superadmin' (pas 'admin') — c'est le compte fondateur de ce
+    // tenant, il doit pouvoir gerer les users de sa propre entreprise
+    // (onglet Utilisateurs, reserve a superadmin) et affecter des
+    // responsables aux agences. Coherent avec admin.pamecas/admin.cms/
+    // directeur.gmv qui sont tous superadmin de leur tenant respectif.
     const adminUser = await User.create({
       username: admin.username.toLowerCase(),
       password: admin.password,
-      role: 'admin',
+      role: 'superadmin',
       nom_complet: admin.nom_complet || '',
       site_id: createdSites[0] ? createdSites[0]._id : null,
       sites_ids: createdSites.map((s) => s._id),

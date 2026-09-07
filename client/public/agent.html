@@ -1657,7 +1657,7 @@
           const data = await r.json();
           if (!r.ok) throw new Error(data.message || "Erreur");
           $("modal-conge").classList.remove("open");
-          showToast("Demande soumise avec succès ✓", "success");
+          showToast("Demande soumise avec succès", "success");
           loadConges();
           loadStats();
         } catch (e) {
