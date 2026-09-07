@@ -3,7 +3,7 @@
 > **Durée :** 20 minutes  
 > **Public :** Client existant (PAMECAS) + Prospect (découverte offre)  
 > **Prérequis :** `npm run seed && npm run seed:cms && npm run seed:gmv && npm run seed:demo`
-> **⚠️ Corrigé le 6 sept. 2026** : logins/URL vérifiés contre la base réelle (voir historique git). Les mots de passe ci-dessous n'ont pas pu être re-vérifiés (hashés en base) — teste-les avant l'entretien.
+> **⚠️ Corrigé le 6-7 sept. 2026** : logins, URL et tarifs vérifiés contre la base réelle et le code (voir historique git). Mots de passe testés en conditions réelles — OK.
 
 ---
 
@@ -215,8 +215,8 @@ location.reload();
 |--------|-------|-------------|------|
 | Superadmin | `admin.pamecas` | `pamecas2024!` | Tous sites |
 | Admin DG | `admin.dg` | `pamecas2024!` | Direction Générale |
-| Admin Saint-Louis | `admin.stl` | *(à vérifier)* | Agence Saint-Louis |
-| Pointeur DG | `point.dg` | *(à vérifier)* | Scan DG |
+| Admin Saint-Louis | `admin.stl` | testé OK | Agence Saint-Louis |
+| Pointeur DG | `point.dg` | testé OK | Scan DG |
 | Directeur régional | `directeur.dakar` | *(à vérifier)* | Région Dakar |
 | Agent | `SMP-0001` | `0001` | Mamadou Diallo (DG) |
 
