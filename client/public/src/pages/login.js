@@ -46,6 +46,28 @@ const DEFAULT_BRANDING = {
   circle_color: '#4CAF50',
 };
 
+// ─── Branding "Superadmin plateforme" (instance_slug = null, cross-tenant) ─
+const SUPERADMIN_BRANDING = {
+  slug: 'superadmin',
+  instance_label: 'Superadmin — Toutes instances',
+  couleur_primaire: '#4527a0',
+  couleur_secondaire: '#311b92',
+  couleur_accent: '#7e57c2',
+  bg_dark: '#170f2e',
+  mark_text: 'SP',
+  mark_color: '#4527a0',
+  mark_text_color: '#ffffff',
+  btn_gradient: 'linear-gradient(135deg, #4527a0, #7e57c2)',
+  btn_shadow: 'rgba(69,39,160,0.3)',
+  btn_shadow_hover: 'rgba(69,39,160,0.4)',
+  input_focus_color: '#4527a0',
+  input_focus_shadow: 'rgba(69,39,160,0.1)',
+  label_icon_color: '#4527a0',
+  feature_icon_color: '#b39ddb',
+  panel_bg: 'linear-gradient(160deg, #311b92 0%, #4527a0 50%, #5e35b1 100%)',
+  circle_color: '#7e57c2',
+};
+
 // ─── Extraire le slug depuis le username ──────────────────────────
 // "admin.dg@cms" → "cms"   |   "admin.cms" → "cms"   |   "admin.dg" → "pamecas"
 const KNOWN_SLUGS = ['cms', 'pamecas', 'gmv']; // étendre si besoin
@@ -592,6 +614,7 @@ export function renderLogin(root) {
 
 // ─── Détecter le slug pour l'affichage live (null = neutre) ───────
 function detectDisplaySlug(username) {
+  if (username.toLowerCase() === 'admin') return 'superadmin';
   const atMatch = username.match(/@([a-zA-Z0-9_-]+)$/);
   if (atMatch) return atMatch[1].toLowerCase();
   const dotMatch = username.match(/\.([a-zA-Z0-9_-]+)$/);
@@ -615,7 +638,9 @@ usernameInput?.addEventListener('input', () => {
     const slug = detected || 'neutral';
     if (slug !== lastSlug) {
       lastSlug = slug;
-      const branding = slug === 'neutral' ? NEUTRAL_BRANDING : await fetchBranding(slug);
+      const branding = slug === 'neutral' ? NEUTRAL_BRANDING
+        : slug === 'superadmin' ? SUPERADMIN_BRANDING
+        : await fetchBranding(slug);
       applyBranding(root, branding);
       injectFocusStyle(root, branding);
     }
@@ -642,8 +667,12 @@ usernameInput?.addEventListener('input', () => {
       const { token, user } = result;
       localStorage.setItem('pamecas_token', token);
       localStorage.setItem('pamecas_user', JSON.stringify(user));
-      // Persister le branding de l'instance pour toute l'app
-      const branding = await fetchBranding(user.instance_slug || 'pamecas');
+      // Persister le branding de l'instance pour toute l'app.
+      // instance_slug === null => superadmin plateforme (acces cross-tenant),
+      // pas "pamecas" par defaut (piege du `null || 'pamecas'`).
+      const branding = user.instance_slug === null
+        ? SUPERADMIN_BRANDING
+        : await fetchBranding(user.instance_slug || 'pamecas');
       localStorage.setItem('sp_branding', JSON.stringify(branding));
       await saveAuth(token, user);
       showToast('Connexion reussie.', 'success');
