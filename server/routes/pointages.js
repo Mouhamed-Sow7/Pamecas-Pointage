@@ -78,14 +78,14 @@ router.post("/", async (req, res) => {
     // Un pointage via scan kiosque (methode=qr_code) DOIT fournir qr_data
     // signé cryptographiquement. Sans ça, n'importe qui connaissant un
     // agent_id pourrait pointer pour un autre agent sans jamais scanner.
-    // Le pointage manuel (admin/pointeur via dashboard) reste autorisé
-    // sans qr_data — c'est un acte volontaire d'un rôle de confiance.
+    // Le pointage manuel (dashboard, sans QR) est reserve au role "pointeur"
+    // uniquement — un admin/superadmin/DR n'a pas vocation a pointer pour un
+    // agent (risque de fraude : "je pointe pour un ami"), et le kiosque passe
+    // par un autre chemin (methode=qr_code, verifie plus bas).
     const isManualByStaff =
       methode === "manuel" &&
       !req.user.is_kiosque &&
-      ["admin", "superadmin", "pointeur", "directeur_regional"].includes(
-        req.user.role,
-      );
+      req.user.role === "pointeur";
 
     if (!isManualByStaff) {
       const agentForTotp = await Agent.findById(agent_id).select(

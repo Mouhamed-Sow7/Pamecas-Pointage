@@ -669,6 +669,7 @@ export async function renderKiosque(root) {
       el.textContent = new Date().toLocaleTimeString("fr-FR", {
         hour: "2-digit",
         minute: "2-digit",
+        timeZone: "Africa/Dakar",
       });
   }
   updateClock();
@@ -783,6 +784,7 @@ export async function renderKiosque(root) {
       const heure = new Date().toLocaleTimeString("fr-FR", {
         hour: "2-digit",
         minute: "2-digit",
+        timeZone: "Africa/Dakar",
       });
       const typeLabel = type === "depart" ? "Depart" : "Arrivee";
       lastActivity.textContent = `Dernier : ${agent.prenom} ${agent.nom} — ${typeLabel} a ${heure}`;

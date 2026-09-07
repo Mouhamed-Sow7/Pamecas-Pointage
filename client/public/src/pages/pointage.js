@@ -392,10 +392,17 @@ function startCamera(video, canvas, onCodeDetected) {
 
 export function renderPointage(root) {
   const admin = isAdmin();
+  const currentUser = getCurrentUser();
+  // Pointage manuel/scan QR depuis le dashboard = risque de fraude si ouvert
+  // a des roles dont ce n'est pas le metier (admin/RH pointeraient "pour un
+  // ami"). Seul le role "pointeur" (terrain, sans kiosque fixe) y a droit ici
+  // — le serveur applique la meme regle en parallele (defense en profondeur).
+  const canPointerManuellement = currentUser?.role === 'pointeur';
 
   root.innerHTML = `
     <div style="display:flex;flex-direction:column;gap:16px;">
 
+      ${canPointerManuellement ? `
       <!-- Pointage Manuel -->
       <div class="card">
         <h2 style="font-size:1rem;font-weight:600;margin-bottom:12px;">
@@ -451,6 +458,13 @@ export function renderPointage(root) {
           </div>
         </details>
       </div>
+      ` : `
+      <div class="card" style="display:flex;align-items:center;gap:10px;color:#888;font-size:0.85rem;">
+        <i class="fa-solid fa-circle-info" style="color:#1565c0;"></i>
+        Le pointage se fait via le kiosque de site ou un agent au role "pointeur".
+        Cette section n'a pas vocation a pointer pour un agent.
+      </div>
+      `}
 
       <!-- Pointages du jour -->
       <div class="card" style="padding-bottom:8px;">
@@ -473,24 +487,29 @@ export function renderPointage(root) {
     const now = new Date();
     const timeEl = root.querySelector('#current-time');
     const dateEl = root.querySelector('#current-date');
-    if (timeEl) timeEl.textContent = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-    if (dateEl) dateEl.textContent = now.toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    // Toujours l'heure du Senegal (UTC+0, pas de changement d'heure), independamment
+    // du fuseau horaire configure sur l'appareil/kiosque (source du decalage observe)
+    if (timeEl) timeEl.textContent = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: 'Africa/Dakar' });
+    if (dateEl) dateEl.textContent = now.toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Africa/Dakar' });
   }
   updateClock();
   setInterval(updateClock, 1000);
 
-  const btnSearchAgent = root.querySelector('#btn-search-agent');
-  const inputSearch = root.querySelector('#input-search');
-  const selectAgent = root.querySelector('#select-agent');
-  const actionButtons = root.querySelector('#action-buttons');
-  const btnArrivee = root.querySelector('#btn-arrivee');
-  const btnDepart = root.querySelector('#btn-depart');
-  const manuelResult = root.querySelector('#manuel-result');
-  const btnCamera = root.querySelector('#btn-start-camera');
-  const video = root.querySelector('#video');
-  const canvas = root.querySelector('#canvas');
   const listePointages = root.querySelector('#liste-pointages');
   const btnRefresh = root.querySelector('#btn-refresh');
+  btnRefresh.addEventListener('click', () => reloadPointagesList(listePointages));
+
+  if (canPointerManuellement) {
+    const btnSearchAgent = root.querySelector('#btn-search-agent');
+    const inputSearch = root.querySelector('#input-search');
+    const selectAgent = root.querySelector('#select-agent');
+    const actionButtons = root.querySelector('#action-buttons');
+    const btnArrivee = root.querySelector('#btn-arrivee');
+    const btnDepart = root.querySelector('#btn-depart');
+    const manuelResult = root.querySelector('#manuel-result');
+    const btnCamera = root.querySelector('#btn-start-camera');
+    const video = root.querySelector('#video');
+    const canvas = root.querySelector('#canvas');
 
   // Recherche agents
   btnSearchAgent.addEventListener('click', async () => {
@@ -581,7 +600,6 @@ export function renderPointage(root) {
 
   btnArrivee.addEventListener('click', () => { if (!btnArrivee.disabled) handlePointageManuel('arrivee'); });
   btnDepart.addEventListener('click', () => { if (!btnDepart.disabled) handlePointageManuel('depart'); });
-  btnRefresh.addEventListener('click', () => reloadPointagesList(listePointages));
 
   // Camera QR — modal avec choix arrivée/départ
   btnCamera.addEventListener('click', () => {
@@ -676,6 +694,7 @@ export function renderPointage(root) {
       }
     });
   });
+  } // fin if (canPointerManuellement)
 
   reloadPointagesList(listePointages);
 }
