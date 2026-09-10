@@ -147,6 +147,85 @@ router.put("/:id", authorizeRoles("superadmin"), async (req, res) => {
   }
 });
 
+// ── PUT /:id/horaires — Config horaires (heure début / seuil retard / heure fin) ──
+// Contrairement à PUT /:id (réservé superadmin), cette route est ouverte aux
+// admins et directeurs régionaux : ce sont eux qui connaissent les horaires
+// réels de leur(s) agence(s). On ne touche qu'au sous-objet config, jamais
+// aux autres champs du site (code, région, coordonnées...).
+const HEURE_REGEX = /^([01]\d|2[0-3]):[0-5]\d$/;
+
+router.put(
+  "/:id/horaires",
+  authorizeRoles("superadmin", "directeur_regional", "admin"),
+  async (req, res) => {
+    try {
+      const { id } = req.params;
+
+      const site = await getSiteInTenant(req, id);
+      if (!site) {
+        return res.status(404).json({ message: "Site non trouvé." });
+      }
+
+      // Scoping : admin = uniquement sa propre agence, DR = uniquement ses agences
+      if (req.user.role === "admin" && req.user.site_id !== id) {
+        return res.status(403).json({
+          message: "Vous ne pouvez configurer que les horaires de votre agence.",
+        });
+      }
+      if (
+        req.user.role === "directeur_regional" &&
+        !(req.user.sites_ids || []).includes(id)
+      ) {
+        return res.status(403).json({
+          message: "Cette agence n'est pas dans votre périmètre.",
+        });
+      }
+
+      const { heure_debut, heure_retard, heure_fin, weekend_actif } =
+        req.body || {};
+
+      for (const [label, val] of [
+        ["heure_debut", heure_debut],
+        ["heure_retard", heure_retard],
+        ["heure_fin", heure_fin],
+      ]) {
+        if (val !== undefined && val !== null && val !== "" && !HEURE_REGEX.test(val)) {
+          return res.status(400).json({
+            message: `${label} doit être au format HH:MM (ex: 08:00).`,
+          });
+        }
+      }
+
+      if (heure_debut && heure_retard && heure_retard < heure_debut) {
+        return res.status(400).json({
+          message: "L'heure de retard doit être postérieure ou égale à l'heure de début.",
+        });
+      }
+      if (heure_retard && heure_fin && heure_fin <= heure_retard) {
+        return res.status(400).json({
+          message: "L'heure de fin doit être postérieure à l'heure de retard.",
+        });
+      }
+
+      const config = { ...(site.config ? site.config.toObject() : {}) };
+      if (heure_debut !== undefined) config.heure_debut = heure_debut;
+      if (heure_retard !== undefined) config.heure_retard = heure_retard;
+      if (heure_fin !== undefined) config.heure_fin = heure_fin;
+      if (weekend_actif !== undefined) config.weekend_actif = !!weekend_actif;
+
+      site.config = config;
+      await site.save();
+
+      return res.json(site);
+    } catch (err) {
+      console.error("Erreur lors de la mise à jour des horaires:", err);
+      return res.status(500).json({
+        message: "Erreur lors de la mise à jour des horaires.",
+      });
+    }
+  },
+);
+
 // Générer token kiosque permanent pour une agence
 router.post(
   "/:id/kiosque-token",

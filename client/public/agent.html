@@ -276,6 +276,12 @@
         min-height: 44px;
         flex-shrink: 0;
       }
+      .header-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-shrink: 0;
+      }
       .btn-logout:active {
         background: rgba(255, 255, 255, 0.2);
       }
@@ -283,6 +289,35 @@
         width: 18px;
         height: 18px;
         fill: white;
+      }
+
+      .btn-refresh {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        border: none;
+        background: rgba(255, 255, 255, 0.12);
+        color: white;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.15s;
+        min-width: 44px;
+        min-height: 44px;
+        flex-shrink: 0;
+      }
+      .btn-refresh:active {
+        background: rgba(255, 255, 255, 0.2);
+      }
+      .btn-refresh svg {
+        width: 18px;
+        height: 18px;
+        fill: white;
+        transition: transform 0.5s ease;
+      }
+      .btn-refresh.spinning svg {
+        animation: spin 0.7s linear infinite;
       }
 
       /* CONTENU */
@@ -972,13 +1007,22 @@
             <div class="header-agence" id="header-agence">SmartPointage</div>
           </div>
         </div>
-        <button class="btn-logout" id="btn-logout" title="Déconnexion">
-          <svg viewBox="0 0 24 24">
-            <path
-              d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"
-            />
-          </svg>
-        </button>
+        <div class="header-actions">
+          <button class="btn-refresh" id="btn-refresh" title="Actualiser">
+            <svg viewBox="0 0 24 24">
+              <path
+                d="M17.65 6.35A7.958 7.958 0 0012 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L14 11h7V4l-2.35 2.35z"
+              />
+            </svg>
+          </button>
+          <button class="btn-logout" id="btn-logout" title="Déconnexion">
+            <svg viewBox="0 0 24 24">
+              <path
+                d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"
+              />
+            </svg>
+          </button>
+        </div>
       </header>
 
       <div class="app-content">
@@ -1280,7 +1324,8 @@
           } else if (activeTab === "conges") {
             if (typeof loadConges === "function") loadConges({ silent: true });
           } else if (activeTab === "historique") {
-            if (typeof loadHistorique === "function") loadHistorique();
+            if (typeof loadHistorique === "function")
+              loadHistorique({ silent: true });
           }
         }, 10000);
       }
@@ -1512,21 +1557,38 @@
             )
             .join("");
         } catch (e) {
-          list.innerHTML =
-            '<div class="empty-state"><p>Erreur de chargement</p></div>';
+          if (!_congesSignature) {
+            list.innerHTML =
+              '<div class="empty-state"><p>Erreur de chargement</p></div>';
+          }
         }
       }
 
-      async function loadHistorique() {
+      let _historiqueSignature = null;
+
+      async function loadHistorique({ silent = false } = {}) {
         const list = $("historique-list");
-        list.innerHTML =
-          '<div class="loading"><div class="spinner"></div> Chargement...</div>';
+        // Même pattern que loadConges : spinner seulement au tout premier
+        // chargement, jamais pendant le polling silencieux — et on ne
+        // redessine que si les données ont réellement changé, pour éviter
+        // le clignotement de la liste toutes les 10s.
+        if (!silent && !_historiqueSignature) {
+          list.innerHTML =
+            '<div class="loading"><div class="spinner"></div> Chargement...</div>';
+        }
         try {
           const r = await apiFetch("/api/agent-portal/stats");
           if (!r) return;
           if (!r.ok) throw new Error();
           const d = await r.json();
           const pointages = d.pointagesRecents || d.derniersPointages || [];
+
+          const signature = JSON.stringify(
+            pointages.map((p) => p.date + p.statut + (p.heure_depart || "")),
+          );
+          if (signature === _historiqueSignature) return;
+          _historiqueSignature = signature;
+
           if (!pointages.length) {
             list.innerHTML =
               '<div class="empty-state"><p>Aucun pointage récent</p></div>';
@@ -1549,8 +1611,10 @@
             })
             .join("");
         } catch {
-          list.innerHTML =
-            '<div class="empty-state"><p>Données non disponibles</p></div>';
+          if (!_historiqueSignature) {
+            list.innerHTML =
+              '<div class="empty-state"><p>Données non disponibles</p></div>';
+          }
         }
       }
 
@@ -1845,6 +1909,42 @@
         $("logout-pin-error").style.display = "none";
         $("modal-logout-pin").classList.add("open");
         setTimeout(() => $("logout-pin-input").focus(), 300);
+      });
+
+      // Refresh manuel — juste un fetch des données de l'onglet actif, sans
+      // reload de page. Utile si le polling auto a un souci réseau/session.
+      let _refreshInFlight = false;
+      $("btn-refresh").addEventListener("click", async () => {
+        if (_refreshInFlight) return;
+        _refreshInFlight = true;
+        const btn = $("btn-refresh");
+        btn.classList.add("spinning");
+        btn.disabled = true;
+        try {
+          const activeTab =
+            document.querySelector(".nav-item.active")?.dataset?.tab ||
+            "badge";
+          if (activeTab === "badge" && typeof loadStats === "function") {
+            await loadStats();
+          } else if (activeTab === "conges" && typeof loadConges === "function") {
+            await loadConges();
+          } else if (
+            activeTab === "historique" &&
+            typeof loadHistorique === "function"
+          ) {
+            await loadHistorique();
+          }
+          showToast("Actualisé", "success", 1200);
+        } catch (e) {
+          showToast("Échec de l'actualisation", "error", 2000);
+        } finally {
+          // Laisser l'icône tourner un minimum visible même si la réponse est instantanée
+          setTimeout(() => {
+            btn.classList.remove("spinning");
+            btn.disabled = false;
+            _refreshInFlight = false;
+          }, 400);
+        }
       });
 
       $("btn-close-logout-pin").addEventListener("click", () => {
