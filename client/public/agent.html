@@ -69,39 +69,50 @@
       /* ── ÉCRAN LOGIN ── */
       #screen-login {
         min-height: 100vh;
+        min-height: 100dvh;
         display: flex;
         flex-direction: column;
         background: var(--green);
         position: relative;
         overflow: hidden;
       }
+      /* halo de profondeur, tres discret, derriere le motif */
       #screen-login::before {
         content: "";
         position: absolute;
-        top: -80px;
-        right: -60px;
+        top: -90px;
+        right: -70px;
         width: 260px;
         height: 260px;
         border-radius: 50%;
-        background: rgba(255, 255, 255, 0.04);
+        background: radial-gradient(circle, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0) 70%);
       }
       #screen-login::after {
         content: "";
         position: absolute;
-        bottom: -100px;
-        left: -80px;
-        width: 320px;
-        height: 320px;
+        bottom: -120px;
+        left: -90px;
+        width: 340px;
+        height: 340px;
         border-radius: 50%;
-        background: rgba(255, 255, 255, 0.03);
+        background: radial-gradient(circle, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0) 70%);
       }
       .login-header {
-        padding: 60px 32px 32px;
+        flex: 1 1 auto;
+        min-height: 200px;
+        padding: 0 32px 32px;
+        padding-top: calc(40px + env(safe-area-inset-top));
         display: flex;
         flex-direction: column;
         align-items: flex-start;
+        justify-content: center;
         position: relative;
         z-index: 1;
+        /* motif organise, epars, dans le theme (mini-cercles) */
+        background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNTAiIGhlaWdodD0iMTUwIiB2aWV3Qm94PSIwIDAgMTUwIDE1MCI+CiAgPGNpcmNsZSBjeD0iMTgiIGN5PSIyMCIgcj0iMyIgZmlsbD0iI2ZmZmZmZiIgZmlsbC1vcGFjaXR5PSIwLjM1Ii8+CiAgPGNpcmNsZSBjeD0iNjYiIGN5PSIxNCIgcj0iNSIgZmlsbD0iI2ZmZmZmZiIgZmlsbC1vcGFjaXR5PSIwLjIyIi8+CiAgPGNpcmNsZSBjeD0iMTEyIiBjeT0iMjYiIHI9IjIuNCIgZmlsbD0iI2ZmZmZmZiIgZmlsbC1vcGFjaXR5PSIwLjQiLz4KICA8Y2lyY2xlIGN4PSIxMzkiIGN5PSI1OCIgcj0iNCIgZmlsbD0iI2ZmZmZmZiIgZmlsbC1vcGFjaXR5PSIwLjI1Ii8+CiAgPGNpcmNsZSBjeD0iMjgiIGN5PSI1OCIgcj0iMi4yIiBmaWxsPSIjZmZmZmZmIiBmaWxsLW9wYWNpdHk9IjAuNCIvPgogIDxjaXJjbGUgY3g9Ijg4IiBjeT0iNTIiIHI9IjMuMiIgZmlsbD0iI2ZmZmZmZiIgZmlsbC1vcGFjaXR5PSIwLjMiLz4KICA8Y2lyY2xlIGN4PSIxMiIgY3k9Ijk4IiByPSI0LjIiIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4yMiIvPgogIDxjaXJjbGUgY3g9IjU2IiBjeT0iOTAiIHI9IjIiIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC40Ii8+CiAgPGNpcmNsZSBjeD0iMTAzIiBjeT0iODQiIHI9IjUuMiIgZmlsbD0iI2ZmZmZmZiIgZmlsbC1vcGFjaXR5PSIwLjE4Ii8+CiAgPGNpcmNsZSBjeD0iMTMyIiBjeT0iMTEyIiByPSIyLjYiIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4zNSIvPgogIDxjaXJjbGUgY3g9IjQyIiBjeT0iMTI2IiByPSIzIiBmaWxsPSIjZmZmZmZmIiBmaWxsLW9wYWNpdHk9IjAuMjgiLz4KICA8Y2lyY2xlIGN4PSI4NSIgY3k9IjEzMiIgcj0iMiIgZmlsbD0iI2ZmZmZmZiIgZmlsbC1vcGFjaXR5PSIwLjQiLz4KICA8Y2lyY2xlIGN4PSIxMTgiIGN5PSIxNDAiIHI9IjEuOCIgZmlsbD0iI2ZmZmZmZiIgZmlsbC1vcGFjaXR5PSIwLjMiLz4KPC9zdmc+Cg==");
+        background-repeat: repeat;
+        background-size: 130px 130px;
+        background-position: -10px -10px;
       }
       .login-logo {
         width: 52px;
@@ -113,6 +124,7 @@
         justify-content: center;
         margin-bottom: 24px;
         border: 1px solid rgba(255, 255, 255, 0.2);
+        flex-shrink: 0;
       }
       .login-logo svg {
         width: 28px;
@@ -132,13 +144,15 @@
         font-weight: 300;
       }
       .login-card {
-        flex: 1;
+        flex: 0 0 auto;
+        width: 100%;
+        max-width: 460px;
+        margin: 0 auto;
         background: var(--surface);
         border-radius: 28px 28px 0 0;
-        padding: 36px 28px 48px;
+        padding: 36px 28px calc(40px + env(safe-area-inset-bottom));
         position: relative;
         z-index: 1;
-        margin-top: auto;
         box-shadow: var(--shadow);
       }
       .login-card h2 {
@@ -146,6 +160,16 @@
         font-weight: 600;
         color: var(--text);
         margin-bottom: 28px;
+      }
+      @media (min-width: 460px) {
+        .login-card {
+          border-radius: 28px;
+          margin-bottom: max(24px, env(safe-area-inset-bottom));
+        }
+        .login-header {
+          align-items: center;
+          text-align: center;
+        }
       }
       .field {
         margin-bottom: 20px;
