@@ -25,9 +25,11 @@ function renderTable(root, sites) {
   if (!tbody) return;
   tbody.innerHTML = "";
 
+  const colCount = 5 + (showHorairesCol() ? 1 : 0) + (isSuperadmin() ? 3 : 0);
+
   if (!sites.length) {
     tbody.innerHTML = `
-        <tr><td colspan="7" style="text-align:center;padding:24px;color:#aaa;">
+        <tr><td colspan="${colCount}" style="text-align:center;padding:24px;color:#aaa;">
           <i class="fa-solid fa-building-circle-xmark"></i> Aucun site trouve
         </td></tr>
       `;
@@ -49,6 +51,20 @@ function renderTable(root, sites) {
             ${site.actif ? "Actif" : "Inactif"}
           </span>
         </td>
+        ${
+          showHorairesCol()
+            ? `<td style="padding:10px 12px;border-bottom:1px solid #f0f0f0;">
+          ${
+            canEditHoraires(site)
+              ? `<button class="btn-action btn-edit-horaires" data-id="${site._id}"
+              style="display:flex;align-items:center;gap:6px;padding:5px 10px;border-radius:8px;border:1.5px solid var(--green);background:white;color:var(--green);cursor:pointer;font-size:0.78rem;font-weight:500;">
+              <i class="fa-solid fa-clock"></i> Configurer
+            </button>`
+              : `<span style="color:#bbb;font-size:0.78rem;">—</span>`
+          }
+        </td>`
+            : ""
+        }
         <td style="padding:10px 12px;border-bottom:1px solid #f0f0f0;">
           <div style="display:flex;gap:6px;align-items:center;">
             <button class="btn-action btn-edit-site" data-id="${site._id}"
@@ -126,6 +142,24 @@ function renderTable(root, sites) {
 
 // ─── Charger les sites ───────────────────────────────────────────
 let sitesCache = [];
+let currentUser = null;
+
+function isSuperadmin() {
+  return currentUser?.role === "superadmin";
+}
+function canEditHoraires(site) {
+  if (isSuperadmin()) return false; // déjà géré par le bouton "Modifier" complet
+  if (currentUser?.role === "admin") return currentUser.site_id === site._id;
+  if (currentUser?.role === "directeur_regional")
+    return (currentUser.sites_ids || []).includes(site._id);
+  return false;
+}
+function showHorairesCol() {
+  return (
+    !isSuperadmin() &&
+    (currentUser?.role === "admin" || currentUser?.role === "directeur_regional")
+  );
+}
 
 async function fetchSites(root) {
   try {
@@ -199,6 +233,13 @@ function openSiteModal(mode, site, root) {
                 style="width:100%;padding:10px 12px;border:1.5px solid #ddd;border-radius:8px;box-sizing:border-box;font-size:1rem;background:white;color:#1f2933;font-family:inherit;" />
             </div>
           </div>
+          <div style="margin-bottom:10px;">
+            <label style="font-size:0.78rem;font-weight:500;display:block;margin-bottom:6px;color:#666;">
+              <i class="fa-solid fa-clock" style="color:#1565c0;"></i> Heure de sortie
+            </label>
+            <input id="f-heure-fin" type="time" value="${site?.config?.heure_fin || "17:30"}"
+              style="width:100%;padding:10px 12px;border:1.5px solid #ddd;border-radius:8px;box-sizing:border-box;font-size:1rem;background:white;color:#1f2933;font-family:inherit;" />
+          </div>
           <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:0.82rem;">
             <input id="f-weekend" type="checkbox" ${site?.config?.weekend_actif ? "checked" : ""} style="accent-color:var(--green);width:16px;height:16px;">
             Weekend actif
@@ -222,6 +263,7 @@ function openSiteModal(mode, site, root) {
         config: {
           heure_debut: document.getElementById("f-heure-debut")?.value,
           heure_retard: document.getElementById("f-heure-retard")?.value,
+          heure_fin: document.getElementById("f-heure-fin")?.value,
           weekend_actif: document.getElementById("f-weekend")?.checked,
         },
       };
@@ -252,9 +294,71 @@ function openSiteModal(mode, site, root) {
   });
 }
 
+// ─── Modal horaires uniquement (admin / directeur régional, sur leur agence) ──
+function openHorairesModal(site, root) {
+  const content = `
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div style="font-size:0.85rem;color:#666;margin-bottom:4px;">
+          <i class="fa-solid fa-building" style="color:var(--green);"></i> ${site.nom}
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div>
+            <label style="font-size:0.78rem;font-weight:500;display:block;margin-bottom:6px;color:#666;">
+              <i class="fa-regular fa-clock" style="color:var(--green);"></i> Heure debut
+            </label>
+            <input id="fh-heure-debut" type="time" value="${site?.config?.heure_debut || "08:00"}"
+              style="width:100%;padding:10px 12px;border:1.5px solid #ddd;border-radius:8px;box-sizing:border-box;font-size:1rem;background:white;color:#1f2933;font-family:inherit;" />
+          </div>
+          <div>
+            <label style="font-size:0.78rem;font-weight:500;display:block;margin-bottom:6px;color:#666;">
+              <i class="fa-solid fa-triangle-exclamation" style="color:#e65100;"></i> Seuil retard
+            </label>
+            <input id="fh-heure-retard" type="time" value="${site?.config?.heure_retard || "08:15"}"
+              style="width:100%;padding:10px 12px;border:1.5px solid #ddd;border-radius:8px;box-sizing:border-box;font-size:1rem;background:white;color:#1f2933;font-family:inherit;" />
+          </div>
+        </div>
+        <div>
+          <label style="font-size:0.78rem;font-weight:500;display:block;margin-bottom:6px;color:#666;">
+            <i class="fa-solid fa-clock" style="color:#1565c0;"></i> Heure de sortie
+          </label>
+          <input id="fh-heure-fin" type="time" value="${site?.config?.heure_fin || "17:30"}"
+            style="width:100%;padding:10px 12px;border:1.5px solid #ddd;border-radius:8px;box-sizing:border-box;font-size:1rem;background:white;color:#1f2933;font-family:inherit;" />
+        </div>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:0.82rem;">
+          <input id="fh-weekend" type="checkbox" ${site?.config?.weekend_actif ? "checked" : ""} style="accent-color:var(--green);width:16px;height:16px;">
+          Weekend actif
+        </label>
+      </div>
+    `;
+
+  showModal({
+    title: `Horaires — ${site.nom}`,
+    content,
+    confirmText: "Enregistrer",
+    cancelText: "Annuler",
+    onConfirm: async (close) => {
+      const payload = {
+        heure_debut: document.getElementById("fh-heure-debut")?.value,
+        heure_retard: document.getElementById("fh-heure-retard")?.value,
+        heure_fin: document.getElementById("fh-heure-fin")?.value,
+        weekend_actif: document.getElementById("fh-weekend")?.checked,
+      };
+      try {
+        await put(`/api/sites/${site._id}/horaires`, payload);
+        showToast("Horaires mis à jour.", "success");
+        close();
+        fetchSites(root);
+      } catch (err) {
+        showToast(err.message || "Erreur lors de l'enregistrement.", "error");
+      }
+    },
+  });
+}
+
 // ─── Export principal ────────────────────────────────────────────
 export async function renderSites(root, user) {
-  const canEdit = user && user.role === "superadmin";
+  currentUser = user;
+  const canEdit = isSuperadmin();
 
   root.innerHTML = `
       <div class="card" style="display:flex;flex-direction:column;">
@@ -282,11 +386,12 @@ export async function renderSites(root, user) {
                 <th style="padding:12px;text-align:left;font-weight:600;">Region</th>
                 <th style="padding:12px;text-align:left;font-weight:600;">Responsable</th>
                 <th style="padding:12px;text-align:left;font-weight:600;">Statut</th>
+                ${showHorairesCol() ? '<th style="padding:12px;text-align:left;font-weight:600;">Horaires</th>' : ""}
                 ${canEdit ? '<th style="padding:12px;text-align:left;font-weight:600;">Actions</th><th style="padding:12px;text-align:left;font-weight:600;">Kiosque</th><th style=\"padding:12px;text-align:left;font-weight:600;\">PIN kiosque</th>' : ""}
               </tr>
             </thead>
             <tbody id="sites-tbody">
-              <tr><td colspan="7" style="text-align:center;padding:24px;color:#aaa;">
+              <tr><td colspan="${5 + (showHorairesCol() ? 1 : 0) + (isSuperadmin() ? 3 : 0)}" style="text-align:center;padding:24px;color:#aaa;">
                 <i class="fa-solid fa-spinner fa-spin"></i> Chargement...
               </td></tr>
             </tbody>
@@ -307,6 +412,7 @@ export async function renderSites(root, user) {
     const btnCopy = e.target.closest(".btn-copy-kiosque");
     const btnGen = e.target.closest(".btn-gen-kiosque");
     const btnEdit = e.target.closest(".btn-edit-site");
+    const btnEditHoraires = e.target.closest(".btn-edit-horaires");
     const btnToggle = e.target.closest(".btn-toggle-site");
     const btnDeploy = e.target.closest(".btn-deploy-kiosque");
     const btnRotatePin = e.target.closest(".btn-rotate-pin");
@@ -364,6 +470,13 @@ export async function renderSites(root, user) {
       const id = btnEdit.dataset.id;
       const site = sitesCache.find((s) => s._id === id);
       if (site) openSiteModal("edit", site, root);
+      return;
+    }
+
+    if (btnEditHoraires) {
+      const id = btnEditHoraires.dataset.id;
+      const site = sitesCache.find((s) => s._id === id);
+      if (site) openHorairesModal(site, root);
       return;
     }
 

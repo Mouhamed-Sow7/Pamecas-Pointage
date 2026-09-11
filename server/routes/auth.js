@@ -140,6 +140,7 @@ function createTokenPayload(user) {
     username: user.username,
     role: user.role,
     site_id: user.site_id || null,
+    sites_ids: user.sites_ids || [],
     instance_slug: user.instance_slug || 'pamecas'
   };
 }
