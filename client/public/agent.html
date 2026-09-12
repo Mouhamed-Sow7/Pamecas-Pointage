@@ -454,25 +454,35 @@
         position: absolute;
         top: 8px;
         right: 8px;
-        width: 28px;
-        height: 28px;
-        border-radius: 8px;
-        border: none;
-        background: rgba(15, 81, 50, 0.07);
-        color: var(--green);
+        width: 32px;
+        height: 32px;
+        border-radius: 9px;
+        border: 2px solid white;
+        background: var(--green);
+        color: white;
         cursor: pointer;
         display: flex;
         align-items: center;
         justify-content: center;
-        transition: background 0.15s;
+        box-shadow: 0 3px 10px rgba(15, 81, 50, 0.35);
+        transition:
+          transform 0.15s,
+          box-shadow 0.15s,
+          background 0.15s;
         z-index: 2;
       }
       .qr-expand-btn:hover {
-        background: rgba(15, 81, 50, 0.14);
+        background: var(--green-dark, #0f5132);
+        transform: scale(1.06);
+        box-shadow: 0 4px 14px rgba(15, 81, 50, 0.45);
+      }
+      .qr-expand-btn:active {
+        transform: scale(0.96);
       }
       .qr-expand-btn svg {
-        width: 15px;
-        height: 15px;
+        width: 17px;
+        height: 17px;
+        stroke-width: 2.4;
       }
 
       /* PLEIN ÉCRAN BADGE/QR */

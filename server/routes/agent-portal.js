@@ -293,7 +293,13 @@ router.get("/stats", authenticateAgent, async (req, res) => {
           p.heure_depart
         ) {
           presencesMois++;
-        } else if (p.statut === "retard" && p.heure_arrivee && p.heure_depart) {
+        } else if (p.statut === "retard" && p.heure_arrivee) {
+          // Le statut "retard" est posé dès l'arrivée (cf. routes/pointages.js)
+          // et n'est jamais écrasé au départ — donc un retard compte tout de
+          // suite, qu'il ait déjà pointé son départ ou non (jour en cours y
+          // compris). Sans ce `heure_depart` était exigé à tort : un agent en
+          // retard qui n'avait pas encore pointé son départ n'était jamais
+          // compté, et retombait même dans la branche "partiel" ci-dessous.
           retardsMois++;
         } else if (
           p.statut === "partiel" ||
