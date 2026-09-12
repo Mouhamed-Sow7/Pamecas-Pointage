@@ -160,7 +160,12 @@ async function reloadPointagesList(container) {
     pointages.forEach(p => {
       const agent = p.agent_id || {};
       const sc = statutConfig[p.statut] || { color: '#555', bg: '#f5f5f5', label: p.statut, icon: 'fa-circle' };
-      const methodeIcon = p.methode === 'qr_code' ? 'fa-qrcode' : 'fa-hand-pointer';
+      const methodeIcon =
+        p.methode === "qr_code"
+          ? "fa-qrcode"
+          : p.methode === "auto"
+            ? "fa-robot"
+            : "fa-hand-pointer";
 
       // Durée formatée
       let dureeStr = '';

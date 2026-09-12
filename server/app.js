@@ -10,6 +10,7 @@ const { Server } = require("socket.io");
 
 const { connectDB } = require("./config/db");
 const { initEmailCron } = require("./services/emailReports");
+const { initAbsenceCron } = require("./services/absenceCron");
 
 dotenv.config();
 
@@ -36,6 +37,7 @@ io.on("connection", (socket) => {
 
 connectDB();
 initEmailCron();
+initAbsenceCron();
 
 // ── Cron rotation PIN kiosque — toutes les 30min, rotate les PINs expirés ──
 (async function initPinRotationCron() {

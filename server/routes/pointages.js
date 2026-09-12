@@ -421,4 +421,51 @@ router.put("/:id", authorizeRoles("admin", "superadmin"), async (req, res) => {
   }
 });
 
+// ── Déclenchement manuel du marquage d'absences (test avant 21h) ──
+// Accepte soit ?date=YYYY-MM-DD (un seul jour), soit ?date_debut=...&date_fin=...
+// (rattrapage sur une période, utile pour peupler l'historique des
+// absences déjà "comptées" dans les stats mais jamais matérialisées).
+router.get(
+  "/test-marquer-absences",
+  authorizeRoles("superadmin"),
+  async (req, res) => {
+    try {
+      const { marquerAbsences } = require("../services/absenceCron");
+      const { date, date_debut, date_fin } = req.query;
+
+      if (date_debut && date_fin) {
+        if (date_fin < date_debut) {
+          return res
+            .status(400)
+            .json({ message: "date_fin doit être après date_debut." });
+        }
+        const cursor = new Date(`${date_debut}T00:00:00Z`);
+        const fin = new Date(`${date_fin}T00:00:00Z`);
+        const nbJours = Math.round((fin - cursor) / 86400000) + 1;
+        if (nbJours > 62) {
+          return res.status(400).json({
+            message: "Période trop large (62 jours maximum en une fois).",
+          });
+        }
+        const resultats = [];
+        while (cursor <= fin) {
+          const dateStr = cursor.toISOString().slice(0, 10);
+          resultats.push(await marquerAbsences(dateStr));
+          cursor.setUTCDate(cursor.getUTCDate() + 1);
+        }
+        return res.json({ jours: resultats.length, resultats });
+      }
+
+      const dateStr = date || todayString();
+      const resultat = await marquerAbsences(dateStr);
+      return res.json(resultat);
+    } catch (err) {
+      console.error("Erreur test marquage absences:", err);
+      return res
+        .status(500)
+        .json({ message: "Erreur lors du marquage des absences." });
+    }
+  },
+);
+
 module.exports = router;
