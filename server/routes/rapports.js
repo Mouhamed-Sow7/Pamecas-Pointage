@@ -6,6 +6,23 @@ const { authenticate, authorizeRoles, tenantFilter, tenantScope } = require('../
 const Pointage = require('../models/Pointage');
 const Site = require('../models/Site');
 const Agent = require('../models/Agent');
+const Tenant = require('../models/Tenant');
+
+// ─── Identité visuelle des rapports ────────────────────────────────
+// Volontairement UNIFORME pour tous les tenants (pas la couleur de
+// thème choisie par chaque instance) : un rapport doit rester lisible,
+// imprimable et reconnaissable comme "SmartPointage" quel que soit le
+// client qui l'exporte. Seul le nom du tenant change, dans l'en-tête.
+const REPORT_BRAND_COLOR = '1E3A5F'; // même bleu marine en Excel et en PDF
+const REPORT_BRAND_COLOR_HEX = `#${REPORT_BRAND_COLOR}`;
+
+async function getTenantDisplayName(req) {
+  const slug = req.user.instance_slug;
+  if (slug === null) return 'Toutes instances';
+  if (!slug || slug === 'pamecas') return 'PAMECAS';
+  const tenant = await Tenant.findOne({ slug }).select('nom configuration.instance_name');
+  return tenant?.configuration?.instance_name || tenant?.nom || slug.toUpperCase();
+}
 
 const router = express.Router();
 
@@ -137,7 +154,7 @@ const STATUT_LABELS = {
   retard: 'Retard'
 };
 
-function genererRapportPdf(res, { pointages, date_debut, date_fin, site_code }) {
+function genererRapportPdf(res, { pointages, date_debut, date_fin, site_code, tenantName }) {
   const doc = new PDFDocument({
     size: 'A4',
     layout: 'landscape',
@@ -159,11 +176,23 @@ function genererRapportPdf(res, { pointages, date_debut, date_fin, site_code }) 
     { key: 'note', label: 'Note', width: pageWidth - (65 + 130 + 75 + 150 + 65 + 60 + 60 + 60) }
   ];
 
-  // --- En-tête du rapport ---
+  // --- Bandeau de marque (uniforme, identique pour tous les tenants) ---
+  const bandHeight = 40;
+  doc.rect(doc.page.margins.left, doc.page.margins.top, pageWidth, bandHeight).fill(REPORT_BRAND_COLOR_HEX);
   doc
-    .fontSize(16)
+    .fontSize(15)
+    .fillColor('#ffffff')
+    .text('SmartPointage — Rapport de pointages', doc.page.margins.left + 14, doc.page.margins.top + 12, {
+      width: pageWidth - 28
+    });
+  doc.y = doc.page.margins.top + bandHeight + 10;
+  doc.x = doc.page.margins.left;
+
+  // --- En-tête : ce qui distingue chaque tenant (nom, période...) ---
+  doc
+    .fontSize(11)
     .fillColor('#1a1a1a')
-    .text('SmartPointage — Rapport de pointages', { align: 'left' });
+    .text(tenantName || 'SmartPointage', { align: 'left', continued: false });
   doc
     .fontSize(10)
     .fillColor('#555')
@@ -198,7 +227,7 @@ function genererRapportPdf(res, { pointages, date_debut, date_fin, site_code }) 
   function drawTableHeader(y) {
     let x = doc.page.margins.left;
     doc.fontSize(9).fillColor('#ffffff');
-    doc.rect(doc.page.margins.left, y, pageWidth, rowHeight).fill('#1e3a5f');
+    doc.rect(doc.page.margins.left, y, pageWidth, rowHeight).fill(REPORT_BRAND_COLOR_HEX);
     doc.fillColor('#ffffff');
     columns.forEach((col) => {
       doc.text(col.label, x + 4, y + 5, { width: col.width - 8, ellipsis: true });
@@ -304,11 +333,15 @@ router.get('/export', async (req, res) => {
         .json({ message: 'Aucun pointage trouvé pour cette période.' });
     }
 
+    const tenantName = await getTenantDisplayName(req);
+
     if (format === 'excel') {
       const workbook = new ExcelJS.Workbook();
+      workbook.creator = 'SmartPointage';
+      workbook.created = new Date();
       const worksheet = workbook.addWorksheet('Pointages');
 
-      worksheet.columns = [
+      const columns = [
         { header: 'Date', key: 'date', width: 12 },
         { header: 'Site', key: 'site', width: 24 },
         { header: 'Code site', key: 'site_code', width: 14 },
@@ -322,9 +355,47 @@ router.get('/export', async (req, res) => {
         { header: 'Méthode', key: 'methode', width: 12 },
         { header: 'Note', key: 'note', width: 30 }
       ];
+      const colCount = columns.length;
+      const colLetter = worksheet.getColumn(colCount).letter;
 
-      pointages.forEach((p) => {
-        worksheet.addRow({
+      // On définit juste les clés/largeurs (pas le "header" auto d'ExcelJS,
+      // on écrit nous-mêmes les 3 lignes d'en-tête pour contrôler le style)
+      worksheet.columns = columns.map(({ header, ...rest }) => rest);
+
+      // Ligne 1 — bandeau titre, marque SmartPointage (uniforme tous tenants)
+      worksheet.mergeCells(`A1:${colLetter}1`);
+      const titleCell = worksheet.getCell('A1');
+      titleCell.value = 'SmartPointage — Rapport de pointages';
+      titleCell.font = { bold: true, size: 14, color: { argb: 'FFFFFFFF' } };
+      titleCell.alignment = { vertical: 'middle', horizontal: 'left' };
+      titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: `FF${REPORT_BRAND_COLOR}` } };
+      worksheet.getRow(1).height = 26;
+
+      // Ligne 2 — identification tenant + période (ce qui varie par instance)
+      worksheet.mergeCells(`A2:${colLetter}2`);
+      const subtitleCell = worksheet.getCell('A2');
+      subtitleCell.value =
+        `${tenantName}  •  Période : ${date_debut} au ${date_fin}` +
+        (site_code ? `  •  Site : ${site_code}` : '  •  Tous sites') +
+        `  •  Généré le ${new Date().toLocaleString('fr-FR')}`;
+      subtitleCell.font = { italic: true, size: 10, color: { argb: 'FF444444' } };
+      subtitleCell.alignment = { vertical: 'middle', horizontal: 'left' };
+      worksheet.getRow(2).height = 20;
+
+      // Ligne 3 — en-têtes de colonnes (même couleur de marque, texte blanc)
+      const headerRow = worksheet.getRow(3);
+      headerRow.values = columns.map((c) => c.header);
+      headerRow.eachCell((cell) => {
+        cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: `FF${REPORT_BRAND_COLOR}` } };
+        cell.alignment = { vertical: 'middle', horizontal: 'left' };
+      });
+      headerRow.height = 20;
+      worksheet.autoFilter = { from: 'A3', to: `${colLetter}3` };
+      worksheet.views = [{ state: 'frozen', ySplit: 3 }];
+
+      pointages.forEach((p, idx) => {
+        const row = worksheet.addRow({
           date: p.date,
           site: p.site_id ? p.site_id.nom : '',
           site_code: p.site_id ? p.site_id.code : '',
@@ -338,6 +409,11 @@ router.get('/export', async (req, res) => {
           methode: p.methode,
           note: p.note || ''
         });
+        if (idx % 2 === 1) {
+          row.eachCell((cell) => {
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF4F6F8' } };
+          });
+        }
       });
 
       const buffer = await workbook.xlsx.writeBuffer();
@@ -361,7 +437,8 @@ router.get('/export', async (req, res) => {
         pointages,
         date_debut,
         date_fin,
-        site_code
+        site_code,
+        tenantName
       });
     }
 
