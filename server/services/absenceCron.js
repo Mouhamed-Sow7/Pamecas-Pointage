@@ -27,7 +27,19 @@ function isWeekend(dateStr) {
  * agent en congé approuvé couvrant cette date.
  */
 async function marquerAbsences(dateStr = todayString()) {
-  const resultat = { date: dateStr, traites: 0, marques: 0, ignores: 0, erreurs: 0 };
+  const resultat = {
+    date: dateStr,
+    traites: 0,
+    marques: 0,
+    ignores: 0,
+    erreurs: 0,
+    raisons: {
+      pas_encore_embauche: 0,
+      weekend: 0,
+      deja_pointe: 0,
+      conge_approuve: 0,
+    },
+  };
 
   // Sécurité : on ne traite jamais une date future — mais "aujourd'hui"
   // reste autorisé, car c'est justement sur ce jour que le cron de 21h
@@ -60,12 +72,14 @@ async function marquerAbsences(dateStr = todayString()) {
         agent.date_embauche.toISOString().slice(0, 10) > dateStr
       ) {
         resultat.ignores += 1;
+        resultat.raisons.pas_encore_embauche += 1;
         continue;
       }
 
       const site = siteById.get(String(agent.site_id));
       if (weekend && !site?.config?.weekend_actif) {
         resultat.ignores += 1;
+        resultat.raisons.weekend += 1;
         continue;
       }
 
@@ -75,6 +89,7 @@ async function marquerAbsences(dateStr = todayString()) {
       });
       if (dejaPointe) {
         resultat.ignores += 1;
+        resultat.raisons.deja_pointe += 1;
         continue;
       }
 
@@ -86,6 +101,7 @@ async function marquerAbsences(dateStr = todayString()) {
       });
       if (enConge) {
         resultat.ignores += 1;
+        resultat.raisons.conge_approuve += 1;
         continue;
       }
 
@@ -109,7 +125,7 @@ async function marquerAbsences(dateStr = todayString()) {
   }
 
   console.log(
-    `[cron absences] ${dateStr} - traites: ${resultat.traites}, marques absent: ${resultat.marques}, ignores: ${resultat.ignores}, erreurs: ${resultat.erreurs}`,
+    `[cron absences] ${dateStr} - traites: ${resultat.traites}, marques absent: ${resultat.marques}, ignores: ${resultat.ignores} (${JSON.stringify(resultat.raisons)}), erreurs: ${resultat.erreurs}`,
   );
   return resultat;
 }
