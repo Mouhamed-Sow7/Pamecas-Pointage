@@ -123,6 +123,20 @@ function showKiosqueExpiredBanner() {
   }, 100);
 }
 
+// ─── Manifest dynamique — permet d'installer /login et /register comme
+// des raccourcis distincts (icône + nom propres), en plus de l'app principale.
+const DEFAULT_MANIFEST = "/manifest.json";
+const ROUTE_MANIFESTS = {
+  "/login": "/manifest-login.json",
+  "/register": "/manifest-register.json",
+};
+function syncInstallManifest(route) {
+  const link = document.getElementById("manifest-link");
+  if (!link) return;
+  const href = ROUTE_MANIFESTS[route] || DEFAULT_MANIFEST;
+  if (!link.href.endsWith(href)) link.setAttribute("href", href);
+}
+
 function mountLayout(route, user, queryParams = {}) {
   const app = document.getElementById("app");
   if (!app) return;
@@ -235,6 +249,8 @@ async function router() {
   const route = hash.replace("#", "").split("?")[0] || "/dashboard";
   const queryStr = hash.includes("?") ? hash.split("?")[1] : "";
   const queryParams = Object.fromEntries(new URLSearchParams(queryStr));
+
+  syncInstallManifest(route);
 
   // Kiosque — pas besoin d'authentification
   if (route.startsWith("/kiosque")) {

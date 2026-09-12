@@ -1,7 +1,9 @@
 const crypto = require("crypto");
 
-// Fenêtre de 30 secondes
-const WINDOW_SECONDS = 30;
+// Fenêtre de 20 secondes (code plus court = moins d'exposition en cas de
+// regard indiscret / capture d'écran, sans gêner le scan normal grâce à la
+// tolérance ci-dessous)
+const WINDOW_SECONDS = 20;
 // Tolérance : fenêtre courante + précédente
 const TOLERANCE = 1;
 

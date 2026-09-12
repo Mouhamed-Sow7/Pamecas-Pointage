@@ -450,6 +450,160 @@
         height: 14px;
         fill: var(--accent-dark);
       }
+      .qr-expand-btn {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        width: 28px;
+        height: 28px;
+        border-radius: 8px;
+        border: none;
+        background: rgba(15, 81, 50, 0.07);
+        color: var(--green);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.15s;
+        z-index: 2;
+      }
+      .qr-expand-btn:hover {
+        background: rgba(15, 81, 50, 0.14);
+      }
+      .qr-expand-btn svg {
+        width: 15px;
+        height: 15px;
+      }
+
+      /* PLEIN ÉCRAN BADGE/QR */
+      .qr-fullscreen {
+        position: fixed;
+        inset: 0;
+        z-index: 400;
+        background: linear-gradient(160deg, #0f5132 0%, #1b7a4c 100%);
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: max(24px, env(safe-area-inset-top)) 24px
+          max(24px, env(safe-area-inset-bottom));
+        text-align: center;
+      }
+      .qr-fullscreen.open {
+        display: flex;
+      }
+      .qr-fullscreen-close {
+        position: absolute;
+        top: max(18px, env(safe-area-inset-top));
+        right: 18px;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.12);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+      }
+      .qr-fullscreen-close svg {
+        width: 18px;
+        height: 18px;
+      }
+      .qr-fullscreen-avatar {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.14);
+        border: 1.5px solid rgba(255, 255, 255, 0.28);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        font-weight: 600;
+        color: white;
+        margin: 0 auto;
+      }
+      .qr-fullscreen-name {
+        font-size: 21px;
+        font-weight: 600;
+        color: white;
+        margin-top: 14px;
+      }
+      .qr-fullscreen-matricule {
+        font-family: "DM Mono", monospace;
+        font-size: 12.5px;
+        color: rgba(255, 255, 255, 0.55);
+        letter-spacing: 0.05em;
+        margin-top: 2px;
+      }
+      .qr-fullscreen-poste {
+        font-size: 13px;
+        color: rgba(255, 255, 255, 0.8);
+        margin-top: 8px;
+        padding: 5px 14px;
+        background: rgba(255, 255, 255, 0.12);
+        border-radius: 20px;
+        display: inline-block;
+      }
+      .qr-fullscreen-wrapper {
+        width: min(76vw, 300px);
+        height: min(76vw, 300px);
+        background: white;
+        border-radius: 22px;
+        padding: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 24px 60px rgba(0, 0, 0, 0.32);
+        margin-top: 26px;
+        position: relative;
+      }
+      #qr-container-fullscreen canvas,
+      #qr-container-fullscreen img {
+        border-radius: 10px;
+      }
+      .qr-fullscreen-loading {
+        color: var(--text-3);
+        font-size: 13px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+      }
+      .qr-fullscreen-timer {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        margin-top: 20px;
+        width: min(76vw, 300px);
+      }
+      .qr-fullscreen-timer-bar {
+        flex: 1;
+        height: 5px;
+        background: rgba(255, 255, 255, 0.18);
+        border-radius: 999px;
+        overflow: hidden;
+      }
+      .qr-fullscreen-timer-fill {
+        height: 100%;
+        background: white;
+        border-radius: 999px;
+        transition: width 1s linear;
+      }
+      .qr-fullscreen-timer-text {
+        font-size: 12.5px;
+        font-family: "DM Mono", monospace;
+        color: rgba(255, 255, 255, 0.75);
+        min-width: 28px;
+      }
+      .qr-fullscreen-hint {
+        font-size: 12.5px;
+        color: rgba(255, 255, 255, 0.5);
+        margin-top: 22px;
+      }
 
       /* STATS GRID */
       .stats-grid {
@@ -1052,13 +1206,23 @@
             </div>
             <div class="qr-wrapper" id="qr-wrapper">
               <div id="qr-container"></div>
+              <button
+                class="qr-expand-btn"
+                id="btn-qr-expand"
+                title="Plein écran"
+                aria-label="Afficher le QR en plein écran"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3" />
+                </svg>
+              </button>
             </div>
             <div id="qr-totp-bar" style="display: none">
               <div class="qr-timer">
                 <div class="qr-timer-bar">
                   <div class="qr-timer-fill" id="timer-fill"></div>
                 </div>
-                <span class="qr-timer-text" id="timer-text">30s</span>
+                <span class="qr-timer-text" id="timer-text">20s</span>
               </div>
             </div>
             <div
@@ -1286,6 +1450,37 @@
       </div>
     </div>
 
+    <!-- QR EN PLEIN ÉCRAN -->
+    <div class="qr-fullscreen" id="qr-fullscreen">
+      <button class="qr-fullscreen-close" id="btn-qr-fullscreen-close" aria-label="Fermer">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+        </svg>
+      </button>
+
+      <div class="qr-fullscreen-avatar" id="qr-fullscreen-avatar">--</div>
+      <div class="qr-fullscreen-name" id="qr-fullscreen-name">—</div>
+      <div class="qr-fullscreen-matricule" id="qr-fullscreen-matricule">—</div>
+      <div class="qr-fullscreen-poste" id="qr-fullscreen-poste">—</div>
+
+      <div class="qr-fullscreen-wrapper">
+        <div class="qr-fullscreen-loading" id="qr-fullscreen-loading">
+          <div style="width:28px;height:28px;border:3px solid #e0e0e0;border-top-color:#0f5132;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
+          <span>Chargement du badge…</span>
+        </div>
+        <div id="qr-container-fullscreen" style="display:none;"></div>
+      </div>
+
+      <div class="qr-fullscreen-timer" id="qr-fullscreen-timer" style="display:none;">
+        <div class="qr-fullscreen-timer-bar">
+          <div class="qr-fullscreen-timer-fill" id="timer-fill-fullscreen"></div>
+        </div>
+        <span class="qr-fullscreen-timer-text" id="timer-text-fullscreen">20s</span>
+      </div>
+
+      <div class="qr-fullscreen-hint">Présentez cet écran à l'agent de contrôle</div>
+    </div>
+
     <!-- TOAST -->
     <div class="toast" id="toast"></div>
 
@@ -1411,6 +1606,8 @@
       let pollingInterval = null;
       let currentWindow = null;
       let _qrInstance = null;
+      let _qrInstanceFull = null;
+      let _currentAgentBadge = null; // { matricule, secret, static, prenom, nom, poste }
 
       async function getHmacKey(secret) {
         if (_keyCache.has(secret)) return _keyCache.get(secret);
@@ -1438,14 +1635,17 @@
       }
 
       async function buildQRData(matricule, secret) {
-        const win = Math.floor(Date.now() / 30000);
+        const win = Math.floor(Date.now() / 20000);
         const hex = await hmacHex(secret, `${matricule}:${win}`);
         return { data: `SP:${matricule}:${hex.substring(0, 12)}:${win}`, win };
       }
 
+      // Dessine le QR dans le petit conteneur (badge), et — s'il est ouvert —
+      // dans le conteneur plein écran, avec exactement la même donnée/instant.
       async function drawQR(matricule, secret) {
-        const container = document.getElementById("qr-container");
         const { data } = await buildQRData(matricule, secret);
+
+        const container = document.getElementById("qr-container");
         if (_qrInstance) {
           _qrInstance.clear();
           _qrInstance.makeCode(data);
@@ -1460,6 +1660,26 @@
             correctLevel: QRCode.CorrectLevel.M,
           });
         }
+
+        if ($("qr-fullscreen")?.classList.contains("open")) {
+          const containerFull = document.getElementById(
+            "qr-container-fullscreen",
+          );
+          if (_qrInstanceFull) {
+            _qrInstanceFull.clear();
+            _qrInstanceFull.makeCode(data);
+          } else {
+            containerFull.innerHTML = "";
+            _qrInstanceFull = new QRCode(containerFull, {
+              text: data,
+              width: 260,
+              height: 260,
+              colorDark: "#0f5132",
+              colorLight: "#ffffff",
+              correctLevel: QRCode.CorrectLevel.M,
+            });
+          }
+        }
       }
 
       function startTOTPTimer(matricule, secret) {
@@ -1470,13 +1690,18 @@
 
         totpInterval = setInterval(() => {
           const now = Math.floor(Date.now() / 1000);
-          const remaining = 30 - (now % 30);
-          const win = Math.floor(now / 30);
+          const remaining = 20 - (now % 20);
+          const win = Math.floor(now / 20);
 
           const fill = document.getElementById("timer-fill");
           const txt = document.getElementById("timer-text");
-          if (fill) fill.style.width = (remaining / 30) * 100 + "%";
+          if (fill) fill.style.width = (remaining / 20) * 100 + "%";
           if (txt) txt.textContent = remaining + "s";
+
+          const fillFull = document.getElementById("timer-fill-fullscreen");
+          const txtFull = document.getElementById("timer-text-fullscreen");
+          if (fillFull) fillFull.style.width = (remaining / 20) * 100 + "%";
+          if (txtFull) txtFull.textContent = remaining + "s";
 
           if (win !== currentWindow) {
             currentWindow = win;
@@ -1487,17 +1712,31 @@
 
       async function renderQR(agent) {
         _qrInstance = null;
+        _qrInstanceFull = null;
         const container = document.getElementById("qr-container");
         container.innerHTML = "";
         document.getElementById("qr-static-badge").style.display = "none";
         document.getElementById("qr-totp-bar").style.display = "none";
 
+        _currentAgentBadge = {
+          matricule: agent.matricule,
+          secret: agent.totp_secret,
+          isStatic: !(agent.totp_enabled && agent.totp_secret),
+          prenom: agent.prenom,
+          nom: agent.nom,
+          poste: agent.poste,
+        };
+
         if (agent.totp_enabled && agent.totp_secret) {
           document.getElementById("qr-totp-bar").style.display = "block";
+          document.getElementById("qr-fullscreen-timer").style.display =
+            "flex";
           startTOTPTimer(agent.matricule, agent.totp_secret);
         } else {
           document.getElementById("qr-static-badge").style.display =
             "inline-flex";
+          document.getElementById("qr-fullscreen-timer").style.display =
+            "none";
           _qrInstance = new QRCode(container, {
             text: agent.matricule,
             width: 176,
@@ -1508,6 +1747,66 @@
           });
         }
       }
+
+      // ── Plein écran ──────────────────────────────────────────────
+      function openQRFullscreen() {
+        if (!_currentAgentBadge) return;
+        const b = _currentAgentBadge;
+
+        $("qr-fullscreen-avatar").textContent = initials(b.prenom, b.nom);
+        $("qr-fullscreen-name").textContent =
+          `${b.prenom || ""} ${b.nom || ""}`.trim() || "—";
+        $("qr-fullscreen-matricule").textContent = b.matricule || "—";
+        $("qr-fullscreen-poste").textContent = b.poste || "Agent";
+
+        // Etat de chargement, le temps de (re)générer un QR frais et net
+        $("qr-fullscreen-loading").style.display = "flex";
+        $("qr-container-fullscreen").style.display = "none";
+        _qrInstanceFull = null;
+        $("qr-container-fullscreen").innerHTML = "";
+
+        $("qr-fullscreen").classList.add("open");
+        document.body.style.overflow = "hidden";
+
+        const reveal = () => {
+          $("qr-fullscreen-loading").style.display = "none";
+          $("qr-container-fullscreen").style.display = "flex";
+        };
+
+        if (b.isStatic) {
+          $("qr-fullscreen-timer").style.display = "none";
+          _qrInstanceFull = new QRCode($("qr-container-fullscreen"), {
+            text: b.matricule,
+            width: 260,
+            height: 260,
+            colorDark: "#0f5132",
+            colorLight: "#ffffff",
+            correctLevel: QRCode.CorrectLevel.M,
+          });
+          setTimeout(reveal, 250);
+        } else {
+          $("qr-fullscreen-timer").style.display = "flex";
+          drawQR(b.matricule, b.secret).then(() =>
+            setTimeout(reveal, 250),
+          );
+        }
+      }
+
+      function closeQRFullscreen() {
+        $("qr-fullscreen").classList.remove("open");
+        document.body.style.overflow = "";
+      }
+
+      $("btn-qr-expand")?.addEventListener("click", openQRFullscreen);
+      $("btn-qr-fullscreen-close")?.addEventListener("click", closeQRFullscreen);
+      $("qr-fullscreen")?.addEventListener("click", (e) => {
+        if (e.target.id === "qr-fullscreen") closeQRFullscreen();
+      });
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && $("qr-fullscreen")?.classList.contains("open")) {
+          closeQRFullscreen();
+        }
+      });
       // ── END TOTP/QR block ──────────────────────────────────
 
       async function loadStats() {
