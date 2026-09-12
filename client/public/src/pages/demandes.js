@@ -6,9 +6,11 @@ export async function renderDemandes(root, user) {
   const isManager = user && ["admin", "superadmin", "directeur_regional"].includes(user.role);
   if (!isManager) {
     root.innerHTML = `
-      <div style="text-align:center;padding:60px 20px;color:#aaa;">
-        <i class="fa-solid fa-lock" style="font-size:2rem;margin-bottom:12px;display:block;"></i>
-        Accès réservé aux administrateurs.
+      <div class="request-empty">
+        <div class="empty-icon-circle" style="background:rgba(198,40,40,0.08);color:#c62828;">
+          <i class="fa-solid fa-lock"></i>
+        </div>
+        <p>Accès réservé aux administrateurs.</p>
       </div>`;
     return;
   }
@@ -16,26 +18,28 @@ export async function renderDemandes(root, user) {
   root.innerHTML = `
     <div>
       <!-- En-tête -->
-      <div style="margin-bottom:16px;">
-        <h1 style="font-size:1.2rem;font-weight:700;margin-bottom:4px;">
-          <i class="fa-solid fa-inbox" style="color:#e65100;margin-right:8px;"></i>Demandes RH
-        </h1>
-        <p style="font-size:0.82rem;color:#888;margin:0;">Traitez les demandes de vos agents en attente de validation.</p>
+      <div class="page-heading" style="margin-bottom:18px;">
+        <div class="page-heading-icon" style="background:rgba(230,81,0,0.1);color:#e65100;">
+          <i class="fa-solid fa-mobile-screen-button"></i>
+        </div>
+        <div>
+          <h1>Demandes RH</h1>
+          <p>Traitez les demandes de changement d'appareil de vos agents.</p>
+        </div>
       </div>
 
       <!-- Panneau : Changement d'appareil (seul objet de cette page désormais — les congés ont leur propre menu "Congés") -->
       <div id="panel-telephone">
-        <div class="card" style="padding:0;overflow:hidden;">
-          <div style="padding:14px 16px;border-bottom:1px solid #f5f5f5;background:#fff8f5;">
-            <div style="font-size:0.82rem;color:#bf360c;">
-              <i class="fa-solid fa-circle-info" style="margin-right:6px;"></i>
-              Un agent dont la session est révoquée devra se réenregistrer depuis son nouveau téléphone.
+        <div class="request-alert">
+          <i class="fa-solid fa-circle-info"></i>
+          <span>Un agent dont la session est révoquée devra se réenregistrer depuis son nouveau téléphone.</span>
+        </div>
+        <div id="list-telephone">
+          <div class="request-empty">
+            <div class="empty-icon-circle" style="background:#f2f2f2;color:#aaa;">
+              <i class="fa-solid fa-spinner fa-spin"></i>
             </div>
-          </div>
-          <div id="list-telephone" style="padding:8px 0;">
-            <div style="text-align:center;padding:30px;color:#bbb;">
-              <i class="fa-solid fa-spinner fa-spin"></i> Chargement...
-            </div>
+            <p>Chargement…</p>
           </div>
         </div>
       </div>
@@ -59,53 +63,55 @@ export async function renderDemandes(root, user) {
 
       if (!demandes.length) {
         list.innerHTML = `
-          <div style="text-align:center;padding:40px 20px;color:#bbb;">
-            <i class="fa-solid fa-circle-check" style="font-size:2rem;color:#a5d6a7;display:block;margin-bottom:10px;"></i>
-            Aucune demande en attente.
+          <div class="request-empty">
+            <div class="empty-icon-circle" style="background:rgba(46,125,50,0.1);color:#2e7d32;">
+              <i class="fa-solid fa-circle-check"></i>
+            </div>
+            <p>Aucune demande en attente.</p>
           </div>`;
         return;
       }
 
       list.innerHTML = demandes.map(a => {
-        const motifLabel = {
-          telephone_vole: '<i class="fa-solid fa-mobile-screen-button"></i> Téléphone volé',
-          telephone_perdu: '<i class="fa-solid fa-magnifying-glass"></i> Téléphone perdu',
-          telephone_detruit: '<i class="fa-solid fa-triangle-exclamation"></i> Téléphone détruit / HS',
-          autre: '<i class="fa-solid fa-circle-question"></i> Autre'
-        }[a.demande_deconnexion?.motif] || a.demande_deconnexion?.motif || "—";
+        const motif = {
+          telephone_vole: { icon: "fa-mobile-screen-button", label: "Téléphone volé" },
+          telephone_perdu: { icon: "fa-magnifying-glass", label: "Téléphone perdu" },
+          telephone_detruit: { icon: "fa-triangle-exclamation", label: "Téléphone détruit / HS" },
+          autre: { icon: "fa-circle-question", label: "Autre" }
+        }[a.demande_deconnexion?.motif] || { icon: "fa-circle-question", label: a.demande_deconnexion?.motif || "—" };
 
         const dateDemande = a.demande_deconnexion?.date_demande
           ? new Date(a.demande_deconnexion.date_demande).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })
           : "—";
 
+        const initials = (a.prenom?.[0] || "") + (a.nom?.[0] || "");
+
         return `
-          <div style="display:flex;align-items:flex-start;gap:12px;padding:14px 16px;border-bottom:1px solid #fafafa;" data-id="${a._id}">
-            <!-- Avatar initiales -->
-            <div style="width:40px;height:40px;border-radius:50%;background:#fff3e0;color:#e65100;font-weight:700;font-size:0.9rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-              ${(a.prenom?.[0] || "") + (a.nom?.[0] || "")}
-            </div>
-            <!-- Info agent -->
-            <div style="flex:1;min-width:0;">
-              <div style="font-weight:600;font-size:0.9rem;">${a.prenom} ${a.nom} <span style="color:#aaa;font-size:0.78rem;font-weight:400;">${a.matricule}</span></div>
-              <div style="font-size:0.78rem;color:#666;margin-top:3px;">
-                <i class="fa-solid fa-building" style="color:var(--green);"></i> ${a.site_id?.nom || "—"}
-                &nbsp;·&nbsp;
-                <i class="fa-solid fa-mobile-screen" style="color:#888;"></i> ${a.session_device || "appareil inconnu"}
+          <div class="request-card" data-id="${a._id}">
+            <div style="display:flex;align-items:flex-start;gap:12px;">
+              <div class="request-avatar" style="background:linear-gradient(135deg,#e65100,#f57c00);">${initials}</div>
+              <div style="flex:1;min-width:0;">
+                <div style="display:flex;align-items:baseline;gap:6px;flex-wrap:wrap;">
+                  <span style="font-weight:600;font-size:0.92rem;color:#1f2933;">${a.prenom} ${a.nom}</span>
+                  <span style="color:#aaa;font-size:0.76rem;">${a.matricule}</span>
+                </div>
+                <div style="font-size:0.78rem;color:#666;margin-top:4px;display:flex;align-items:center;gap:5px;flex-wrap:wrap;">
+                  <i class="fa-solid fa-building" style="color:var(--sp-accent,var(--green));"></i> ${a.site_id?.nom || "—"}
+                  <span style="color:#ddd;">·</span>
+                  <i class="fa-solid fa-mobile-screen" style="color:#888;"></i> ${a.session_device || "appareil inconnu"}
+                </div>
+                <div style="margin-top:9px;display:flex;gap:6px;flex-wrap:wrap;">
+                  <span class="request-chip" style="background:#fff3e0;color:#e65100;"><i class="fa-solid ${motif.icon}"></i> ${motif.label}</span>
+                  <span class="request-chip" style="background:#f5f5f5;color:#888;font-weight:500;">Demandé le ${dateDemande}</span>
+                </div>
               </div>
-              <div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;">
-                <span style="background:#fff3e0;color:#e65100;border-radius:6px;padding:3px 8px;font-size:0.73rem;font-weight:600;">${motifLabel}</span>
-                <span style="background:#f5f5f5;color:#888;border-radius:6px;padding:3px 8px;font-size:0.73rem;">Demandé le ${dateDemande}</span>
-              </div>
             </div>
-            <!-- Actions -->
-            <div style="display:flex;gap:6px;flex-shrink:0;align-items:center;">
-              <button class="btn-approuver-deco btn-primary" data-id="${a._id}"
-                style="font-size:0.78rem;padding:6px 12px;background:#2e7d32;">
-                <i class="fa-solid fa-check"></i> Approuver
-              </button>
-              <button class="btn-refuser-deco" data-id="${a._id}"
-                style="font-size:0.78rem;padding:6px 12px;border-radius:8px;border:1.5px solid #c62828;background:white;color:#c62828;cursor:pointer;font-weight:500;">
+            <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;padding-top:12px;border-top:1px solid #f5f5f5;">
+              <button class="btn-reject-pill btn-refuser-deco" data-id="${a._id}">
                 <i class="fa-solid fa-xmark"></i> Refuser
+              </button>
+              <button class="btn-approve-pill btn-approuver-deco" data-id="${a._id}">
+                <i class="fa-solid fa-check"></i> Approuver
               </button>
             </div>
           </div>
@@ -157,7 +163,7 @@ export async function renderDemandes(root, user) {
       });
 
     } catch (err) {
-      list.innerHTML = `<div style="text-align:center;padding:20px;color:#c62828;">Erreur de chargement.</div>`;
+      list.innerHTML = `<div class="request-empty"><p style="color:#c62828;">Erreur de chargement.</p></div>`;
     }
   }
 

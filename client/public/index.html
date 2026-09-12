@@ -720,6 +720,237 @@
         box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
       }
 
+      /* ── REQUEST CARDS (Demandes RH / Congés) — design partagé,
+           tenant-aware via var(--sp-accent), pour remplacer les listes
+           "texte + 2 boutons" par quelque chose de soigné. ─────────── */
+      .page-heading {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .page-heading-icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.05rem;
+        flex-shrink: 0;
+      }
+      .page-heading h1 {
+        font-size: 1.15rem;
+        font-weight: 700;
+        margin: 0;
+        color: #1f2933;
+        line-height: 1.3;
+      }
+      .page-heading p {
+        font-size: 0.8rem;
+        color: #8a8f98;
+        margin: 2px 0 0;
+      }
+      .request-toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-bottom: 18px;
+      }
+      .filter-pills {
+        display: inline-flex;
+        background: #eef1ee;
+        padding: 4px;
+        border-radius: 11px;
+        gap: 2px;
+        flex-wrap: wrap;
+      }
+      .filter-pill {
+        border: none;
+        background: transparent;
+        padding: 7px 14px;
+        border-radius: 8px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: #6b7280;
+        cursor: pointer;
+        transition:
+          background 0.15s,
+          color 0.15s;
+        white-space: nowrap;
+        font-family: inherit;
+      }
+      .filter-pill:hover {
+        color: #1f2933;
+      }
+      .filter-pill.active {
+        background: white;
+        color: var(--sp-accent, var(--green-dark));
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.14);
+      }
+      .stat-chip-row {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-bottom: 16px;
+      }
+      .stat-chip {
+        flex: 1;
+        min-width: 140px;
+        background: white;
+        border: 1px solid #e8e8e8;
+        border-radius: 12px;
+        padding: 12px 14px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        box-shadow: var(--shadow);
+      }
+      .stat-chip-icon {
+        width: 34px;
+        height: 34px;
+        border-radius: 9px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.85rem;
+        flex-shrink: 0;
+      }
+      .stat-chip-value {
+        font-size: 1.25rem;
+        font-weight: 700;
+        line-height: 1;
+      }
+      .stat-chip-label {
+        font-size: 0.7rem;
+        color: #8a8f98;
+        font-weight: 500;
+        margin-top: 2px;
+      }
+      .request-alert {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        background: #fff8f2;
+        border: 1px solid #ffe1c2;
+        border-radius: 12px;
+        padding: 12px 14px;
+        margin-bottom: 14px;
+        font-size: 0.8rem;
+        color: #9a5b1c;
+        line-height: 1.45;
+      }
+      .request-alert i {
+        margin-top: 1px;
+        color: #e65100;
+      }
+      .request-card {
+        background: white;
+        border: 1px solid #ececec;
+        border-radius: 14px;
+        padding: 16px;
+        margin-bottom: 10px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+        transition:
+          box-shadow 0.15s,
+          transform 0.15s;
+      }
+      .request-card:hover {
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+        transform: translateY(-1px);
+      }
+      .request-avatar {
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 0.85rem;
+        color: white;
+        background: linear-gradient(135deg, var(--green), var(--green-light));
+      }
+      .request-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 3px 9px;
+        border-radius: 7px;
+        font-size: 0.72rem;
+        font-weight: 600;
+      }
+      .btn-approve-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border: none;
+        cursor: pointer;
+        padding: 7px 14px;
+        border-radius: 20px;
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: white;
+        font-family: inherit;
+        background: linear-gradient(135deg, #2e7d32, #43a047);
+        transition:
+          box-shadow 0.15s,
+          transform 0.1s;
+        white-space: nowrap;
+      }
+      .btn-approve-pill:hover {
+        box-shadow: 0 4px 12px rgba(46, 125, 50, 0.35);
+        transform: translateY(-1px);
+      }
+      .btn-approve-pill:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+      }
+      .btn-reject-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        padding: 7px 14px;
+        border-radius: 20px;
+        font-size: 0.78rem;
+        font-weight: 600;
+        font-family: inherit;
+        background: white;
+        color: #c62828;
+        border: 1.5px solid #f1c4c0;
+        transition:
+          background 0.15s,
+          border-color 0.15s;
+        white-space: nowrap;
+      }
+      .btn-reject-pill:hover {
+        background: #fff5f4;
+        border-color: #e57373;
+      }
+      .request-empty {
+        text-align: center;
+        padding: 48px 20px;
+        color: #9aa0a6;
+      }
+      .request-empty .empty-icon-circle {
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        margin: 0 auto 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+      }
+      .request-empty p {
+        font-size: 0.85rem;
+      }
+
       /* ── MOBILE (< 768px) ────────────────────────────────── */
       @media (max-width: 768px) {
         .topbar {
@@ -756,6 +987,23 @@
         .kpi-card {
           padding: 12px 10px;
           gap: 6px;
+        }
+        .stat-chip-row {
+          gap: 8px;
+        }
+        .stat-chip {
+          min-width: 100px;
+          padding: 10px 12px;
+        }
+        .request-card {
+          padding: 14px;
+        }
+        .request-toolbar {
+          gap: 10px;
+        }
+        .filter-pills {
+          width: 100%;
+          overflow-x: auto;
         }
       }
       /* ── TABLETTE (769px - 1024px) ──────────────────────── */
