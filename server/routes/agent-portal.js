@@ -279,42 +279,45 @@ router.get("/stats", authenticateAgent, async (req, res) => {
 
     while (cursor <= now) {
       const dow = cursor.getDay();
-      if (dow !== 0 && dow !== 6) {
-        // lundi-vendredi seulement
-        const dateStr = cursor.toISOString().slice(0, 10);
-        const p = pointagesParDate[dateStr];
+      const jourOuvre = dow !== 0 && dow !== 6; // lundi-vendredi
+      const dateStr = cursor.toISOString().slice(0, 10);
+      const p = pointagesParDate[dateStr];
 
-        if (!p) {
-          // Pas de pointage ce jour — absent seulement si jour passé
-          if (dateStr < todayStr) absencesMois++;
-        } else if (
-          p.statut === "present" &&
-          p.heure_arrivee &&
-          p.heure_depart
-        ) {
-          presencesMois++;
-        } else if (p.statut === "retard" && p.heure_arrivee) {
-          // Le statut "retard" est posé dès l'arrivée (cf. routes/pointages.js)
-          // et n'est jamais écrasé au départ — donc un retard compte tout de
-          // suite, qu'il ait déjà pointé son départ ou non (jour en cours y
-          // compris). Sans ce `heure_depart` était exigé à tort : un agent en
-          // retard qui n'avait pas encore pointé son départ n'était jamais
-          // compté, et retombait même dans la branche "partiel" ci-dessous.
-          retardsMois++;
-        } else if (
-          p.statut === "partiel" ||
-          (p.heure_arrivee && !p.heure_depart)
-        ) {
-          // Arrivée sans départ = partiel = absence justifiable
-          if (dateStr < todayStr) {
-            partielsMois++;
-            absencesMois++;
-          }
-        } else if (p.statut === "absent") {
+      // IMPORTANT : un pointage réellement enregistré compte toujours, même
+      // un samedi/dimanche (ex: test, astreinte, ou site avec weekend_actif).
+      // Le filtre jour-ouvré ne doit s'appliquer qu'à la marque "absent"
+      // quand il n'y a AUCUN pointage — pas à un pointage qui existe déjà.
+      // (Bug initial : tout le bloc était sauté le week-end, donc un agent
+      // pointé "retard" un samedi n'était jamais compté nulle part.)
+      if (!p) {
+        // Pas de pointage ce jour — absent seulement si jour ouvré et jour passé
+        if (jourOuvre && dateStr < todayStr) absencesMois++;
+      } else if (
+        p.statut === "present" &&
+        p.heure_arrivee &&
+        p.heure_depart
+      ) {
+        presencesMois++;
+      } else if (p.statut === "retard" && p.heure_arrivee) {
+        // Le statut "retard" est posé dès l'arrivée (cf. routes/pointages.js)
+        // et n'est jamais écrasé au départ — donc un retard compte tout de
+        // suite, qu'il ait déjà pointé son départ ou non (jour en cours y
+        // compris).
+        retardsMois++;
+      } else if (
+        p.statut === "partiel" ||
+        (p.heure_arrivee && !p.heure_depart)
+      ) {
+        // Arrivée sans départ = partiel = absence justifiable
+        if (dateStr < todayStr) {
+          partielsMois++;
           absencesMois++;
         }
-        // conge et justifie ne comptent ni présence ni absence
+      } else if (p.statut === "absent") {
+        absencesMois++;
       }
+      // conge et justifie ne comptent ni présence ni absence
+
       cursor.setDate(cursor.getDate() + 1);
     }
 
