@@ -90,7 +90,7 @@ app.use(
           "data:",
           "blob:",
           "https://tile.openstreetmap.org",
-          "https://*.basemaps.cartocdn.com",
+          "https://tile.openstreetmap.de",
         ],
         mediaSrc: ["'self'", "data:"],
         connectSrc: [

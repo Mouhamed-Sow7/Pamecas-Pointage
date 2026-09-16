@@ -556,7 +556,7 @@ function openGeofenceModal(site, root) {
           <span style="color:#4285F4;">●</span> ta position actuelle
         </div>
         <div style="font-size:0.72rem;color:#999;text-align:center;margin-top:4px;">Clique n'importe où sur la carte pour déplacer le point.</div>
-        <div style="font-size:0.65rem;color:#bbb;text-align:center;margin-top:2px;">© OpenStreetMap contributors © CARTO</div>
+        <div style="font-size:0.65rem;color:#bbb;text-align:center;margin-top:2px;">© OpenStreetMap contributors</div>
       </div>
       <div id="geo-manual" style="display:none;font-size:0.78rem;color:#888;text-align:center;">
         Ou saisis/colle les coordonnées exactes (décimal, "16°01'21.0"N", ou une paire "lat, lng") :
@@ -620,6 +620,52 @@ function openGeofenceModal(site, root) {
   // Coin haut-gauche de la mosaïque 3x3 (en coordonnées de tuile, non arrondies)
   let originXTile = null, originYTile = null;
 
+  // ── Fournisseurs de tuiles avec repli automatique ────────────────────────
+  // Les deux sont OSM, sans clé API, sur des infras indépendantes. Si le
+  // premier se met à bloquer (politique anti-hotlinking, panne...), on
+  // bascule une fois sur le second avant d'afficher un message clair.
+  const TILE_PROVIDERS = [
+    { name: "OpenStreetMap", url: (z, x, y) => `https://tile.openstreetmap.org/${z}/${x}/${y}.png` },
+    { name: "OpenStreetMap DE", url: (z, x, y) => `https://tile.openstreetmap.de/${z}/${x}/${y}.png` },
+  ];
+  let providerIndex = 0;
+  let tileFailCount = 0;
+  let tileLoadToken = 0; // annule les callbacks d'un rendu périmé (zoom/clic rapides)
+  let fallbackTried = false;
+
+  function showTileFallbackNotice() {
+    let notice = document.getElementById("geo-map-fallback");
+    if (!notice) {
+      notice = document.createElement("div");
+      notice.id = "geo-map-fallback";
+      notice.style.cssText =
+        "position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center;padding:16px;background:rgba(245,245,245,0.96);font-size:0.78rem;color:#777;pointer-events:none;";
+      notice.innerHTML = `
+        <i class="fa-solid fa-map-slash" style="font-size:1.3rem;color:#bbb;"></i>
+        <span>La carte ne s'affiche pas sur ce réseau.<br>Tu peux quand même cliquer ici pour placer le point, ou utiliser les champs ci-dessous.</span>
+      `;
+      // Insérée juste après la mosaïque mais avant les pins (ordre du DOM),
+      // pour que le point rouge/bleu reste visible par-dessus l'avis.
+      mosaic.insertAdjacentElement("afterend", notice);
+    }
+    notice.style.display = "flex";
+  }
+  function hideTileFallbackNotice() {
+    document.getElementById("geo-map-fallback")?.style.setProperty("display", "none");
+  }
+  function handleTileError(token) {
+    if (token !== tileLoadToken) return; // rendu périmé (zoom/clic depuis)
+    tileFailCount++;
+    if (tileFailCount < 5) return;
+    if (!fallbackTried && providerIndex < TILE_PROVIDERS.length - 1) {
+      fallbackTried = true;
+      providerIndex++;
+      renderMosaic();
+    } else {
+      showTileFallbackNotice();
+    }
+  }
+
   function lngLatToTileF(lat, lng, zoom) {
     const n = Math.pow(2, zoom);
     const latRad = (lat * Math.PI) / 180;
@@ -643,25 +689,28 @@ function openGeofenceModal(site, root) {
     originYTile = centerYTile - 1;
 
     mosaic.innerHTML = "";
-    // Tuiles servies via le CDN CARTO (basemaps.cartocdn.com), pas
-    // directement tile.openstreetmap.org : OSM applique une politique
-    // stricte anti-hotlinking (2 req/s max, User-Agent applicatif requis)
-    // et bloque de plus en plus agressivement les usages comme le nôtre
-    // (mosaïque de 9 tuiles par ouverture de modal). CARTO sert les mêmes
-    // données OSM via un CDN pensé pour ce genre d'intégration directe,
-    // gratuit, sans clé API. Rotation sur 4 sous-domaines pour paralléliser
-    // le chargement des 9 tuiles.
-    const CARTO_SUBDOMAINS = ["a", "b", "c", "d"];
+    // Tuiles OSM standard (tile.openstreetmap.org) : c'est le rendu que tu
+    // préfères visuellement, et il ne demande pas de clé API — contrairement
+    // à CARTO, qui a commencé à exiger une clé sur ses tuiles raster fin août
+    // 2026 (tuiles renvoyées mais recouvertes d'un bandeau "API KEY
+    // REQUIRED"). OSM applique en retour une politique anti-hotlinking plus
+    // stricte (2 req/s indicatif, sensible à l'absence de Referer) : si ça
+    // recommence à bloquer, on bascule automatiquement sur un second
+    // fournisseur OSM (tile.openstreetmap.de, infra indépendante, même
+    // rendu) avant d'abandonner — cf. handleTileError plus bas. On NE fixe
+    // PAS referrerPolicy à "no-referrer" ici : un Referer absent est
+    // justement ce qui déclenche le blocage silencieux côté OSM.
+    tileFailCount = 0;
+    const token = ++tileLoadToken;
+    hideTileFallbackNotice();
     for (let dy = 0; dy < 3; dy++) {
       for (let dx = 0; dx < 3; dx++) {
         const img = document.createElement("img");
         img.width = 256; img.height = 256;
+        img.alt = "";
         img.style.cssText = `position:absolute;left:${dx * 256}px;top:${dy * 256}px;pointer-events:none;`;
-        const sub = CARTO_SUBDOMAINS[(dx + dy * 3) % CARTO_SUBDOMAINS.length];
-        img.src = `https://${sub}.basemaps.cartocdn.com/rastertiles/voyager/${ZOOM}/${originXTile + dx}/${originYTile + dy}.png`;
-        // Dégradation propre si une tuile ne charge pas (plutôt que l'icône
-        // d'image cassée) — le fond gris de geo-map-wrap prend le relais.
-        img.onerror = () => { img.style.visibility = "hidden"; };
+        img.src = TILE_PROVIDERS[providerIndex].url(ZOOM, originXTile + dx, originYTile + dy);
+        img.addEventListener("error", () => handleTileError(token));
         mosaic.appendChild(img);
       }
     }
@@ -684,7 +733,7 @@ function openGeofenceModal(site, root) {
     }
   }
 
-  function showPosition(lat, lng, label) {
+  function showPosition(lat, lng, label, accuracyMeters) {
     curLat = lat; curLng = lng;
     mapWrap.dataset.lat = lat;
     mapWrap.dataset.lng = lng;
@@ -693,7 +742,16 @@ function openGeofenceModal(site, root) {
     manualFields.style.display = "flex";
     latInput.value = lat.toFixed(6);
     lngInput.value = lng.toFixed(6);
-    statusEl.innerHTML = `<i class="fa-solid fa-location-crosshairs" style="color:#0f5132;"></i> ${label} : ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+    let html = `<i class="fa-solid fa-location-crosshairs" style="color:#0f5132;"></i> ${label} : ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+    // Un Mac/PC n'a pas de GPS : le navigateur estime la position via le
+    // Wi-Fi ou l'IP, ce qui peut se tromper de ville entière si la zone est
+    // mal cartographiée dans la base de géoloc du navigateur/OS (fréquent
+    // hors des grandes villes). On prévient plutôt que d'imposer une
+    // position fausse en silence — les champs restent modifiables en dessous.
+    if (accuracyMeters && accuracyMeters > 3000) {
+      html += `<br><span style="color:#e65100;font-size:0.78rem;"><i class="fa-solid fa-triangle-exclamation"></i> Précision faible (~${Math.round(accuracyMeters / 1000)} km) — vérifie/corrige la position sur la carte ou les champs ci-dessous.</span>`;
+    }
+    statusEl.innerHTML = html;
     renderMosaic();
   }
 
@@ -773,7 +831,7 @@ function openGeofenceModal(site, root) {
       (pos) => {
         myLat = pos.coords.latitude;
         myLng = pos.coords.longitude;
-        showPosition(myLat, myLng, "Position actuelle détectée");
+        showPosition(myLat, myLng, "Position actuelle détectée", pos.coords.accuracy);
       },
       () => {
         statusEl.innerHTML = `<i class="fa-solid fa-triangle-exclamation" style="color:#c62828;"></i> Localisation refusée ou indisponible — saisis les coordonnées manuellement ci-dessous.`;
