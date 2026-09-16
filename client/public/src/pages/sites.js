@@ -556,6 +556,7 @@ function openGeofenceModal(site, root) {
           <span style="color:#4285F4;">●</span> ta position actuelle
         </div>
         <div style="font-size:0.72rem;color:#999;text-align:center;margin-top:4px;">Clique n'importe où sur la carte pour déplacer le point.</div>
+        <div style="font-size:0.65rem;color:#bbb;text-align:center;margin-top:2px;">© OpenStreetMap contributors © CARTO</div>
       </div>
       <div id="geo-manual" style="display:none;font-size:0.78rem;color:#888;text-align:center;">
         Ou saisis/colle les coordonnées exactes (décimal, "16°01'21.0"N", ou une paire "lat, lng") :
@@ -642,12 +643,25 @@ function openGeofenceModal(site, root) {
     originYTile = centerYTile - 1;
 
     mosaic.innerHTML = "";
+    // Tuiles servies via le CDN CARTO (basemaps.cartocdn.com), pas
+    // directement tile.openstreetmap.org : OSM applique une politique
+    // stricte anti-hotlinking (2 req/s max, User-Agent applicatif requis)
+    // et bloque de plus en plus agressivement les usages comme le nôtre
+    // (mosaïque de 9 tuiles par ouverture de modal). CARTO sert les mêmes
+    // données OSM via un CDN pensé pour ce genre d'intégration directe,
+    // gratuit, sans clé API. Rotation sur 4 sous-domaines pour paralléliser
+    // le chargement des 9 tuiles.
+    const CARTO_SUBDOMAINS = ["a", "b", "c", "d"];
     for (let dy = 0; dy < 3; dy++) {
       for (let dx = 0; dx < 3; dx++) {
         const img = document.createElement("img");
         img.width = 256; img.height = 256;
         img.style.cssText = `position:absolute;left:${dx * 256}px;top:${dy * 256}px;pointer-events:none;`;
-        img.src = `https://tile.openstreetmap.org/${ZOOM}/${originXTile + dx}/${originYTile + dy}.png`;
+        const sub = CARTO_SUBDOMAINS[(dx + dy * 3) % CARTO_SUBDOMAINS.length];
+        img.src = `https://${sub}.basemaps.cartocdn.com/rastertiles/voyager/${ZOOM}/${originXTile + dx}/${originYTile + dy}.png`;
+        // Dégradation propre si une tuile ne charge pas (plutôt que l'icône
+        // d'image cassée) — le fond gris de geo-map-wrap prend le relais.
+        img.onerror = () => { img.style.visibility = "hidden"; };
         mosaic.appendChild(img);
       }
     }
