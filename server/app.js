@@ -83,22 +83,34 @@ app.use(
         ],
         // ✅ Fix: autoriser les event handlers inline (data-* via JS = ok, mais au cas où)
         scriptSrcAttr: ["'unsafe-inline'"],
-        styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+        styleSrc: [
+          "'self'",
+          "'unsafe-inline'",
+          "https://fonts.googleapis.com",
+          "https://cdn.jsdelivr.net",
+        ],
         fontSrc: ["'self'", "https://fonts.gstatic.com"],
+        // MapLibre GL (carte de geofencing) : les tuiles vectorielles OpenFreeMap
+        // sont chargées en fetch() (connectSrc), pas en <img> — mais son style
+        // référence aussi des sprites/icônes en image, d'où la présence ici aussi.
         imgSrc: [
           "'self'",
           "data:",
           "blob:",
-          "https://tile.openstreetmap.org",
-          "https://tile.openstreetmap.de",
+          "https://tiles.openfreemap.org",
         ],
         mediaSrc: ["'self'", "data:"],
+        // MapLibre GL décode les tuiles vectorielles dans un Web Worker créé
+        // via blob: — sans ce directive il tombe sur scriptSrc par défaut,
+        // qui n'autorise pas blob:.
+        workerSrc: ["'self'", "blob:"],
         connectSrc: [
           "'self'",
           "ws:",
           "wss:",
           "https://fonts.googleapis.com",
           "https://cdn.jsdelivr.net",
+          "https://tiles.openfreemap.org",
         ],
       },
     },

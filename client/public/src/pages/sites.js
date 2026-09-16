@@ -525,6 +525,34 @@ export async function renderSites(root, user) {
   fetchSites(root);
 }
 
+
+// ─── Chargement paresseux de MapLibre GL JS (uniquement à la première
+// ouverture du modal — inutile d'alourdir le chargement initial de la page).
+// Après trois fournisseurs de tuiles raster cassés coup sur coup
+// (tile.openstreetmap.org bloque en 403 les usages comme le nôtre, CARTO
+// exige désormais une clé), on arrête le hotlinking raster : OpenFreeMap +
+// MapLibre GL est le duo pensé pour ce cas précis — tuiles vectorielles,
+// gratuit, illimité, sans clé API, hébergé par l'écosystème OSM lui-même.
+// ─────────────────────────────────────────────────────────────────────────
+let _maplibreLoadPromise = null;
+function loadMapLibre() {
+  if (window.maplibregl) return Promise.resolve();
+  if (_maplibreLoadPromise) return _maplibreLoadPromise;
+  _maplibreLoadPromise = new Promise((resolve, reject) => {
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = "https://cdn.jsdelivr.net/npm/maplibre-gl@5/dist/maplibre-gl.css";
+    document.head.appendChild(link);
+
+    const script = document.createElement("script");
+    script.src = "https://cdn.jsdelivr.net/npm/maplibre-gl@5/dist/maplibre-gl.js";
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error("maplibre-load-failed"));
+    document.head.appendChild(script);
+  });
+  return _maplibreLoadPromise;
+}
+
 // ─── Modal de confirmation geofencing avant déploiement kiosk ────────────────
 function openGeofenceModal(site, root) {
   const existing = site.coordonnees?.latitude && site.coordonnees?.longitude ? site.coordonnees : null;
@@ -546,17 +574,15 @@ function openGeofenceModal(site, root) {
           <span style="font-size:0.72rem;color:#999;align-self:center;">zoom</span>
           <button id="geo-zoom-in" type="button" class="btn-icon-sm" style="width:28px;height:28px;border-radius:6px;border:1px solid #ddd;background:white;cursor:pointer;">+</button>
         </div>
-        <div id="geo-map-wrap" style="border-radius:10px;overflow:hidden;border:1px solid #eee;position:relative;width:288px;height:288px;margin:0 auto;background:#eee;cursor:crosshair;">
-          <div id="geo-map-mosaic" style="position:absolute;width:768px;height:768px;"></div>
-          <div id="geo-my-pos" style="display:none;position:absolute;width:14px;height:14px;border-radius:50%;background:#4285F4;border:2px solid white;box-shadow:0 0 0 2px rgba(66,133,244,0.35),0 0 0 8px rgba(66,133,244,0.15);transform:translate(-50%,-50%);pointer-events:none;"></div>
-          <div id="geo-map-pin" style="position:absolute;width:14px;height:14px;border-radius:50%;background:#c62828;border:2px solid white;box-shadow:0 0 0 2px rgba(198,40,40,0.4);transform:translate(-50%,-50%);pointer-events:none;"></div>
+        <div id="geo-map-wrap" style="border-radius:10px;overflow:hidden;border:1px solid #eee;position:relative;width:288px;height:288px;margin:0 auto;background:#eee;">
+          <div id="geo-map-container" style="width:100%;height:100%;cursor:crosshair;"></div>
         </div>
         <div style="font-size:0.72rem;color:#999;text-align:center;margin-top:4px;">
           <span style="color:#c62828;">●</span> zone confirmée &nbsp;·&nbsp;
           <span style="color:#4285F4;">●</span> ta position actuelle
         </div>
-        <div style="font-size:0.72rem;color:#999;text-align:center;margin-top:4px;">Clique n'importe où sur la carte pour déplacer le point.</div>
-        <div style="font-size:0.65rem;color:#bbb;text-align:center;margin-top:2px;">© OpenStreetMap contributors</div>
+        <div style="font-size:0.72rem;color:#999;text-align:center;margin-top:4px;">Clique n'importe où sur la carte (ou fais glisser le point rouge) pour l'ajuster.</div>
+        <div style="font-size:0.65rem;color:#bbb;text-align:center;margin-top:2px;">© OpenStreetMap contributors © OpenFreeMap</div>
       </div>
       <div id="geo-manual" style="display:none;font-size:0.78rem;color:#888;text-align:center;">
         Ou saisis/colle les coordonnées exactes (décimal, "16°01'21.0"N", ou une paire "lat, lng") :
@@ -607,8 +633,6 @@ function openGeofenceModal(site, root) {
   const statusEl = document.getElementById("geo-status");
   const mapOuter = document.getElementById("geo-map-outer");
   const mapWrap = document.getElementById("geo-map-wrap");
-  const mosaic = document.getElementById("geo-map-mosaic");
-  const mapPin = document.getElementById("geo-map-pin");
   const manualHint = document.getElementById("geo-manual");
   const manualFields = document.getElementById("geo-manual-fields");
   const latInput = document.getElementById("geo-lat-input");
@@ -617,119 +641,65 @@ function openGeofenceModal(site, root) {
   let ZOOM = 16;
   let curLat = null, curLng = null;
   let myLat = null, myLng = null; // position réelle détectée (ne bouge pas au clic)
-  // Coin haut-gauche de la mosaïque 3x3 (en coordonnées de tuile, non arrondies)
-  let originXTile = null, originYTile = null;
+  let map = null;
+  let pinMarker = null;
+  let myPosMarker = null;
+  let mapReady = false;
+  let pendingPosition = null; // si showPosition() est appelé avant que la carte finisse de charger
 
-  // ── Fournisseurs de tuiles avec repli automatique ────────────────────────
-  // Les deux sont OSM, sans clé API, sur des infras indépendantes. Si le
-  // premier se met à bloquer (politique anti-hotlinking, panne...), on
-  // bascule une fois sur le second avant d'afficher un message clair.
-  const TILE_PROVIDERS = [
-    { name: "OpenStreetMap", url: (z, x, y) => `https://tile.openstreetmap.org/${z}/${x}/${y}.png` },
-    { name: "OpenStreetMap DE", url: (z, x, y) => `https://tile.openstreetmap.de/${z}/${x}/${y}.png` },
-  ];
-  let providerIndex = 0;
-  let tileFailCount = 0;
-  let tileLoadToken = 0; // annule les callbacks d'un rendu périmé (zoom/clic rapides)
-  let fallbackTried = false;
+  loadMapLibre()
+    .then(() => {
+      map = new window.maplibregl.Map({
+        container: "geo-map-container",
+        style: "https://tiles.openfreemap.org/styles/liberty",
+        center: [-17.4677, 14.7167], // Dakar par défaut, recentré dès qu'une position arrive
+        zoom: ZOOM,
+        attributionControl: false,
+      });
+      map.on("load", () => {
+        mapReady = true;
+        if (pendingPosition) {
+          const { lat, lng } = pendingPosition;
+          pendingPosition = null;
+          placeOnMap(lat, lng);
+        }
+      });
+      map.on("click", (e) => {
+        showPosition(e.lngLat.lat, e.lngLat.lng, "Position ajustée manuellement (clic)");
+      });
+    })
+    .catch(() => {
+      mapOuter.innerHTML = `
+        <div style="text-align:center;padding:24px 12px;color:#999;font-size:0.8rem;">
+          <i class="fa-solid fa-map-slash" style="font-size:1.3rem;color:#ccc;"></i><br>
+          La carte n'a pas pu se charger sur ce réseau.<br>Utilise les coordonnées manuelles ci-dessous.
+        </div>`;
+      mapOuter.style.display = "block";
+    });
 
-  function showTileFallbackNotice() {
-    let notice = document.getElementById("geo-map-fallback");
-    if (!notice) {
-      notice = document.createElement("div");
-      notice.id = "geo-map-fallback";
-      notice.style.cssText =
-        "position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center;padding:16px;background:rgba(245,245,245,0.96);font-size:0.78rem;color:#777;pointer-events:none;";
-      notice.innerHTML = `
-        <i class="fa-solid fa-map-slash" style="font-size:1.3rem;color:#bbb;"></i>
-        <span>La carte ne s'affiche pas sur ce réseau.<br>Tu peux quand même cliquer ici pour placer le point, ou utiliser les champs ci-dessous.</span>
-      `;
-      // Insérée juste après la mosaïque mais avant les pins (ordre du DOM),
-      // pour que le point rouge/bleu reste visible par-dessus l'avis.
-      mosaic.insertAdjacentElement("afterend", notice);
-    }
-    notice.style.display = "flex";
-  }
-  function hideTileFallbackNotice() {
-    document.getElementById("geo-map-fallback")?.style.setProperty("display", "none");
-  }
-  function handleTileError(token) {
-    if (token !== tileLoadToken) return; // rendu périmé (zoom/clic depuis)
-    tileFailCount++;
-    if (tileFailCount < 5) return;
-    if (!fallbackTried && providerIndex < TILE_PROVIDERS.length - 1) {
-      fallbackTried = true;
-      providerIndex++;
-      renderMosaic();
+  function placeOnMap(lat, lng) {
+    if (!mapReady) { pendingPosition = { lat, lng }; return; }
+    if (!pinMarker) {
+      pinMarker = new window.maplibregl.Marker({ color: "#c62828", draggable: true })
+        .setLngLat([lng, lat])
+        .addTo(map);
+      pinMarker.on("dragend", () => {
+        const { lat: dLat, lng: dLng } = pinMarker.getLngLat();
+        showPosition(dLat, dLng, "Position ajustée manuellement (glissé)");
+      });
     } else {
-      showTileFallbackNotice();
+      pinMarker.setLngLat([lng, lat]);
     }
-  }
+    map.flyTo({ center: [lng, lat], zoom: ZOOM, duration: 600 });
 
-  function lngLatToTileF(lat, lng, zoom) {
-    const n = Math.pow(2, zoom);
-    const latRad = (lat * Math.PI) / 180;
-    return {
-      xTileF: ((lng + 180) / 360) * n,
-      yTileF: ((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2) * n,
-    };
-  }
-  function tileFToLatLng(xTileF, yTileF, zoom) {
-    const n = Math.pow(2, zoom);
-    const lng = (xTileF / n) * 360 - 180;
-    const latRad = Math.atan(Math.sinh(Math.PI * (1 - (2 * yTileF) / n)));
-    return { lat: (latRad * 180) / Math.PI, lng };
-  }
-
-  function renderMosaic() {
-    const { xTileF, yTileF } = lngLatToTileF(curLat, curLng, ZOOM);
-    const centerXTile = Math.floor(xTileF);
-    const centerYTile = Math.floor(yTileF);
-    originXTile = centerXTile - 1;
-    originYTile = centerYTile - 1;
-
-    mosaic.innerHTML = "";
-    // Tuiles OSM standard (tile.openstreetmap.org) : c'est le rendu que tu
-    // préfères visuellement, et il ne demande pas de clé API — contrairement
-    // à CARTO, qui a commencé à exiger une clé sur ses tuiles raster fin août
-    // 2026 (tuiles renvoyées mais recouvertes d'un bandeau "API KEY
-    // REQUIRED"). OSM applique en retour une politique anti-hotlinking plus
-    // stricte (2 req/s indicatif, sensible à l'absence de Referer) : si ça
-    // recommence à bloquer, on bascule automatiquement sur un second
-    // fournisseur OSM (tile.openstreetmap.de, infra indépendante, même
-    // rendu) avant d'abandonner — cf. handleTileError plus bas. On NE fixe
-    // PAS referrerPolicy à "no-referrer" ici : un Referer absent est
-    // justement ce qui déclenche le blocage silencieux côté OSM.
-    tileFailCount = 0;
-    const token = ++tileLoadToken;
-    hideTileFallbackNotice();
-    for (let dy = 0; dy < 3; dy++) {
-      for (let dx = 0; dx < 3; dx++) {
-        const img = document.createElement("img");
-        img.width = 256; img.height = 256;
-        img.alt = "";
-        img.style.cssText = `position:absolute;left:${dx * 256}px;top:${dy * 256}px;pointer-events:none;`;
-        img.src = TILE_PROVIDERS[providerIndex].url(ZOOM, originXTile + dx, originYTile + dy);
-        img.addEventListener("error", () => handleTileError(token));
-        mosaic.appendChild(img);
-      }
-    }
-    // Centrer visuellement la mosaïque 768px dans la fenêtre 288px, point sous le curseur
-    const pinPxX = (xTileF - originXTile) * 256;
-    const pinPxY = (yTileF - originYTile) * 256;
-    mosaic.style.left = `${144 - pinPxX}px`;
-    mosaic.style.top = `${144 - pinPxY}px`;
-    mapPin.style.left = "144px";
-    mapPin.style.top = "144px";
-
-    // Marqueur bleu "ta position" — positionné selon sa vraie coordonnée,
-    // indépendamment du point rouge (qui peut avoir été déplacé manuellement)
-    const myPosEl = document.getElementById("geo-my-pos");
     if (myLat !== null && myLng !== null) {
-      const my = lngLatToTileF(myLat, myLng, ZOOM);
-      myPosEl.style.left = `${144 - pinPxX + (my.xTileF - originXTile) * 256}px`;
-      myPosEl.style.top = `${144 - pinPxY + (my.yTileF - originYTile) * 256}px`;
-      myPosEl.style.display = "block";
+      if (!myPosMarker) {
+        myPosMarker = new window.maplibregl.Marker({ color: "#4285F4" })
+          .setLngLat([myLng, myLat])
+          .addTo(map);
+      } else {
+        myPosMarker.setLngLat([myLng, myLat]);
+      }
     }
   }
 
@@ -752,28 +722,14 @@ function openGeofenceModal(site, root) {
       html += `<br><span style="color:#e65100;font-size:0.78rem;"><i class="fa-solid fa-triangle-exclamation"></i> Précision faible (~${Math.round(accuracyMeters / 1000)} km) — vérifie/corrige la position sur la carte ou les champs ci-dessous.</span>`;
     }
     statusEl.innerHTML = html;
-    renderMosaic();
+    placeOnMap(lat, lng);
   }
 
-  mapWrap.addEventListener("click", (e) => {
-    if (originXTile === null) return;
-    const rect = mapWrap.getBoundingClientRect();
-    const px = e.clientX - rect.left;
-    const py = e.clientY - rect.top;
-    // px/py sont dans le cadre visible (288); on retrouve la position dans la mosaïque via son offset courant
-    const mosaicLeft = parseFloat(mosaic.style.left);
-    const mosaicTop = parseFloat(mosaic.style.top);
-    const xTileF = originXTile + (px - mosaicLeft) / 256;
-    const yTileF = originYTile + (py - mosaicTop) / 256;
-    const { lat, lng } = tileFToLatLng(xTileF, yTileF, ZOOM);
-    showPosition(lat, lng, "Position ajustée manuellement (clic)");
-  });
-
   document.getElementById("geo-zoom-in").addEventListener("click", () => {
-    if (ZOOM < 19) { ZOOM++; renderMosaic(); }
+    if (ZOOM < 19) { ZOOM++; map?.zoomTo(ZOOM); }
   });
   document.getElementById("geo-zoom-out").addEventListener("click", () => {
-    if (ZOOM > 3) { ZOOM--; renderMosaic(); }
+    if (ZOOM > 3) { ZOOM--; map?.zoomTo(ZOOM); }
   });
 
   // ── Parseur de coordonnées : décimal (point ou virgule), DMS ("16°01'21.0\"N"),
