@@ -2359,6 +2359,72 @@
         if (e.key === "Enter") $("btn-confirm-logout").click();
       });
 
+      // ── Gate biométrique du badge — vérifie que c'est bien le
+      // propriétaire du téléphone qui affiche le QR, avant chaque
+      // affichage/réaffichage (pas seulement à l'enrollment) ──────────
+      let lastBioVerifiedAt = 0;
+      const BIO_REVALIDATE_MS = 2 * 60 * 1000; // 2 min : évite de redemander
+      // Face ID à chaque changement d'onglet pendant un même passage au
+      // kiosque, mais force une nouvelle vérification à la prochaine
+      // ouverture de l'app (prochaine arrivée/départ).
+
+      async function gateQRWithBiometrics(agent, { force = false } = {}) {
+        const container = document.getElementById("qr-container");
+        const fresh = force || Date.now() - lastBioVerifiedAt > BIO_REVALIDATE_MS;
+
+        if (!fresh) {
+          renderQR(agent);
+          return;
+        }
+
+        const supported = await checkBiometricSupport().catch(() => false);
+        const enrolled = supported ? await hasPasskey().catch(() => false) : false;
+
+        if (!supported || !enrolled) {
+          // Pas de biométrie possible sur cet appareil/compte : on ne
+          // bloque pas (checkAndEnroll gère l'incitation à s'enrôler),
+          // mais on n'affiche pas le badge comme "vérifié".
+          renderQR(agent);
+          return;
+        }
+
+        // Masquer le QR pendant la vérification — on ne montre jamais un
+        // badge "en attente" qui pourrait être scanné avant confirmation.
+        if (container) container.innerHTML = "";
+        document.getElementById("qr-static-badge").style.display = "none";
+        document.getElementById("qr-totp-bar").style.display = "none";
+
+        try {
+          await showBioChallenge();
+          lastBioVerifiedAt = Date.now();
+          renderQR(agent);
+        } catch (err) {
+          renderBioGateFailure(agent, err);
+        }
+      }
+
+      function renderBioGateFailure(agent, err) {
+        const container = document.getElementById("qr-container");
+        if (!container) return;
+        const msg =
+          err?.message === "CANCELLED"
+            ? "Vérification annulée."
+            : "Vérification biométrique impossible. Le badge reste masqué tant qu'elle n'est pas confirmée.";
+        container.innerHTML = `
+          <div style="display:flex;flex-direction:column;align-items:center;gap:10px;padding:20px;text-align:center;color:#c62828;">
+            <i class="fa-solid fa-fingerprint" style="font-size:2rem;"></i>
+            <div style="font-size:0.85rem;">${msg}</div>
+            <button id="btn-retry-bio-gate" style="padding:10px 16px;background:#1565c0;color:white;border:none;border-radius:8px;font-weight:600;">
+              Réessayer
+            </button>
+          </div>
+        `;
+        document.getElementById("btn-retry-bio-gate")?.addEventListener(
+          "click",
+          () => gateQRWithBiometrics(agent, { force: true }),
+        );
+      }
+
       async function showApp(agent, fromLogin = false) {
         $("screen-login").style.display = "none";
         $("screen-app").style.display = "flex";
@@ -2372,9 +2438,16 @@
         $("agent-matricule").textContent = agent.matricule || "---";
         $("agent-poste").textContent = agent.poste || "Agent";
 
-        renderQR(agent);
-
-        // Refresh profil depuis serveur UNIQUEMENT au reload (pas au login)
+        // fromLogin = juste après connexion (mot de passe déjà prouvé
+        // l'identité) → pas de double friction immédiate. Sinon (reload,
+        // retour au premier plan après absence) → gate biométrique avant
+        // d'afficher le QR.
+        if (fromLogin) {
+          lastBioVerifiedAt = Date.now();
+          renderQR(agent);
+        } else {
+          gateQRWithBiometrics(agent);
+        }
         // Au login, data.agent est déjà frais — un 2e appel /me causerait un 401
         // car le nouveau session_token vient juste d'être écrit en DB
         if (!fromLogin) {
@@ -2388,7 +2461,7 @@
               $("agent-name").textContent = fresh.prenom + " " + fresh.nom;
               $("agent-matricule").textContent = fresh.matricule || "---";
               $("agent-poste").textContent = fresh.poste || "Agent";
-              renderQR(fresh);
+              gateQRWithBiometrics(fresh);
             }
           } catch (e) {
             console.warn("Impossible de rafraîchir le profil agent:", e);
@@ -2660,8 +2733,20 @@
         }
       }
 
+      let hiddenSince = 0;
       document.addEventListener("visibilitychange", () => {
-        if (!document.hidden && getToken()) loadStats();
+        if (document.hidden) {
+          hiddenSince = Date.now();
+          return;
+        }
+        if (!getToken()) return;
+        loadStats();
+        // Retour au premier plan après un moment en arrière-plan (l'agent
+        // rouvre l'app pour pointer) → on regate le badge par biométrie.
+        const agent = getAgent();
+        if (agent && hiddenSince && Date.now() - hiddenSince > 15000) {
+          gateQRWithBiometrics(agent);
+        }
       });
 
       (async function init() {
