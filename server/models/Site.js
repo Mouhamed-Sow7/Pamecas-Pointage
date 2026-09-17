@@ -27,8 +27,9 @@ const CoordonneesSchema = new mongoose.Schema(
 
 const ConfigSiteSchema = new mongoose.Schema(
   {
-    heure_debut: { type: String }, // ex: "07:30"
-    heure_retard: { type: String }, // ex: "08:00"
+    heure_debut: { type: String }, // ex: "07:30" — début de journée attendu
+    heure_retard: { type: String }, // ex: "08:00" — au-delà = statut "retard"
+    heure_fin: { type: String }, // ex: "17:30" — fin de journée attendue ; départ avant = statut "partiel"
     weekend_actif: { type: Boolean, default: false },
   },
   { _id: false },

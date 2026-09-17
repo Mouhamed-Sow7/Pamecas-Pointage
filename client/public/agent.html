@@ -67,39 +67,54 @@
       }
 
       /* ── ÉCRAN LOGIN ── */
+      /* Design "carte flottante centrée" : fonctionne nativement du plus petit
+         telephone au plus grand ecran, sans breakpoints fragiles — le fond
+         texture s'etend, la carte reste compacte et toujours centree. */
       #screen-login {
         min-height: 100vh;
+        min-height: 100dvh;
         display: flex;
         flex-direction: column;
-        background: var(--green);
+        align-items: center;
+        justify-content: center;
+        gap: 28px;
+        background-color: var(--green);
+        /* motif organise, epars, tres discret (luminosite reduite) */
+        background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNTAiIGhlaWdodD0iMTUwIiB2aWV3Qm94PSIwIDAgMTUwIDE1MCI+CiAgPGNpcmNsZSBjeD0iMTgiIGN5PSIyMCIgcj0iMyIgZmlsbD0iI2ZmZmZmZiIgZmlsbC1vcGFjaXR5PSIwLjE2Ii8+CiAgPGNpcmNsZSBjeD0iNjYiIGN5PSIxNCIgcj0iNSIgZmlsbD0iI2ZmZmZmZiIgZmlsbC1vcGFjaXR5PSIwLjEwIi8+CiAgPGNpcmNsZSBjeD0iMTEyIiBjeT0iMjYiIHI9IjIuNCIgZmlsbD0iI2ZmZmZmZiIgZmlsbC1vcGFjaXR5PSIwLjE4Ii8+CiAgPGNpcmNsZSBjeD0iMTM5IiBjeT0iNTgiIHI9IjQiIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4xMSIvPgogIDxjaXJjbGUgY3g9IjI4IiBjeT0iNTgiIHI9IjIuMiIgZmlsbD0iI2ZmZmZmZiIgZmlsbC1vcGFjaXR5PSIwLjE4Ii8+CiAgPGNpcmNsZSBjeD0iODgiIGN5PSI1MiIgcj0iMy4yIiBmaWxsPSIjZmZmZmZmIiBmaWxsLW9wYWNpdHk9IjAuMTMiLz4KICA8Y2lyY2xlIGN4PSIxMiIgY3k9Ijk4IiByPSI0LjIiIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4xMCIvPgogIDxjaXJjbGUgY3g9IjU2IiBjeT0iOTAiIHI9IjIiIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4xOCIvPgogIDxjaXJjbGUgY3g9IjEwMyIgY3k9Ijg0IiByPSI1LjIiIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4wOCIvPgogIDxjaXJjbGUgY3g9IjEzMiIgY3k9IjExMiIgcj0iMi42IiBmaWxsPSIjZmZmZmZmIiBmaWxsLW9wYWNpdHk9IjAuMTUiLz4KICA8Y2lyY2xlIGN4PSI0MiIgY3k9IjEyNiIgcj0iMyIgZmlsbD0iI2ZmZmZmZiIgZmlsbC1vcGFjaXR5PSIwLjEyIi8+CiAgPGNpcmNsZSBjeD0iODUiIGN5PSIxMzIiIHI9IjIiIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4xOCIvPgogIDxjaXJjbGUgY3g9IjExOCIgY3k9IjE0MCIgcj0iMS44IiBmaWxsPSIjZmZmZmZmIiBmaWxsLW9wYWNpdHk9IjAuMTMiLz4KPC9zdmc+Cg==");
+        background-repeat: repeat;
+        background-size: 130px 130px;
         position: relative;
         overflow: hidden;
+        padding: max(40px, env(safe-area-inset-top)) 24px max(40px, env(safe-area-inset-bottom));
       }
+      /* halo de profondeur, tres discret, derriere le motif */
       #screen-login::before {
         content: "";
         position: absolute;
-        top: -80px;
-        right: -60px;
-        width: 260px;
-        height: 260px;
+        top: -90px;
+        right: -70px;
+        width: 320px;
+        height: 320px;
         border-radius: 50%;
-        background: rgba(255, 255, 255, 0.04);
+        background: radial-gradient(circle, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0) 70%);
       }
       #screen-login::after {
         content: "";
         position: absolute;
-        bottom: -100px;
-        left: -80px;
-        width: 320px;
-        height: 320px;
+        bottom: -140px;
+        left: -100px;
+        width: 400px;
+        height: 400px;
         border-radius: 50%;
-        background: rgba(255, 255, 255, 0.03);
+        background: radial-gradient(circle, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0) 70%);
       }
       .login-header {
-        padding: 60px 32px 32px;
+        width: 100%;
+        max-width: 380px;
         display: flex;
         flex-direction: column;
-        align-items: flex-start;
+        align-items: center;
+        text-align: center;
         position: relative;
         z-index: 1;
       }
@@ -111,7 +126,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        margin-bottom: 24px;
+        margin-bottom: 18px;
         border: 1px solid rgba(255, 255, 255, 0.2);
       }
       .login-logo svg {
@@ -120,32 +135,32 @@
         fill: white;
       }
       .login-title {
-        font-size: 28px;
+        font-size: 26px;
         font-weight: 600;
         color: white;
         line-height: 1.2;
       }
       .login-sub {
-        font-size: 15px;
+        font-size: 14.5px;
         color: rgba(255, 255, 255, 0.65);
         margin-top: 6px;
         font-weight: 300;
       }
       .login-card {
-        flex: 1;
+        width: 100%;
+        max-width: 380px;
         background: var(--surface);
-        border-radius: 28px 28px 0 0;
-        padding: 36px 28px 48px;
+        border-radius: 24px;
+        padding: 32px 28px;
         position: relative;
         z-index: 1;
-        margin-top: auto;
-        box-shadow: var(--shadow);
+        box-shadow: 0 24px 60px rgba(0, 0, 0, 0.22);
       }
       .login-card h2 {
         font-size: 20px;
         font-weight: 600;
         color: var(--text);
-        margin-bottom: 28px;
+        margin-bottom: 24px;
       }
       .field {
         margin-bottom: 20px;
@@ -276,6 +291,12 @@
         min-height: 44px;
         flex-shrink: 0;
       }
+      .header-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-shrink: 0;
+      }
       .btn-logout:active {
         background: rgba(255, 255, 255, 0.2);
       }
@@ -283,6 +304,35 @@
         width: 18px;
         height: 18px;
         fill: white;
+      }
+
+      .btn-refresh {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        border: none;
+        background: rgba(255, 255, 255, 0.12);
+        color: white;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.15s;
+        min-width: 44px;
+        min-height: 44px;
+        flex-shrink: 0;
+      }
+      .btn-refresh:active {
+        background: rgba(255, 255, 255, 0.2);
+      }
+      .btn-refresh svg {
+        width: 18px;
+        height: 18px;
+        fill: white;
+        transition: transform 0.5s ease;
+      }
+      .btn-refresh.spinning svg {
+        animation: spin 0.7s linear infinite;
       }
 
       /* CONTENU */
@@ -399,6 +449,170 @@
         width: 14px;
         height: 14px;
         fill: var(--accent-dark);
+      }
+      .qr-expand-btn {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        width: 32px;
+        height: 32px;
+        border-radius: 9px;
+        border: 2px solid white;
+        background: var(--green);
+        color: white;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 3px 10px rgba(15, 81, 50, 0.35);
+        transition:
+          transform 0.15s,
+          box-shadow 0.15s,
+          background 0.15s;
+        z-index: 2;
+      }
+      .qr-expand-btn:hover {
+        background: var(--green-dark, #0f5132);
+        transform: scale(1.06);
+        box-shadow: 0 4px 14px rgba(15, 81, 50, 0.45);
+      }
+      .qr-expand-btn:active {
+        transform: scale(0.96);
+      }
+      .qr-expand-btn svg {
+        width: 17px;
+        height: 17px;
+        stroke-width: 2.4;
+      }
+
+      /* PLEIN ÉCRAN BADGE/QR */
+      .qr-fullscreen {
+        position: fixed;
+        inset: 0;
+        z-index: 400;
+        background: linear-gradient(160deg, #0f5132 0%, #1b7a4c 100%);
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: max(24px, env(safe-area-inset-top)) 24px
+          max(24px, env(safe-area-inset-bottom));
+        text-align: center;
+      }
+      .qr-fullscreen.open {
+        display: flex;
+      }
+      .qr-fullscreen-close {
+        position: absolute;
+        top: max(18px, env(safe-area-inset-top));
+        right: 18px;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.12);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+      }
+      .qr-fullscreen-close svg {
+        width: 18px;
+        height: 18px;
+      }
+      .qr-fullscreen-avatar {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.14);
+        border: 1.5px solid rgba(255, 255, 255, 0.28);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        font-weight: 600;
+        color: white;
+        margin: 0 auto;
+      }
+      .qr-fullscreen-name {
+        font-size: 21px;
+        font-weight: 600;
+        color: white;
+        margin-top: 14px;
+      }
+      .qr-fullscreen-matricule {
+        font-family: "DM Mono", monospace;
+        font-size: 12.5px;
+        color: rgba(255, 255, 255, 0.55);
+        letter-spacing: 0.05em;
+        margin-top: 2px;
+      }
+      .qr-fullscreen-poste {
+        font-size: 13px;
+        color: rgba(255, 255, 255, 0.8);
+        margin-top: 8px;
+        padding: 5px 14px;
+        background: rgba(255, 255, 255, 0.12);
+        border-radius: 20px;
+        display: inline-block;
+      }
+      .qr-fullscreen-wrapper {
+        width: min(76vw, 300px);
+        height: min(76vw, 300px);
+        background: white;
+        border-radius: 22px;
+        padding: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 24px 60px rgba(0, 0, 0, 0.32);
+        margin-top: 26px;
+        position: relative;
+      }
+      #qr-container-fullscreen canvas,
+      #qr-container-fullscreen img {
+        border-radius: 10px;
+      }
+      .qr-fullscreen-loading {
+        color: var(--text-3);
+        font-size: 13px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+      }
+      .qr-fullscreen-timer {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        margin-top: 20px;
+        width: min(76vw, 300px);
+      }
+      .qr-fullscreen-timer-bar {
+        flex: 1;
+        height: 5px;
+        background: rgba(255, 255, 255, 0.18);
+        border-radius: 999px;
+        overflow: hidden;
+      }
+      .qr-fullscreen-timer-fill {
+        height: 100%;
+        background: white;
+        border-radius: 999px;
+        transition: width 1s linear;
+      }
+      .qr-fullscreen-timer-text {
+        font-size: 12.5px;
+        font-family: "DM Mono", monospace;
+        color: rgba(255, 255, 255, 0.75);
+        min-width: 28px;
+      }
+      .qr-fullscreen-hint {
+        font-size: 12.5px;
+        color: rgba(255, 255, 255, 0.5);
+        margin-top: 22px;
       }
 
       /* STATS GRID */
@@ -972,13 +1186,22 @@
             <div class="header-agence" id="header-agence">SmartPointage</div>
           </div>
         </div>
-        <button class="btn-logout" id="btn-logout" title="Déconnexion">
-          <svg viewBox="0 0 24 24">
-            <path
-              d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"
-            />
-          </svg>
-        </button>
+        <div class="header-actions">
+          <button class="btn-refresh" id="btn-refresh" title="Actualiser">
+            <svg viewBox="0 0 24 24">
+              <path
+                d="M17.65 6.35A7.958 7.958 0 0012 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L14 11h7V4l-2.35 2.35z"
+              />
+            </svg>
+          </button>
+          <button class="btn-logout" id="btn-logout" title="Déconnexion">
+            <svg viewBox="0 0 24 24">
+              <path
+                d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"
+              />
+            </svg>
+          </button>
+        </div>
       </header>
 
       <div class="app-content">
@@ -993,13 +1216,23 @@
             </div>
             <div class="qr-wrapper" id="qr-wrapper">
               <div id="qr-container"></div>
+              <button
+                class="qr-expand-btn"
+                id="btn-qr-expand"
+                title="Plein écran"
+                aria-label="Afficher le QR en plein écran"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3" />
+                </svg>
+              </button>
             </div>
             <div id="qr-totp-bar" style="display: none">
               <div class="qr-timer">
                 <div class="qr-timer-bar">
                   <div class="qr-timer-fill" id="timer-fill"></div>
                 </div>
-                <span class="qr-timer-text" id="timer-text">30s</span>
+                <span class="qr-timer-text" id="timer-text">20s</span>
               </div>
             </div>
             <div
@@ -1227,6 +1460,37 @@
       </div>
     </div>
 
+    <!-- QR EN PLEIN ÉCRAN -->
+    <div class="qr-fullscreen" id="qr-fullscreen">
+      <button class="qr-fullscreen-close" id="btn-qr-fullscreen-close" aria-label="Fermer">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+        </svg>
+      </button>
+
+      <div class="qr-fullscreen-avatar" id="qr-fullscreen-avatar">--</div>
+      <div class="qr-fullscreen-name" id="qr-fullscreen-name">—</div>
+      <div class="qr-fullscreen-matricule" id="qr-fullscreen-matricule">—</div>
+      <div class="qr-fullscreen-poste" id="qr-fullscreen-poste">—</div>
+
+      <div class="qr-fullscreen-wrapper">
+        <div class="qr-fullscreen-loading" id="qr-fullscreen-loading">
+          <div style="width:28px;height:28px;border:3px solid #e0e0e0;border-top-color:#0f5132;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
+          <span>Chargement du badge…</span>
+        </div>
+        <div id="qr-container-fullscreen" style="display:none;"></div>
+      </div>
+
+      <div class="qr-fullscreen-timer" id="qr-fullscreen-timer" style="display:none;">
+        <div class="qr-fullscreen-timer-bar">
+          <div class="qr-fullscreen-timer-fill" id="timer-fill-fullscreen"></div>
+        </div>
+        <span class="qr-fullscreen-timer-text" id="timer-text-fullscreen">20s</span>
+      </div>
+
+      <div class="qr-fullscreen-hint">Présentez cet écran à l'agent de contrôle</div>
+    </div>
+
     <!-- TOAST -->
     <div class="toast" id="toast"></div>
 
@@ -1280,7 +1544,8 @@
           } else if (activeTab === "conges") {
             if (typeof loadConges === "function") loadConges({ silent: true });
           } else if (activeTab === "historique") {
-            if (typeof loadHistorique === "function") loadHistorique();
+            if (typeof loadHistorique === "function")
+              loadHistorique({ silent: true });
           }
         }, 10000);
       }
@@ -1351,6 +1616,8 @@
       let pollingInterval = null;
       let currentWindow = null;
       let _qrInstance = null;
+      let _qrInstanceFull = null;
+      let _currentAgentBadge = null; // { matricule, secret, static, prenom, nom, poste }
 
       async function getHmacKey(secret) {
         if (_keyCache.has(secret)) return _keyCache.get(secret);
@@ -1378,14 +1645,17 @@
       }
 
       async function buildQRData(matricule, secret) {
-        const win = Math.floor(Date.now() / 30000);
+        const win = Math.floor(Date.now() / 20000);
         const hex = await hmacHex(secret, `${matricule}:${win}`);
         return { data: `SP:${matricule}:${hex.substring(0, 12)}:${win}`, win };
       }
 
+      // Dessine le QR dans le petit conteneur (badge), et — s'il est ouvert —
+      // dans le conteneur plein écran, avec exactement la même donnée/instant.
       async function drawQR(matricule, secret) {
-        const container = document.getElementById("qr-container");
         const { data } = await buildQRData(matricule, secret);
+
+        const container = document.getElementById("qr-container");
         if (_qrInstance) {
           _qrInstance.clear();
           _qrInstance.makeCode(data);
@@ -1400,6 +1670,26 @@
             correctLevel: QRCode.CorrectLevel.M,
           });
         }
+
+        if ($("qr-fullscreen")?.classList.contains("open")) {
+          const containerFull = document.getElementById(
+            "qr-container-fullscreen",
+          );
+          if (_qrInstanceFull) {
+            _qrInstanceFull.clear();
+            _qrInstanceFull.makeCode(data);
+          } else {
+            containerFull.innerHTML = "";
+            _qrInstanceFull = new QRCode(containerFull, {
+              text: data,
+              width: 260,
+              height: 260,
+              colorDark: "#0f5132",
+              colorLight: "#ffffff",
+              correctLevel: QRCode.CorrectLevel.M,
+            });
+          }
+        }
       }
 
       function startTOTPTimer(matricule, secret) {
@@ -1410,13 +1700,18 @@
 
         totpInterval = setInterval(() => {
           const now = Math.floor(Date.now() / 1000);
-          const remaining = 30 - (now % 30);
-          const win = Math.floor(now / 30);
+          const remaining = 20 - (now % 20);
+          const win = Math.floor(now / 20);
 
           const fill = document.getElementById("timer-fill");
           const txt = document.getElementById("timer-text");
-          if (fill) fill.style.width = (remaining / 30) * 100 + "%";
+          if (fill) fill.style.width = (remaining / 20) * 100 + "%";
           if (txt) txt.textContent = remaining + "s";
+
+          const fillFull = document.getElementById("timer-fill-fullscreen");
+          const txtFull = document.getElementById("timer-text-fullscreen");
+          if (fillFull) fillFull.style.width = (remaining / 20) * 100 + "%";
+          if (txtFull) txtFull.textContent = remaining + "s";
 
           if (win !== currentWindow) {
             currentWindow = win;
@@ -1427,17 +1722,31 @@
 
       async function renderQR(agent) {
         _qrInstance = null;
+        _qrInstanceFull = null;
         const container = document.getElementById("qr-container");
         container.innerHTML = "";
         document.getElementById("qr-static-badge").style.display = "none";
         document.getElementById("qr-totp-bar").style.display = "none";
 
+        _currentAgentBadge = {
+          matricule: agent.matricule,
+          secret: agent.totp_secret,
+          isStatic: !(agent.totp_enabled && agent.totp_secret),
+          prenom: agent.prenom,
+          nom: agent.nom,
+          poste: agent.poste,
+        };
+
         if (agent.totp_enabled && agent.totp_secret) {
           document.getElementById("qr-totp-bar").style.display = "block";
+          document.getElementById("qr-fullscreen-timer").style.display =
+            "flex";
           startTOTPTimer(agent.matricule, agent.totp_secret);
         } else {
           document.getElementById("qr-static-badge").style.display =
             "inline-flex";
+          document.getElementById("qr-fullscreen-timer").style.display =
+            "none";
           _qrInstance = new QRCode(container, {
             text: agent.matricule,
             width: 176,
@@ -1448,6 +1757,66 @@
           });
         }
       }
+
+      // ── Plein écran ──────────────────────────────────────────────
+      function openQRFullscreen() {
+        if (!_currentAgentBadge) return;
+        const b = _currentAgentBadge;
+
+        $("qr-fullscreen-avatar").textContent = initials(b.prenom, b.nom);
+        $("qr-fullscreen-name").textContent =
+          `${b.prenom || ""} ${b.nom || ""}`.trim() || "—";
+        $("qr-fullscreen-matricule").textContent = b.matricule || "—";
+        $("qr-fullscreen-poste").textContent = b.poste || "Agent";
+
+        // Etat de chargement, le temps de (re)générer un QR frais et net
+        $("qr-fullscreen-loading").style.display = "flex";
+        $("qr-container-fullscreen").style.display = "none";
+        _qrInstanceFull = null;
+        $("qr-container-fullscreen").innerHTML = "";
+
+        $("qr-fullscreen").classList.add("open");
+        document.body.style.overflow = "hidden";
+
+        const reveal = () => {
+          $("qr-fullscreen-loading").style.display = "none";
+          $("qr-container-fullscreen").style.display = "flex";
+        };
+
+        if (b.isStatic) {
+          $("qr-fullscreen-timer").style.display = "none";
+          _qrInstanceFull = new QRCode($("qr-container-fullscreen"), {
+            text: b.matricule,
+            width: 260,
+            height: 260,
+            colorDark: "#0f5132",
+            colorLight: "#ffffff",
+            correctLevel: QRCode.CorrectLevel.M,
+          });
+          setTimeout(reveal, 250);
+        } else {
+          $("qr-fullscreen-timer").style.display = "flex";
+          drawQR(b.matricule, b.secret).then(() =>
+            setTimeout(reveal, 250),
+          );
+        }
+      }
+
+      function closeQRFullscreen() {
+        $("qr-fullscreen").classList.remove("open");
+        document.body.style.overflow = "";
+      }
+
+      $("btn-qr-expand")?.addEventListener("click", openQRFullscreen);
+      $("btn-qr-fullscreen-close")?.addEventListener("click", closeQRFullscreen);
+      $("qr-fullscreen")?.addEventListener("click", (e) => {
+        if (e.target.id === "qr-fullscreen") closeQRFullscreen();
+      });
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && $("qr-fullscreen")?.classList.contains("open")) {
+          closeQRFullscreen();
+        }
+      });
       // ── END TOTP/QR block ──────────────────────────────────
 
       async function loadStats() {
@@ -1512,21 +1881,38 @@
             )
             .join("");
         } catch (e) {
-          list.innerHTML =
-            '<div class="empty-state"><p>Erreur de chargement</p></div>';
+          if (!_congesSignature) {
+            list.innerHTML =
+              '<div class="empty-state"><p>Erreur de chargement</p></div>';
+          }
         }
       }
 
-      async function loadHistorique() {
+      let _historiqueSignature = null;
+
+      async function loadHistorique({ silent = false } = {}) {
         const list = $("historique-list");
-        list.innerHTML =
-          '<div class="loading"><div class="spinner"></div> Chargement...</div>';
+        // Même pattern que loadConges : spinner seulement au tout premier
+        // chargement, jamais pendant le polling silencieux — et on ne
+        // redessine que si les données ont réellement changé, pour éviter
+        // le clignotement de la liste toutes les 10s.
+        if (!silent && !_historiqueSignature) {
+          list.innerHTML =
+            '<div class="loading"><div class="spinner"></div> Chargement...</div>';
+        }
         try {
           const r = await apiFetch("/api/agent-portal/stats");
           if (!r) return;
           if (!r.ok) throw new Error();
           const d = await r.json();
           const pointages = d.pointagesRecents || d.derniersPointages || [];
+
+          const signature = JSON.stringify(
+            pointages.map((p) => p.date + p.statut + (p.heure_depart || "")),
+          );
+          if (signature === _historiqueSignature) return;
+          _historiqueSignature = signature;
+
           if (!pointages.length) {
             list.innerHTML =
               '<div class="empty-state"><p>Aucun pointage récent</p></div>';
@@ -1549,8 +1935,10 @@
             })
             .join("");
         } catch {
-          list.innerHTML =
-            '<div class="empty-state"><p>Données non disponibles</p></div>';
+          if (!_historiqueSignature) {
+            list.innerHTML =
+              '<div class="empty-state"><p>Données non disponibles</p></div>';
+          }
         }
       }
 
@@ -1845,6 +2233,42 @@
         $("logout-pin-error").style.display = "none";
         $("modal-logout-pin").classList.add("open");
         setTimeout(() => $("logout-pin-input").focus(), 300);
+      });
+
+      // Refresh manuel — juste un fetch des données de l'onglet actif, sans
+      // reload de page. Utile si le polling auto a un souci réseau/session.
+      let _refreshInFlight = false;
+      $("btn-refresh").addEventListener("click", async () => {
+        if (_refreshInFlight) return;
+        _refreshInFlight = true;
+        const btn = $("btn-refresh");
+        btn.classList.add("spinning");
+        btn.disabled = true;
+        try {
+          const activeTab =
+            document.querySelector(".nav-item.active")?.dataset?.tab ||
+            "badge";
+          if (activeTab === "badge" && typeof loadStats === "function") {
+            await loadStats();
+          } else if (activeTab === "conges" && typeof loadConges === "function") {
+            await loadConges();
+          } else if (
+            activeTab === "historique" &&
+            typeof loadHistorique === "function"
+          ) {
+            await loadHistorique();
+          }
+          showToast("Actualisé", "success", 1200);
+        } catch (e) {
+          showToast("Échec de l'actualisation", "error", 2000);
+        } finally {
+          // Laisser l'icône tourner un minimum visible même si la réponse est instantanée
+          setTimeout(() => {
+            btn.classList.remove("spinning");
+            btn.disabled = false;
+            _refreshInFlight = false;
+          }, 400);
+        }
       });
 
       $("btn-close-logout-pin").addEventListener("click", () => {

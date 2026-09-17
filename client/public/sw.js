@@ -1,5 +1,5 @@
 ﻿// Version du cache â€” incrementer a chaque deploiement majeur
-const CACHE_VERSION = "smartpointage-v20";
+const CACHE_VERSION = "smartpointage-v27";
 const CACHE_NAME = CACHE_VERSION;
 
 const STATIC_ASSETS = [
@@ -9,6 +9,7 @@ const STATIC_ASSETS = [
   "/app/src/css/global.css",
   "/app/src/api.js",
   "/app/src/pages/login.js",
+  "/app/src/pages/register.js",
   "/app/src/pages/dashboard.js",
   "/app/src/pages/pointage.js",
   "/app/src/pages/agents.js",
@@ -16,15 +17,14 @@ const STATIC_ASSETS = [
   "/app/src/pages/rapports.js",
   "/app/src/pages/demandes.js",
   "/app/src/pages/conges.js",
-  "/app/src/pages/badge.js",
   "/app/src/components/navbar.js",
   "/app/src/components/modal.js",
   "/app/src/components/toast.js",
   "/app/src/store/indexedDB.js",
   "/app/src/store/syncManager.js",
-  "/app/src/store/badgeQR.js",
-  "/app/src/libs/qrcode-generator.js",
   "/app/manifest.json",
+  "/app/manifest-login.json",
+  "/app/manifest-register.json",
 ];
 
 // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Install : mise en cache des assets statiques Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬

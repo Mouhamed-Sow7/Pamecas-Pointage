@@ -14,11 +14,11 @@ describe("getTimeWindow()", () => {
     const ts = 1; // 1ms après epoch
     expect(getTimeWindow(ts)).toBe(0);
 
-    const ts30 = 30_000; // 30s après epoch
-    expect(getTimeWindow(ts30)).toBe(1);
+    const ts20 = 20_000; // 20s après epoch
+    expect(getTimeWindow(ts20)).toBe(1);
 
-    const ts60 = 60_000; // 60s après epoch
-    expect(getTimeWindow(ts60)).toBe(2);
+    const ts40 = 40_000; // 40s après epoch
+    expect(getTimeWindow(ts40)).toBe(2);
   });
 });
 

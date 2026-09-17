@@ -46,7 +46,7 @@ const PointageSchema = new Schema(
     },
     methode: {
       type: String,
-      enum: ["qr_code", "manuel"],
+      enum: ["qr_code", "manuel", "auto"],
       required: true,
     },
     superviseur_id: {

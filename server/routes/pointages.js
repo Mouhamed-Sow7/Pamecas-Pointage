@@ -4,6 +4,7 @@ const mongoose = require("mongoose");
 
 const Pointage = require("../models/Pointage");
 const Agent = require("../models/Agent");
+const Site = require("../models/Site");
 const { validateQRData, validateQRDataOffline } = require("../utils/totp");
 const {
   authenticate,
@@ -48,7 +49,6 @@ router.post("/", async (req, res) => {
     let distanceM = null;
 
     if (coordonnees_agent?.latitude && coordonnees_agent?.longitude) {
-      const Site = require("../models/Site");
       const site = await Site.findById(site_id).select("coordonnees");
       if (site?.coordonnees?.latitude && site?.coordonnees?.longitude) {
         distanceM = distanceMetres(
@@ -129,6 +129,10 @@ router.post("/", async (req, res) => {
     const dateStr = todayString();
     const heure = new Date().toTimeString().slice(0, 5);
 
+    // Config horaires de l'agence (pour calcul retard / départ anticipé)
+    const siteConfig = await Site.findById(site_id).select("config");
+    const cfg = siteConfig?.config || {};
+
     let pointage = await Pointage.findOne({ agent_id, site_id, date: dateStr });
 
     // Cooldown anti-fraude : 1 minute entre deux scans du même agent
@@ -164,7 +168,10 @@ router.post("/", async (req, res) => {
         site_id,
         date: dateStr,
         heure_arrivee: heure,
-        statut: "present",
+        // Retard = arrivée après l'heure_retard configurée pour l'agence.
+        // Si aucun seuil n'est configuré, on ne pénalise pas (comportement
+        // historique conservé pour ne pas casser les agences non configurées).
+        statut: cfg.heure_retard && heure > cfg.heure_retard ? "retard" : "present",
         methode: methode || "manuel",
         note: note || "",
         superviseur_id:
@@ -190,6 +197,15 @@ router.post("/", async (req, res) => {
             });
         }
         pointage.heure_depart = heure;
+        // Départ anticipé = avant l'heure_fin configurée pour l'agence.
+        // On ne remplace pas un statut "retard" déjà posé à l'arrivée (on
+        // garde le problème le plus significatif de la journée) ; sinon on
+        // marque "partiel" si le départ est anticipé, "present" sinon.
+        if (cfg.heure_fin && heure < cfg.heure_fin) {
+          if (pointage.statut !== "retard") {
+            pointage.statut = "partiel";
+          }
+        }
         // Calcul durée en minutes
         if (pointage.heure_arrivee) {
           const [h1, m1] = pointage.heure_arrivee.split(":").map(Number);
@@ -244,7 +260,6 @@ router.post("/sync", async (req, res) => {
     }
 
     const syncedLocalIds = [];
-    const Site = require("../models/Site");
 
     for (const p of pointages) {
       try {
@@ -491,5 +506,52 @@ router.put("/:id", authorizeRoles("admin", "superadmin"), async (req, res) => {
     return res.status(500).json({ message: "Erreur lors de la mise à jour." });
   }
 });
+
+// ── Déclenchement manuel du marquage d'absences (test avant 21h) ──
+// Accepte soit ?date=YYYY-MM-DD (un seul jour), soit ?date_debut=...&date_fin=...
+// (rattrapage sur une période, utile pour peupler l'historique des
+// absences déjà "comptées" dans les stats mais jamais matérialisées).
+router.get(
+  "/test-marquer-absences",
+  authorizeRoles("superadmin"),
+  async (req, res) => {
+    try {
+      const { marquerAbsences } = require("../services/absenceCron");
+      const { date, date_debut, date_fin } = req.query;
+
+      if (date_debut && date_fin) {
+        if (date_fin < date_debut) {
+          return res
+            .status(400)
+            .json({ message: "date_fin doit être après date_debut." });
+        }
+        const cursor = new Date(`${date_debut}T00:00:00Z`);
+        const fin = new Date(`${date_fin}T00:00:00Z`);
+        const nbJours = Math.round((fin - cursor) / 86400000) + 1;
+        if (nbJours > 62) {
+          return res.status(400).json({
+            message: "Période trop large (62 jours maximum en une fois).",
+          });
+        }
+        const resultats = [];
+        while (cursor <= fin) {
+          const dateStr = cursor.toISOString().slice(0, 10);
+          resultats.push(await marquerAbsences(dateStr));
+          cursor.setUTCDate(cursor.getUTCDate() + 1);
+        }
+        return res.json({ jours: resultats.length, resultats });
+      }
+
+      const dateStr = date || todayString();
+      const resultat = await marquerAbsences(dateStr);
+      return res.json(resultat);
+    } catch (err) {
+      console.error("Erreur test marquage absences:", err);
+      return res
+        .status(500)
+        .json({ message: "Erreur lors du marquage des absences." });
+    }
+  },
+);
 
 module.exports = router;

@@ -11,41 +11,65 @@ export async function renderConges(root, user) {
       year: "numeric",
     });
   }
+
+  const FILTERS = [
+    { value: "en_attente", label: "En attente" },
+    { value: "", label: "Toutes" },
+    { value: "approuve", label: "Approuvées" },
+    { value: "refuse", label: "Refusées" },
+  ];
+  let currentFilter = "en_attente";
+
   root.innerHTML = `
     <div>
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
-        <h2 style="font-size:1.1rem;font-weight:700;">
-          <i class="fa-solid fa-calendar-days" style="color:#2e7d32;margin-right:6px;"></i>Demandes de congé
-        </h2>
-        <div style="display:flex;gap:8px;align-items:center;">
-          <select id="filtre-statut-conge" style="padding:8px 10px;border:1.5px solid #ddd;border-radius:8px;font-size:0.85rem;">
-            <option value="en_attente">En attente</option>
-            <option value="">Toutes</option>
-            <option value="approuve">Approuvées</option>
-            <option value="refuse">Refusées</option>
-          </select>
+      <div class="request-toolbar">
+        <div class="page-heading">
+          <div class="page-heading-icon" style="background:rgba(46,125,50,0.1);color:var(--sp-accent,#2e7d32);">
+            <i class="fa-solid fa-calendar-days"></i>
+          </div>
+          <div>
+            <h1>Demandes de congé</h1>
+            <p>Approuvez ou refusez les congés soumis par vos agents.</p>
+          </div>
+        </div>
+        <div class="filter-pills" id="filtre-statut-conge" role="tablist">
+          ${FILTERS.map(f => `
+            <button type="button" class="filter-pill${f.value === currentFilter ? " active" : ""}" data-value="${f.value}">${f.label}</button>
+          `).join("")}
         </div>
       </div>
 
       <!-- Stats rapides -->
-      <div id="conges-stats" style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
-        <div style="background:#fff3e0;border-radius:8px;padding:8px 14px;font-size:0.78rem;font-weight:600;color:#e65100;display:flex;align-items:center;gap:6px;">
-          <i class="fa-solid fa-clock"></i>
-          <span id="stat-attente">—</span> en attente
+      <div id="conges-stats" class="stat-chip-row">
+        <div class="stat-chip">
+          <div class="stat-chip-icon" style="background:rgba(230,81,0,0.1);color:#e65100;"><i class="fa-solid fa-clock"></i></div>
+          <div>
+            <div class="stat-chip-value" style="color:#e65100;" id="stat-attente">—</div>
+            <div class="stat-chip-label">En attente</div>
+          </div>
         </div>
-        <div style="background:#e8f5e9;border-radius:8px;padding:8px 14px;font-size:0.78rem;font-weight:600;color:#2e7d32;display:flex;align-items:center;gap:6px;">
-          <i class="fa-solid fa-circle-check"></i>
-          <span id="stat-approuve">—</span> approuvées
+        <div class="stat-chip">
+          <div class="stat-chip-icon" style="background:rgba(46,125,50,0.1);color:#2e7d32;"><i class="fa-solid fa-circle-check"></i></div>
+          <div>
+            <div class="stat-chip-value" style="color:#2e7d32;" id="stat-approuve">—</div>
+            <div class="stat-chip-label">Approuvées</div>
+          </div>
         </div>
-        <div style="background:#ffebee;border-radius:8px;padding:8px 14px;font-size:0.78rem;font-weight:600;color:#c62828;display:flex;align-items:center;gap:6px;">
-          <i class="fa-solid fa-circle-xmark"></i>
-          <span id="stat-refuse">—</span> refusées
+        <div class="stat-chip">
+          <div class="stat-chip-icon" style="background:rgba(198,40,40,0.1);color:#c62828;"><i class="fa-solid fa-circle-xmark"></i></div>
+          <div>
+            <div class="stat-chip-value" style="color:#c62828;" id="stat-refuse">—</div>
+            <div class="stat-chip-label">Refusées</div>
+          </div>
         </div>
       </div>
 
-      <div id="conges-list" style="display:flex;flex-direction:column;gap:8px;max-height:calc(100vh - 260px);overflow-y:auto;">
-        <div style="text-align:center;padding:20px;color:#999;">
-          <i class="fa-solid fa-spinner fa-spin"></i> Chargement...
+      <div id="conges-list" style="max-height:calc(100vh - 320px);overflow-y:auto;">
+        <div class="request-empty">
+          <div class="empty-icon-circle" style="background:#f2f2f2;color:#aaa;">
+            <i class="fa-solid fa-spinner fa-spin"></i>
+          </div>
+          <p>Chargement…</p>
         </div>
       </div>
     </div>
@@ -68,7 +92,7 @@ export async function renderConges(root, user) {
   let lastSignature = null;
 
   async function loadConges({ silent = false } = {}) {
-    const statut = document.getElementById("filtre-statut-conge")?.value ?? "en_attente";
+    const statut = currentFilter;
     const list = document.getElementById("conges-list");
     if (!list) return stopPolling(); // page quittée
 
@@ -82,7 +106,13 @@ export async function renderConges(root, user) {
       lastSignature = signature;
 
       if (!conges.length) {
-        list.innerHTML = `<div style="text-align:center;padding:32px;color:#bbb;">Aucune demande</div>`;
+        list.innerHTML = `
+          <div class="request-empty">
+            <div class="empty-icon-circle" style="background:rgba(46,125,50,0.1);color:#2e7d32;">
+              <i class="fa-solid fa-mug-hot"></i>
+            </div>
+            <p>Aucune demande dans cette catégorie.</p>
+          </div>`;
         return;
       }
 
@@ -96,42 +126,39 @@ export async function renderConges(root, user) {
         .map((c) => {
           const sc = statutColors[c.statut] || statutColors.en_attente;
           const agent = c.agent_id || {};
+          const initials = (agent.prenom?.[0] || "") + (agent.nom?.[0] || "");
           return `
-          <div style="background:white;border-radius:10px;padding:14px;border:1px solid #eee;border-left:3px solid ${sc.color};">
-            <div style="display:flex;justify-content:space-between;align-items:start;gap:8px;flex-wrap:wrap;">
-              <div>
-                <div style="font-weight:600;font-size:0.88rem;">${agent.nom || ""} ${agent.prenom || ""}</div>
-                <div style="font-size:0.75rem;color:#888;">${agent.matricule || ""} · ${c.site_id?.nom || ""}</div>
-                <div style="font-size:0.82rem;margin-top:6px;color:#444;">
-                  <i class="fa-solid fa-calendar-range" style="color:#2e7d32;"></i>
-                  ${fmtDate(c.date_debut)} → ${fmtDate(c.date_fin)}
-                  <strong>(${c.nb_jours} jours)</strong>
-                </div>
-                ${c.motif ? `<div style="font-size:0.75rem;color:#888;margin-top:3px;">Motif: ${c.motif}</div>` : ""}
-              </div>
-              <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
-                <span style="padding:3px 10px;border-radius:10px;background:${sc.bg};color:${sc.color};font-size:0.72rem;font-weight:600;white-space:nowrap;">
-                  ${sc.label}
-                </span>
-                ${
-                  c.statut === "en_attente"
-                    ? `
-                  <div style="display:flex;gap:5px;">
-                    <button class="btn-approuver" data-id="${c._id}"
-                      style="padding:5px 10px;background:#2e7d32;color:white;border:none;border-radius:6px;font-size:0.72rem;cursor:pointer;">
-                      <i class="fa-solid fa-check"></i> Approuver
-                    </button>
-                    <button class="btn-refuser" data-id="${c._id}"
-                      style="padding:5px 10px;background:#c62828;color:white;border:none;border-radius:6px;font-size:0.72rem;cursor:pointer;">
-                      <i class="fa-solid fa-xmark"></i> Refuser
-                    </button>
+          <div class="request-card" style="border-left:3px solid ${sc.color};" data-id="${c._id}">
+            <div style="display:flex;align-items:flex-start;gap:12px;">
+              <div class="request-avatar">${initials || "?"}</div>
+              <div style="flex:1;min-width:0;">
+                <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+                  <div>
+                    <div style="display:flex;align-items:baseline;gap:6px;flex-wrap:wrap;">
+                      <span style="font-weight:600;font-size:0.92rem;color:#1f2933;">${agent.prenom || ""} ${agent.nom || ""}</span>
+                      <span style="color:#aaa;font-size:0.76rem;">${agent.matricule || ""}${c.site_id?.nom ? " · " + c.site_id.nom : ""}</span>
+                    </div>
+                    <div style="font-size:0.82rem;margin-top:6px;color:#444;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+                      <i class="fa-solid fa-calendar-range" style="color:var(--sp-accent,#2e7d32);"></i>
+                      ${fmtDate(c.date_debut)} → ${fmtDate(c.date_fin)}
+                      <span class="request-chip" style="background:#f5f5f5;color:#555;">${c.nb_jours} jour(s)</span>
+                    </div>
+                    ${c.motif ? `<div style="font-size:0.78rem;color:#888;margin-top:4px;">Motif : ${c.motif}</div>` : ""}
                   </div>
-                `
-                    : ""
-                }
+                  <span class="request-chip" style="background:${sc.bg};color:${sc.color};flex-shrink:0;">${sc.label}</span>
+                </div>
+                ${c.commentaire_rh ? `<div style="font-size:0.78rem;color:#888;margin-top:10px;padding:8px 10px;background:#fafafa;border-radius:8px;border-left:2px solid #ddd;">Note RH : ${c.commentaire_rh}</div>` : ""}
+                ${c.statut === "en_attente" ? `
+                <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px;padding-top:12px;border-top:1px solid #f5f5f5;">
+                  <button class="btn-reject-pill btn-refuser" data-id="${c._id}">
+                    <i class="fa-solid fa-xmark"></i> Refuser
+                  </button>
+                  <button class="btn-approve-pill btn-approuver" data-id="${c._id}">
+                    <i class="fa-solid fa-check"></i> Approuver
+                  </button>
+                </div>` : ""}
               </div>
             </div>
-            ${c.commentaire_rh ? `<div style="font-size:0.75rem;color:#888;margin-top:6px;padding-top:6px;border-top:1px solid #f0f0f0;">Note RH: ${c.commentaire_rh}</div>` : ""}
           </div>
         `;
         })
@@ -147,7 +174,7 @@ export async function renderConges(root, user) {
         });
       });
     } catch (err) {
-      list.innerHTML = `<div style="text-align:center;padding:20px;color:#c62828;">Erreur chargement</div>`;
+      list.innerHTML = `<div class="request-empty"><p style="color:#c62828;">Erreur de chargement.</p></div>`;
     }
   }
 
@@ -202,9 +229,16 @@ export async function renderConges(root, user) {
     });
   }
 
-  document
-    .getElementById("filtre-statut-conge")
-    ?.addEventListener("change", () => loadConges());
+  document.getElementById("filtre-statut-conge")?.addEventListener("click", (e) => {
+    const btn = e.target.closest(".filter-pill");
+    if (!btn) return;
+    currentFilter = btn.dataset.value;
+    document
+      .querySelectorAll("#filtre-statut-conge .filter-pill")
+      .forEach((p) => p.classList.toggle("active", p === btn));
+    lastSignature = null; // force le redessin même si la liste sous-jacente n'a pas changé
+    loadConges();
+  });
 
   let pollHandle = setInterval(() => {
     if (!root.isConnected) { stopPolling(); return; }

@@ -9,7 +9,6 @@ import { renderSites } from "./pages/sites.js";
 import { renderKiosque } from "./pages/kiosque.js";
 import { renderUsers } from "./pages/users.js";
 import { renderConges } from "./pages/conges.js";
-import { renderBadge } from "./pages/badge.js";
 import {
   renderNavbar,
   initResponsiveSidebar,
@@ -124,6 +123,20 @@ function showKiosqueExpiredBanner() {
   }, 100);
 }
 
+// ─── Manifest dynamique — permet d'installer /login et /register comme
+// des raccourcis distincts (icône + nom propres), en plus de l'app principale.
+const DEFAULT_MANIFEST = "/manifest.json";
+const ROUTE_MANIFESTS = {
+  "/login": "/manifest-login.json",
+  "/register": "/manifest-register.json",
+};
+function syncInstallManifest(route) {
+  const link = document.getElementById("manifest-link");
+  if (!link) return;
+  const href = ROUTE_MANIFESTS[route] || DEFAULT_MANIFEST;
+  if (!link.href.endsWith(href)) link.setAttribute("href", href);
+}
+
 function mountLayout(route, user, queryParams = {}) {
   const app = document.getElementById("app");
   if (!app) return;
@@ -147,14 +160,6 @@ function mountLayout(route, user, queryParams = {}) {
     app.className = "";
     app.innerHTML = "";
     renderRegister(app);
-    return;
-  }
-
-  // ─── Badge agent — identité propre (agent-portal), pas de login staff ──
-  if (route === "/badge") {
-    app.className = "";
-    app.innerHTML = "";
-    renderBadge(app);
     return;
   }
 
@@ -245,6 +250,8 @@ async function router() {
   const queryStr = hash.includes("?") ? hash.split("?")[1] : "";
   const queryParams = Object.fromEntries(new URLSearchParams(queryStr));
 
+  syncInstallManifest(route);
+
   // Kiosque — pas besoin d'authentification
   if (route.startsWith("/kiosque")) {
     mountLayout(route, null);
@@ -252,13 +259,6 @@ async function router() {
   }
 
   if (route === "/register") {
-    mountLayout(route, null);
-    return;
-  }
-
-  // Badge agent — authentification propre à l'agent (agent-portal),
-  // indépendante de la session staff (JWT admin/pointeur/etc).
-  if (route === "/badge") {
     mountLayout(route, null);
     return;
   }

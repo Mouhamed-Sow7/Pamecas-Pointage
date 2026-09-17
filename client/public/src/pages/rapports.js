@@ -220,8 +220,8 @@ export async function renderRapports(root, user) {
           <button id="btn-export-excel" style="width:100%;padding:13px;background:linear-gradient(135deg,#2e7d32,#43a047);color:white;border:none;border-radius:10px;font-size:0.9rem;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:opacity 0.2s;">
             <i class="fa-solid fa-file-excel"></i> Exporter en Excel
           </button>
-          <button id="btn-export-pdf" style="width:100%;padding:13px;background:white;color:#c62828;border:2px solid #ef9a9a;border-radius:10px;font-size:0.9rem;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:all 0.2s;" disabled title="Bientôt disponible">
-            <i class="fa-solid fa-file-pdf"></i> Exporter en PDF <span style="font-size:0.72rem;background:#ef9a9a;color:white;padding:2px 6px;border-radius:4px;margin-left:4px;">Bientôt</span>
+          <button id="btn-export-pdf" style="width:100%;padding:13px;background:white;color:#c62828;border:2px solid #ef9a9a;border-radius:10px;font-size:0.9rem;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:all 0.2s;">
+            <i class="fa-solid fa-file-pdf"></i> Exporter en PDF
           </button>
         </div>
 
@@ -364,7 +364,58 @@ export async function renderRapports(root, user) {
     } catch (err) {
       showToast(`Erreur : ${err.message}`, 'error');
     } finally {
-      btn.innerHTML = '<span><i class="fa-solid fa-file-excel"></i></span> Exporter en Excel';
+      btn.innerHTML = '<i class="fa-solid fa-file-excel"></i> Exporter en Excel';
+      btn.disabled = false;
+    }
+  });
+
+  // Export PDF — même flow que Excel, format=pdf
+  root.querySelector('#btn-export-pdf').addEventListener('click', async () => {
+    const debut = inputDebut.value;
+    const fin = inputFin.value;
+    if (!debut || !fin) {
+      showToast('Veuillez choisir une date début et une date fin.', 'warning');
+      return;
+    }
+    if (debut > fin) {
+      showToast('La date début doit être avant la date fin.', 'warning');
+      return;
+    }
+
+    const btn = root.querySelector('#btn-export-pdf');
+    const originalHtml = btn.innerHTML;
+    btn.textContent = 'Génération en cours...';
+    btn.disabled = true;
+
+    try {
+      const token = localStorage.getItem('pamecas_token');
+      const site = root.querySelector('#site-code').value;
+      const params = new URLSearchParams({ date_debut: debut, date_fin: fin, format: 'pdf' });
+      if (site) params.append('site_code', site);
+
+      const res = await fetch(`/api/rapports/export?${params}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || 'Erreur serveur');
+      }
+
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `rapport-pamecas-${debut}-${fin}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast('Rapport PDF téléchargé.', 'success');
+    } catch (err) {
+      showToast(`Erreur : ${err.message}`, 'error');
+    } finally {
+      btn.innerHTML = originalHtml;
       btn.disabled = false;
     }
   });

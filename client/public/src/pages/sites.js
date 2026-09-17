@@ -25,9 +25,11 @@ function renderTable(root, sites) {
   if (!tbody) return;
   tbody.innerHTML = "";
 
+  const colCount = 5 + (showHorairesCol() ? 1 : 0) + (isSuperadmin() ? 3 : 0);
+
   if (!sites.length) {
     tbody.innerHTML = `
-        <tr><td colspan="7" style="text-align:center;padding:24px;color:#aaa;">
+        <tr><td colspan="${colCount}" style="text-align:center;padding:24px;color:#aaa;">
           <i class="fa-solid fa-building-circle-xmark"></i> Aucun site trouve
         </td></tr>
       `;
@@ -49,6 +51,20 @@ function renderTable(root, sites) {
             ${site.actif ? "Actif" : "Inactif"}
           </span>
         </td>
+        ${
+          showHorairesCol()
+            ? `<td style="padding:10px 12px;border-bottom:1px solid #f0f0f0;">
+          ${
+            canEditHoraires(site)
+              ? `<button class="btn-action btn-edit-horaires" data-id="${site._id}"
+              style="display:flex;align-items:center;gap:6px;padding:5px 10px;border-radius:8px;border:1.5px solid var(--green);background:white;color:var(--green);cursor:pointer;font-size:0.78rem;font-weight:500;">
+              <i class="fa-solid fa-clock"></i> Configurer
+            </button>`
+              : `<span style="color:#bbb;font-size:0.78rem;">—</span>`
+          }
+        </td>`
+            : ""
+        }
         <td style="padding:10px 12px;border-bottom:1px solid #f0f0f0;">
           <div style="display:flex;gap:6px;align-items:center;">
             <button class="btn-action btn-edit-site" data-id="${site._id}"
@@ -126,6 +142,24 @@ function renderTable(root, sites) {
 
 // ─── Charger les sites ───────────────────────────────────────────
 let sitesCache = [];
+let currentUser = null;
+
+function isSuperadmin() {
+  return currentUser?.role === "superadmin";
+}
+function canEditHoraires(site) {
+  if (isSuperadmin()) return false; // déjà géré par le bouton "Modifier" complet
+  if (currentUser?.role === "admin") return currentUser.site_id === site._id;
+  if (currentUser?.role === "directeur_regional")
+    return (currentUser.sites_ids || []).includes(site._id);
+  return false;
+}
+function showHorairesCol() {
+  return (
+    !isSuperadmin() &&
+    (currentUser?.role === "admin" || currentUser?.role === "directeur_regional")
+  );
+}
 
 async function fetchSites(root) {
   try {
@@ -199,6 +233,13 @@ function openSiteModal(mode, site, root) {
                 style="width:100%;padding:10px 12px;border:1.5px solid #ddd;border-radius:8px;box-sizing:border-box;font-size:1rem;background:white;color:#1f2933;font-family:inherit;" />
             </div>
           </div>
+          <div style="margin-bottom:10px;">
+            <label style="font-size:0.78rem;font-weight:500;display:block;margin-bottom:6px;color:#666;">
+              <i class="fa-solid fa-clock" style="color:#1565c0;"></i> Heure de sortie
+            </label>
+            <input id="f-heure-fin" type="time" value="${site?.config?.heure_fin || "17:30"}"
+              style="width:100%;padding:10px 12px;border:1.5px solid #ddd;border-radius:8px;box-sizing:border-box;font-size:1rem;background:white;color:#1f2933;font-family:inherit;" />
+          </div>
           <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:0.82rem;">
             <input id="f-weekend" type="checkbox" ${site?.config?.weekend_actif ? "checked" : ""} style="accent-color:var(--green);width:16px;height:16px;">
             Weekend actif
@@ -222,6 +263,7 @@ function openSiteModal(mode, site, root) {
         config: {
           heure_debut: document.getElementById("f-heure-debut")?.value,
           heure_retard: document.getElementById("f-heure-retard")?.value,
+          heure_fin: document.getElementById("f-heure-fin")?.value,
           weekend_actif: document.getElementById("f-weekend")?.checked,
         },
       };
@@ -252,9 +294,71 @@ function openSiteModal(mode, site, root) {
   });
 }
 
+// ─── Modal horaires uniquement (admin / directeur régional, sur leur agence) ──
+function openHorairesModal(site, root) {
+  const content = `
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div style="font-size:0.85rem;color:#666;margin-bottom:4px;">
+          <i class="fa-solid fa-building" style="color:var(--green);"></i> ${site.nom}
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div>
+            <label style="font-size:0.78rem;font-weight:500;display:block;margin-bottom:6px;color:#666;">
+              <i class="fa-regular fa-clock" style="color:var(--green);"></i> Heure debut
+            </label>
+            <input id="fh-heure-debut" type="time" value="${site?.config?.heure_debut || "08:00"}"
+              style="width:100%;padding:10px 12px;border:1.5px solid #ddd;border-radius:8px;box-sizing:border-box;font-size:1rem;background:white;color:#1f2933;font-family:inherit;" />
+          </div>
+          <div>
+            <label style="font-size:0.78rem;font-weight:500;display:block;margin-bottom:6px;color:#666;">
+              <i class="fa-solid fa-triangle-exclamation" style="color:#e65100;"></i> Seuil retard
+            </label>
+            <input id="fh-heure-retard" type="time" value="${site?.config?.heure_retard || "08:15"}"
+              style="width:100%;padding:10px 12px;border:1.5px solid #ddd;border-radius:8px;box-sizing:border-box;font-size:1rem;background:white;color:#1f2933;font-family:inherit;" />
+          </div>
+        </div>
+        <div>
+          <label style="font-size:0.78rem;font-weight:500;display:block;margin-bottom:6px;color:#666;">
+            <i class="fa-solid fa-clock" style="color:#1565c0;"></i> Heure de sortie
+          </label>
+          <input id="fh-heure-fin" type="time" value="${site?.config?.heure_fin || "17:30"}"
+            style="width:100%;padding:10px 12px;border:1.5px solid #ddd;border-radius:8px;box-sizing:border-box;font-size:1rem;background:white;color:#1f2933;font-family:inherit;" />
+        </div>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:0.82rem;">
+          <input id="fh-weekend" type="checkbox" ${site?.config?.weekend_actif ? "checked" : ""} style="accent-color:var(--green);width:16px;height:16px;">
+          Weekend actif
+        </label>
+      </div>
+    `;
+
+  showModal({
+    title: `Horaires — ${site.nom}`,
+    content,
+    confirmText: "Enregistrer",
+    cancelText: "Annuler",
+    onConfirm: async (close) => {
+      const payload = {
+        heure_debut: document.getElementById("fh-heure-debut")?.value,
+        heure_retard: document.getElementById("fh-heure-retard")?.value,
+        heure_fin: document.getElementById("fh-heure-fin")?.value,
+        weekend_actif: document.getElementById("fh-weekend")?.checked,
+      };
+      try {
+        await put(`/api/sites/${site._id}/horaires`, payload);
+        showToast("Horaires mis à jour.", "success");
+        close();
+        fetchSites(root);
+      } catch (err) {
+        showToast(err.message || "Erreur lors de l'enregistrement.", "error");
+      }
+    },
+  });
+}
+
 // ─── Export principal ────────────────────────────────────────────
 export async function renderSites(root, user) {
-  const canEdit = user && user.role === "superadmin";
+  currentUser = user;
+  const canEdit = isSuperadmin();
 
   root.innerHTML = `
       <div class="card" style="display:flex;flex-direction:column;">
@@ -282,11 +386,12 @@ export async function renderSites(root, user) {
                 <th style="padding:12px;text-align:left;font-weight:600;">Region</th>
                 <th style="padding:12px;text-align:left;font-weight:600;">Responsable</th>
                 <th style="padding:12px;text-align:left;font-weight:600;">Statut</th>
+                ${showHorairesCol() ? '<th style="padding:12px;text-align:left;font-weight:600;">Horaires</th>' : ""}
                 ${canEdit ? '<th style="padding:12px;text-align:left;font-weight:600;">Actions</th><th style="padding:12px;text-align:left;font-weight:600;">Kiosque</th><th style=\"padding:12px;text-align:left;font-weight:600;\">PIN kiosque</th>' : ""}
               </tr>
             </thead>
             <tbody id="sites-tbody">
-              <tr><td colspan="7" style="text-align:center;padding:24px;color:#aaa;">
+              <tr><td colspan="${5 + (showHorairesCol() ? 1 : 0) + (isSuperadmin() ? 3 : 0)}" style="text-align:center;padding:24px;color:#aaa;">
                 <i class="fa-solid fa-spinner fa-spin"></i> Chargement...
               </td></tr>
             </tbody>
@@ -307,6 +412,7 @@ export async function renderSites(root, user) {
     const btnCopy = e.target.closest(".btn-copy-kiosque");
     const btnGen = e.target.closest(".btn-gen-kiosque");
     const btnEdit = e.target.closest(".btn-edit-site");
+    const btnEditHoraires = e.target.closest(".btn-edit-horaires");
     const btnToggle = e.target.closest(".btn-toggle-site");
     const btnDeploy = e.target.closest(".btn-deploy-kiosque");
     const btnRotatePin = e.target.closest(".btn-rotate-pin");
@@ -367,6 +473,13 @@ export async function renderSites(root, user) {
       return;
     }
 
+    if (btnEditHoraires) {
+      const id = btnEditHoraires.dataset.id;
+      const site = sitesCache.find((s) => s._id === id);
+      if (site) openHorairesModal(site, root);
+      return;
+    }
+
     if (btnToggle) {
       const id = btnToggle.dataset.id;
       const estActif = btnToggle.dataset.actif === "true";
@@ -412,6 +525,34 @@ export async function renderSites(root, user) {
   fetchSites(root);
 }
 
+
+// ─── Chargement paresseux de MapLibre GL JS (uniquement à la première
+// ouverture du modal — inutile d'alourdir le chargement initial de la page).
+// Après trois fournisseurs de tuiles raster cassés coup sur coup
+// (tile.openstreetmap.org bloque en 403 les usages comme le nôtre, CARTO
+// exige désormais une clé), on arrête le hotlinking raster : OpenFreeMap +
+// MapLibre GL est le duo pensé pour ce cas précis — tuiles vectorielles,
+// gratuit, illimité, sans clé API, hébergé par l'écosystème OSM lui-même.
+// ─────────────────────────────────────────────────────────────────────────
+let _maplibreLoadPromise = null;
+function loadMapLibre() {
+  if (window.maplibregl) return Promise.resolve();
+  if (_maplibreLoadPromise) return _maplibreLoadPromise;
+  _maplibreLoadPromise = new Promise((resolve, reject) => {
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = "https://cdn.jsdelivr.net/npm/maplibre-gl@5/dist/maplibre-gl.css";
+    document.head.appendChild(link);
+
+    const script = document.createElement("script");
+    script.src = "https://cdn.jsdelivr.net/npm/maplibre-gl@5/dist/maplibre-gl.js";
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error("maplibre-load-failed"));
+    document.head.appendChild(script);
+  });
+  return _maplibreLoadPromise;
+}
+
 // ─── Modal de confirmation geofencing avant déploiement kiosk ────────────────
 function openGeofenceModal(site, root) {
   const existing = site.coordonnees?.latitude && site.coordonnees?.longitude ? site.coordonnees : null;
@@ -433,16 +574,15 @@ function openGeofenceModal(site, root) {
           <span style="font-size:0.72rem;color:#999;align-self:center;">zoom</span>
           <button id="geo-zoom-in" type="button" class="btn-icon-sm" style="width:28px;height:28px;border-radius:6px;border:1px solid #ddd;background:white;cursor:pointer;">+</button>
         </div>
-        <div id="geo-map-wrap" style="border-radius:10px;overflow:hidden;border:1px solid #eee;position:relative;width:288px;height:288px;margin:0 auto;background:#eee;cursor:crosshair;">
-          <div id="geo-map-mosaic" style="position:absolute;width:768px;height:768px;"></div>
-          <div id="geo-my-pos" style="display:none;position:absolute;width:14px;height:14px;border-radius:50%;background:#4285F4;border:2px solid white;box-shadow:0 0 0 2px rgba(66,133,244,0.35),0 0 0 8px rgba(66,133,244,0.15);transform:translate(-50%,-50%);pointer-events:none;"></div>
-          <div id="geo-map-pin" style="position:absolute;width:14px;height:14px;border-radius:50%;background:#c62828;border:2px solid white;box-shadow:0 0 0 2px rgba(198,40,40,0.4);transform:translate(-50%,-50%);pointer-events:none;"></div>
+        <div id="geo-map-wrap" style="border-radius:10px;overflow:hidden;border:1px solid #eee;position:relative;width:288px;height:288px;margin:0 auto;background:#eee;">
+          <div id="geo-map-container" style="width:100%;height:100%;cursor:crosshair;"></div>
         </div>
         <div style="font-size:0.72rem;color:#999;text-align:center;margin-top:4px;">
           <span style="color:#c62828;">●</span> zone confirmée &nbsp;·&nbsp;
           <span style="color:#4285F4;">●</span> ta position actuelle
         </div>
-        <div style="font-size:0.72rem;color:#999;text-align:center;margin-top:4px;">Clique n'importe où sur la carte pour déplacer le point.</div>
+        <div style="font-size:0.72rem;color:#999;text-align:center;margin-top:4px;">Clique n'importe où sur la carte (ou fais glisser le point rouge) pour l'ajuster.</div>
+        <div style="font-size:0.65rem;color:#bbb;text-align:center;margin-top:2px;">© OpenStreetMap contributors © OpenFreeMap</div>
       </div>
       <div id="geo-manual" style="display:none;font-size:0.78rem;color:#888;text-align:center;">
         Ou saisis/colle les coordonnées exactes (décimal, "16°01'21.0"N", ou une paire "lat, lng") :
@@ -481,6 +621,7 @@ function openGeofenceModal(site, root) {
       try {
         await put(`/api/sites/${site._id}/coordonnees`, { latitude: parseFloat(lat), longitude: parseFloat(lng) });
         showToast("Zone de pointage confirmée.", "success");
+        stopWatch();
         close();
         window.open(site.kiosque_url, "_blank");
         fetchSites(root);
@@ -488,13 +629,12 @@ function openGeofenceModal(site, root) {
         showToast("Erreur lors de l'enregistrement de la position.", "error");
       }
     },
+    onCancel: () => stopWatch(),
   });
 
   const statusEl = document.getElementById("geo-status");
   const mapOuter = document.getElementById("geo-map-outer");
   const mapWrap = document.getElementById("geo-map-wrap");
-  const mosaic = document.getElementById("geo-map-mosaic");
-  const mapPin = document.getElementById("geo-map-pin");
   const manualHint = document.getElementById("geo-manual");
   const manualFields = document.getElementById("geo-manual-fields");
   const latInput = document.getElementById("geo-lat-input");
@@ -503,61 +643,85 @@ function openGeofenceModal(site, root) {
   let ZOOM = 16;
   let curLat = null, curLng = null;
   let myLat = null, myLng = null; // position réelle détectée (ne bouge pas au clic)
-  // Coin haut-gauche de la mosaïque 3x3 (en coordonnées de tuile, non arrondies)
-  let originXTile = null, originYTile = null;
+  let map = null;
+  let pinMarker = null;
+  let myPosMarker = null;
+  let mapReady = false;
+  let watchId = null;
+  let bestAccuracy = Infinity;
+  let pendingPosition = null; // si showPosition() est appelé avant que la carte finisse de charger
 
-  function lngLatToTileF(lat, lng, zoom) {
-    const n = Math.pow(2, zoom);
-    const latRad = (lat * Math.PI) / 180;
-    return {
-      xTileF: ((lng + 180) / 360) * n,
-      yTileF: ((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2) * n,
-    };
-  }
-  function tileFToLatLng(xTileF, yTileF, zoom) {
-    const n = Math.pow(2, zoom);
-    const lng = (xTileF / n) * 360 - 180;
-    const latRad = Math.atan(Math.sinh(Math.PI * (1 - (2 * yTileF) / n)));
-    return { lat: (latRad * 180) / Math.PI, lng };
-  }
+  loadMapLibre()
+    .then(() => {
+      map = new window.maplibregl.Map({
+        container: "geo-map-container",
+        style: "https://tiles.openfreemap.org/styles/liberty",
+        center: [-17.4677, 14.7167], // Dakar par défaut, recentré dès qu'une position arrive
+        zoom: ZOOM,
+        attributionControl: false,
+      });
+      map.on("load", () => {
+        mapReady = true;
+        if (pendingPosition) {
+          const { lat, lng } = pendingPosition;
+          pendingPosition = null;
+          placeOnMap(lat, lng);
+        }
+      });
+      map.on("click", (e) => {
+        showPosition(e.lngLat.lat, e.lngLat.lng, "Position ajustée manuellement (clic)");
+      });
+    })
+    .catch(() => {
+      mapOuter.innerHTML = `
+        <div style="text-align:center;padding:24px 12px;color:#999;font-size:0.8rem;">
+          <i class="fa-solid fa-map-slash" style="font-size:1.3rem;color:#ccc;"></i><br>
+          La carte n'a pas pu se charger sur ce réseau.<br>Utilise les coordonnées manuelles ci-dessous.
+        </div>`;
+      mapOuter.style.display = "block";
+    });
 
-  function renderMosaic() {
-    const { xTileF, yTileF } = lngLatToTileF(curLat, curLng, ZOOM);
-    const centerXTile = Math.floor(xTileF);
-    const centerYTile = Math.floor(yTileF);
-    originXTile = centerXTile - 1;
-    originYTile = centerYTile - 1;
+  function placeOnMap(lat, lng) {
+    if (!mapReady) { pendingPosition = { lat, lng }; return; }
+    if (!pinMarker) {
+      pinMarker = new window.maplibregl.Marker({ color: "#c62828", draggable: true })
+        .setLngLat([lng, lat])
+        .addTo(map);
+      pinMarker.on("dragend", () => {
+        const { lat: dLat, lng: dLng } = pinMarker.getLngLat();
+        showPosition(dLat, dLng, "Position ajustée manuellement (glissé)");
+      });
+      // Toujours au-dessus du marqueur bleu "ta position" — c'est LE point
+      // qui compte (déplaçable, celui qu'on enregistre). Les deux se
+      // superposent pile la plupart du temps (position détectée = position
+      // confirmée tant qu'on n'a pas ajusté à la main), et le bleu passait
+      // par-dessus en étant ajouté en second, rendant le rouge invisible et
+      // impossible à saisir pour le glisser.
+      pinMarker.getElement().style.zIndex = "3";
+    } else {
+      pinMarker.setLngLat([lng, lat]);
+    }
+    map.flyTo({ center: [lng, lat], zoom: ZOOM, duration: 600 });
 
-    mosaic.innerHTML = "";
-    for (let dy = 0; dy < 3; dy++) {
-      for (let dx = 0; dx < 3; dx++) {
-        const img = document.createElement("img");
-        img.width = 256; img.height = 256;
-        img.style.cssText = `position:absolute;left:${dx * 256}px;top:${dy * 256}px;pointer-events:none;`;
-        img.src = `https://tile.openstreetmap.org/${ZOOM}/${originXTile + dx}/${originYTile + dy}.png`;
-        mosaic.appendChild(img);
+    if (myLat !== null && myLng !== null) {
+      if (!myPosMarker) {
+        // Petit point bleu façon "position actuelle" (style Google Maps),
+        // volontairement plus discret que le pin rouge pour ne pas lui faire
+        // concurrence visuelle quand les deux coïncident.
+        const dot = document.createElement("div");
+        dot.style.cssText =
+          "width:14px;height:14px;border-radius:50%;background:#4285F4;border:2px solid white;box-shadow:0 0 0 2px rgba(66,133,244,0.35),0 0 0 8px rgba(66,133,244,0.15);";
+        myPosMarker = new window.maplibregl.Marker({ element: dot })
+          .setLngLat([myLng, myLat])
+          .addTo(map);
+        myPosMarker.getElement().style.zIndex = "1";
+      } else {
+        myPosMarker.setLngLat([myLng, myLat]);
       }
     }
-    // Centrer visuellement la mosaïque 768px dans la fenêtre 288px, point sous le curseur
-    const pinPxX = (xTileF - originXTile) * 256;
-    const pinPxY = (yTileF - originYTile) * 256;
-    mosaic.style.left = `${144 - pinPxX}px`;
-    mosaic.style.top = `${144 - pinPxY}px`;
-    mapPin.style.left = "144px";
-    mapPin.style.top = "144px";
-
-    // Marqueur bleu "ta position" — positionné selon sa vraie coordonnée,
-    // indépendamment du point rouge (qui peut avoir été déplacé manuellement)
-    const myPosEl = document.getElementById("geo-my-pos");
-    if (myLat !== null && myLng !== null) {
-      const my = lngLatToTileF(myLat, myLng, ZOOM);
-      myPosEl.style.left = `${144 - pinPxX + (my.xTileF - originXTile) * 256}px`;
-      myPosEl.style.top = `${144 - pinPxY + (my.yTileF - originYTile) * 256}px`;
-      myPosEl.style.display = "block";
-    }
   }
 
-  function showPosition(lat, lng, label) {
+  function showPosition(lat, lng, label, accuracyMeters) {
     curLat = lat; curLng = lng;
     mapWrap.dataset.lat = lat;
     mapWrap.dataset.lng = lng;
@@ -566,29 +730,27 @@ function openGeofenceModal(site, root) {
     manualFields.style.display = "flex";
     latInput.value = lat.toFixed(6);
     lngInput.value = lng.toFixed(6);
-    statusEl.innerHTML = `<i class="fa-solid fa-location-crosshairs" style="color:#0f5132;"></i> ${label} : ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
-    renderMosaic();
+    let html = `<i class="fa-solid fa-location-crosshairs" style="color:#0f5132;"></i> ${label} : ${lat.toFixed(6)}, ${lng.toFixed(6)}
+      <button type="button" id="geo-refresh-btn" title="Actualiser ma position" style="margin-left:6px;background:none;border:none;color:#0f5132;cursor:pointer;font-size:0.82rem;padding:2px 4px;vertical-align:middle;">
+        <i class="fa-solid fa-rotate"></i>
+      </button>`;
+    // Un Mac/PC n'a pas de GPS : le navigateur estime la position via le
+    // Wi-Fi ou l'IP, ce qui peut se tromper de ville entière si la zone est
+    // mal cartographiée dans la base de géoloc du navigateur/OS (fréquent
+    // hors des grandes villes). On prévient plutôt que d'imposer une
+    // position fausse en silence — les champs restent modifiables en dessous.
+    if (accuracyMeters && accuracyMeters > 3000) {
+      html += `<br><span style="color:#e65100;font-size:0.78rem;"><i class="fa-solid fa-triangle-exclamation"></i> Précision faible (~${Math.round(accuracyMeters / 1000)} km) — vérifie/corrige la position sur la carte ou les champs ci-dessous.</span>`;
+    }
+    statusEl.innerHTML = html;
+    placeOnMap(lat, lng);
   }
 
-  mapWrap.addEventListener("click", (e) => {
-    if (originXTile === null) return;
-    const rect = mapWrap.getBoundingClientRect();
-    const px = e.clientX - rect.left;
-    const py = e.clientY - rect.top;
-    // px/py sont dans le cadre visible (288); on retrouve la position dans la mosaïque via son offset courant
-    const mosaicLeft = parseFloat(mosaic.style.left);
-    const mosaicTop = parseFloat(mosaic.style.top);
-    const xTileF = originXTile + (px - mosaicLeft) / 256;
-    const yTileF = originYTile + (py - mosaicTop) / 256;
-    const { lat, lng } = tileFToLatLng(xTileF, yTileF, ZOOM);
-    showPosition(lat, lng, "Position ajustée manuellement (clic)");
-  });
-
   document.getElementById("geo-zoom-in").addEventListener("click", () => {
-    if (ZOOM < 19) { ZOOM++; renderMosaic(); }
+    if (ZOOM < 19) { ZOOM++; map?.zoomTo(ZOOM); }
   });
   document.getElementById("geo-zoom-out").addEventListener("click", () => {
-    if (ZOOM > 3) { ZOOM--; renderMosaic(); }
+    if (ZOOM > 3) { ZOOM--; map?.zoomTo(ZOOM); }
   });
 
   // ── Parseur de coordonnées : décimal (point ou virgule), DMS ("16°01'21.0\"N"),
@@ -639,21 +801,50 @@ function openGeofenceModal(site, root) {
     });
   });
 
-  if (!navigator.geolocation) {
-    statusEl.innerHTML = `<i class="fa-solid fa-triangle-exclamation" style="color:#e65100;"></i> Géolocalisation non disponible sur cet appareil/navigateur.`;
-  } else {
-    navigator.geolocation.getCurrentPosition(
+  // Un ordinateur n'a pas de GPS : le premier "fix" vient souvent du Wi-Fi/IP
+  // et peut être très approximatif (des dizaines de km). En pratique, le
+  // navigateur/l'OS affine cette estimation en continu pendant quelques
+  // secondes s'il continue à écouter — d'où watchPosition() plutôt qu'un
+  // simple getCurrentPosition() one-shot : on garde la meilleure lecture vue
+  // pendant ~8s (ou on s'arrête plus tôt si elle devient déjà bonne, <50m),
+  // au lieu de se figer sur la toute première estimation, souvent la pire.
+  function stopWatch() {
+    if (watchId !== null) { navigator.geolocation.clearWatch(watchId); watchId = null; }
+  }
+
+  function locateMe() {
+    if (!navigator.geolocation) {
+      statusEl.innerHTML = `<i class="fa-solid fa-triangle-exclamation" style="color:#e65100;"></i> Géolocalisation non disponible sur cet appareil/navigateur.`;
+      return;
+    }
+    stopWatch();
+    bestAccuracy = Infinity;
+    statusEl.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Localisation en cours... <span style="color:#999;font-size:0.78rem;">(affinage ~8s)</span>`;
+
+    watchId = navigator.geolocation.watchPosition(
       (pos) => {
+        const acc = pos.coords.accuracy;
+        // On ne redessine que sur une vraie amélioration, pour éviter que le
+        // point saute dans tous les sens pendant que le navigateur affine.
+        if (acc >= bestAccuracy) return;
+        bestAccuracy = acc;
         myLat = pos.coords.latitude;
         myLng = pos.coords.longitude;
-        showPosition(myLat, myLng, "Position actuelle détectée");
+        showPosition(myLat, myLng, "Position actuelle détectée", acc);
+        if (acc < 50) stopWatch(); // déjà précis, inutile de continuer à attendre
       },
       () => {
         statusEl.innerHTML = `<i class="fa-solid fa-triangle-exclamation" style="color:#c62828;"></i> Localisation refusée ou indisponible — saisis les coordonnées manuellement ci-dessous.`;
       },
-      { enableHighAccuracy: true, timeout: 10000 },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
     );
+    setTimeout(stopWatch, 8000);
   }
+
+  locateMe();
+  statusEl.addEventListener("click", (e) => {
+    if (e.target.closest("#geo-refresh-btn")) locateMe();
+  });
 
   document.getElementById("btn-clear-geo")?.addEventListener("click", async () => {
     try {

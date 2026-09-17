@@ -29,13 +29,31 @@ const tenantSchema = new mongoose.Schema({
   // Plan et statut
   plan: {
     type: String,
-    enum: ['pro', 'enterprise'],
-    default: 'pro'
+    enum: ['standard', 'pro'],
+    default: 'standard'
   },
   statut: {
     type: String,
-    enum: ['actif', 'trial', 'suspendu'],
+    enum: ['actif', 'trial', 'suspendu', 'expire'],
     default: 'trial'
+  },
+  // Etat d'abonnement / facturation (PayDunya)
+  abonnement: {
+    date_expiration: { type: Date, default: null },
+    dernier_paiement: {
+      token: { type: String, default: null },
+      montant: { type: Number, default: null },
+      methode: { type: String, default: null }, // wave, orange-money-senegal, carte...
+      date: { type: Date, default: null }
+    },
+    // Facture PayDunya en attente de confirmation (evite de recreer une facture
+    // a chaque clic sur "payer" si le client a deja un lien de paiement valide)
+    facture_en_attente: {
+      token: { type: String, default: null },
+      montant: { type: Number, default: null },
+      plan_vise: { type: String, default: null },
+      cree_le: { type: Date, default: null }
+    }
   },
   
   // Dates
@@ -115,11 +133,12 @@ tenantSchema.index({ statut: 1 });
 tenantSchema.index({ plan: 1 });
 
 // Méthode pour calculer le revenu mensuel
-// Tarification reelle (landing page /tarifs) : par AGENT, pas par site.
-// enum plan 'pro' = tier "Essentiel" (2500 FCFA/agent/mois),
-// enum plan 'enterprise' = tier "Pro" multi-agences (3500 FCFA/agent/mois).
+// Tarification par AGENT (pas par site) :
+// plan 'standard' = 1700 FCFA/agent/mois (sans conges, sans rapport email auto)
+// plan 'pro'      = 2100 FCFA/agent/mois (conges + rapport mensuel par email)
+const PRIX_PAR_AGENT = { standard: 1700, pro: 2100 };
 tenantSchema.methods.getRevenuMensuel = function() {
-  const prixParAgent = this.plan === 'enterprise' ? 3500 : 2500;
+  const prixParAgent = PRIX_PAR_AGENT[this.plan] || PRIX_PAR_AGENT.standard;
   return (this.stats?.nb_agents || 0) * prixParAgent;
 };
 
@@ -142,3 +161,4 @@ tenantSchema.methods.suspendre = function() {
 };
 
 module.exports = mongoose.model('Tenant', tenantSchema);
+module.exports.PRIX_PAR_AGENT = PRIX_PAR_AGENT;
