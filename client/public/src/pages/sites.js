@@ -611,6 +611,7 @@ function openGeofenceModal(site, root) {
     content,
     confirmText: "Confirmer et déployer",
     cancelText: "Annuler",
+    closeOnOverlayClick: false,
     onConfirm: async (close) => {
       const lat = document.getElementById("geo-map-wrap")?.dataset.lat;
       const lng = document.getElementById("geo-map-wrap")?.dataset.lng;

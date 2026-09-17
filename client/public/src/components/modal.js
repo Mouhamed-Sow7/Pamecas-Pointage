@@ -1,4 +1,4 @@
-export function showModal({ title, content, onConfirm, onCancel, onReady, confirmText = 'Confirmer', cancelText = 'Annuler' }) {
+export function showModal({ title, content, onConfirm, onCancel, onReady, confirmText = 'Confirmer', cancelText = 'Annuler', closeOnOverlayClick = true }) {
   let overlay = document.getElementById('gds-modal-overlay');
   if (overlay) overlay.remove();
 
@@ -55,8 +55,12 @@ export function showModal({ title, content, onConfirm, onCancel, onReady, confir
 
   btnCancel.addEventListener('click', () => { if (onCancel) onCancel(); close(); });
 
-  // Fermer en cliquant sur l'overlay
-  overlay.addEventListener('click', (e) => { if (e.target === overlay) { if (onCancel) onCancel(); close(); } });
+  // Fermer en cliquant sur l'overlay — désactivable (ex: modals avec
+  // carte interactive où un clic "en dehors" est facile à faire par erreur
+  // et où l'utilisateur doit fermer volontairement via Annuler/Confirmer).
+  if (closeOnOverlayClick) {
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) { if (onCancel) onCancel(); close(); } });
+  }
 
   // onReady : passe close() au parent (utile pour les modals avec boutons internes)
   if (onReady) onReady(close);
