@@ -621,6 +621,7 @@ function openGeofenceModal(site, root) {
       try {
         await put(`/api/sites/${site._id}/coordonnees`, { latitude: parseFloat(lat), longitude: parseFloat(lng) });
         showToast("Zone de pointage confirmée.", "success");
+        stopWatch();
         close();
         window.open(site.kiosque_url, "_blank");
         fetchSites(root);
@@ -628,6 +629,7 @@ function openGeofenceModal(site, root) {
         showToast("Erreur lors de l'enregistrement de la position.", "error");
       }
     },
+    onCancel: () => stopWatch(),
   });
 
   const statusEl = document.getElementById("geo-status");
@@ -645,6 +647,8 @@ function openGeofenceModal(site, root) {
   let pinMarker = null;
   let myPosMarker = null;
   let mapReady = false;
+  let watchId = null;
+  let bestAccuracy = Infinity;
   let pendingPosition = null; // si showPosition() est appelé avant que la carte finisse de charger
 
   loadMapLibre()
@@ -687,6 +691,13 @@ function openGeofenceModal(site, root) {
         const { lat: dLat, lng: dLng } = pinMarker.getLngLat();
         showPosition(dLat, dLng, "Position ajustée manuellement (glissé)");
       });
+      // Toujours au-dessus du marqueur bleu "ta position" — c'est LE point
+      // qui compte (déplaçable, celui qu'on enregistre). Les deux se
+      // superposent pile la plupart du temps (position détectée = position
+      // confirmée tant qu'on n'a pas ajusté à la main), et le bleu passait
+      // par-dessus en étant ajouté en second, rendant le rouge invisible et
+      // impossible à saisir pour le glisser.
+      pinMarker.getElement().style.zIndex = "3";
     } else {
       pinMarker.setLngLat([lng, lat]);
     }
@@ -694,9 +705,16 @@ function openGeofenceModal(site, root) {
 
     if (myLat !== null && myLng !== null) {
       if (!myPosMarker) {
-        myPosMarker = new window.maplibregl.Marker({ color: "#4285F4" })
+        // Petit point bleu façon "position actuelle" (style Google Maps),
+        // volontairement plus discret que le pin rouge pour ne pas lui faire
+        // concurrence visuelle quand les deux coïncident.
+        const dot = document.createElement("div");
+        dot.style.cssText =
+          "width:14px;height:14px;border-radius:50%;background:#4285F4;border:2px solid white;box-shadow:0 0 0 2px rgba(66,133,244,0.35),0 0 0 8px rgba(66,133,244,0.15);";
+        myPosMarker = new window.maplibregl.Marker({ element: dot })
           .setLngLat([myLng, myLat])
           .addTo(map);
+        myPosMarker.getElement().style.zIndex = "1";
       } else {
         myPosMarker.setLngLat([myLng, myLat]);
       }
@@ -712,7 +730,10 @@ function openGeofenceModal(site, root) {
     manualFields.style.display = "flex";
     latInput.value = lat.toFixed(6);
     lngInput.value = lng.toFixed(6);
-    let html = `<i class="fa-solid fa-location-crosshairs" style="color:#0f5132;"></i> ${label} : ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+    let html = `<i class="fa-solid fa-location-crosshairs" style="color:#0f5132;"></i> ${label} : ${lat.toFixed(6)}, ${lng.toFixed(6)}
+      <button type="button" id="geo-refresh-btn" title="Actualiser ma position" style="margin-left:6px;background:none;border:none;color:#0f5132;cursor:pointer;font-size:0.82rem;padding:2px 4px;vertical-align:middle;">
+        <i class="fa-solid fa-rotate"></i>
+      </button>`;
     // Un Mac/PC n'a pas de GPS : le navigateur estime la position via le
     // Wi-Fi ou l'IP, ce qui peut se tromper de ville entière si la zone est
     // mal cartographiée dans la base de géoloc du navigateur/OS (fréquent
@@ -780,21 +801,50 @@ function openGeofenceModal(site, root) {
     });
   });
 
-  if (!navigator.geolocation) {
-    statusEl.innerHTML = `<i class="fa-solid fa-triangle-exclamation" style="color:#e65100;"></i> Géolocalisation non disponible sur cet appareil/navigateur.`;
-  } else {
-    navigator.geolocation.getCurrentPosition(
+  // Un ordinateur n'a pas de GPS : le premier "fix" vient souvent du Wi-Fi/IP
+  // et peut être très approximatif (des dizaines de km). En pratique, le
+  // navigateur/l'OS affine cette estimation en continu pendant quelques
+  // secondes s'il continue à écouter — d'où watchPosition() plutôt qu'un
+  // simple getCurrentPosition() one-shot : on garde la meilleure lecture vue
+  // pendant ~8s (ou on s'arrête plus tôt si elle devient déjà bonne, <50m),
+  // au lieu de se figer sur la toute première estimation, souvent la pire.
+  function stopWatch() {
+    if (watchId !== null) { navigator.geolocation.clearWatch(watchId); watchId = null; }
+  }
+
+  function locateMe() {
+    if (!navigator.geolocation) {
+      statusEl.innerHTML = `<i class="fa-solid fa-triangle-exclamation" style="color:#e65100;"></i> Géolocalisation non disponible sur cet appareil/navigateur.`;
+      return;
+    }
+    stopWatch();
+    bestAccuracy = Infinity;
+    statusEl.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Localisation en cours... <span style="color:#999;font-size:0.78rem;">(affinage ~8s)</span>`;
+
+    watchId = navigator.geolocation.watchPosition(
       (pos) => {
+        const acc = pos.coords.accuracy;
+        // On ne redessine que sur une vraie amélioration, pour éviter que le
+        // point saute dans tous les sens pendant que le navigateur affine.
+        if (acc >= bestAccuracy) return;
+        bestAccuracy = acc;
         myLat = pos.coords.latitude;
         myLng = pos.coords.longitude;
-        showPosition(myLat, myLng, "Position actuelle détectée", pos.coords.accuracy);
+        showPosition(myLat, myLng, "Position actuelle détectée", acc);
+        if (acc < 50) stopWatch(); // déjà précis, inutile de continuer à attendre
       },
       () => {
         statusEl.innerHTML = `<i class="fa-solid fa-triangle-exclamation" style="color:#c62828;"></i> Localisation refusée ou indisponible — saisis les coordonnées manuellement ci-dessous.`;
       },
-      { enableHighAccuracy: true, timeout: 10000 },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
     );
+    setTimeout(stopWatch, 8000);
   }
+
+  locateMe();
+  statusEl.addEventListener("click", (e) => {
+    if (e.target.closest("#geo-refresh-btn")) locateMe();
+  });
 
   document.getElementById("btn-clear-geo")?.addEventListener("click", async () => {
     try {
