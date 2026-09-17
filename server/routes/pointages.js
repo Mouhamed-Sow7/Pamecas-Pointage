@@ -4,7 +4,7 @@ const mongoose = require("mongoose");
 
 const Pointage = require("../models/Pointage");
 const Agent = require("../models/Agent");
-const { validateQRData } = require("../utils/totp");
+const { validateQRData, validateQRDataOffline } = require("../utils/totp");
 const {
   authenticate,
   authorizeRoles,
@@ -244,6 +244,7 @@ router.post("/sync", async (req, res) => {
     }
 
     const syncedLocalIds = [];
+    const Site = require("../models/Site");
 
     for (const p of pointages) {
       try {
@@ -253,6 +254,62 @@ router.post("/sync", async (req, res) => {
           site_id: p.site_id,
           date: dateStr,
         };
+
+        // ── Revalidation anti-fraude (les mêmes contrôles que le
+        // pointage en direct, appliqués rétroactivement) ────────────
+        let horsZoneDetectee = false;
+        let distanceDetectee = null;
+        let qrInvalideDetecte = false;
+
+        const agentForCheck = await Agent.findById(p.agent_id).select(
+          "matricule totp_enabled totp_secret",
+        );
+
+        // Geofencing : on recalcule la distance par rapport au site,
+        // même si le scan a eu lieu il y a plusieurs heures.
+        if (
+          p.coordonnees_agent?.latitude &&
+          p.coordonnees_agent?.longitude
+        ) {
+          const site = await Site.findById(p.site_id).select("coordonnees");
+          if (site?.coordonnees?.latitude && site?.coordonnees?.longitude) {
+            distanceDetectee = distanceMetres(
+              p.coordonnees_agent.latitude,
+              p.coordonnees_agent.longitude,
+              site.coordonnees.latitude,
+              site.coordonnees.longitude,
+            );
+            if (distanceDetectee > RAYON_GEOFENCE_METRES) {
+              horsZoneDetectee = true;
+            }
+          }
+        } else if (agentForCheck) {
+          // Aucune position transmise du tout : impossible de confirmer
+          // la présence sur site → à vérifier manuellement.
+          horsZoneDetectee = true;
+        }
+
+        // QR dynamique : on revalide le HMAC pour la fenêtre revendiquée
+        // dans le QR lui-même (voir validateQRDataOffline).
+        if (
+          (p.methode === "qr_code") &&
+          agentForCheck?.totp_enabled &&
+          agentForCheck?.totp_secret
+        ) {
+          if (!p.qr_data) {
+            qrInvalideDetecte = true;
+          } else {
+            const result = validateQRDataOffline(
+              p.qr_data,
+              agentForCheck.matricule,
+              agentForCheck.totp_secret,
+            );
+            if (!result.valid) qrInvalideDetecte = true;
+          }
+        }
+
+        const aVerifier = horsZoneDetectee || qrInvalideDetecte;
+
         let pointage = await Pointage.findOne(filter);
 
         if (!pointage) {
@@ -268,6 +325,12 @@ router.post("/sync", async (req, res) => {
               req.user.is_kiosque || req.user.is_god_mode ? null : req.user.id,
             sync_status: "synced",
             synced_at: new Date(),
+            coordonnees_arrivee: p.coordonnees_agent || undefined,
+            hors_zone_detectee: horsZoneDetectee,
+            distance_metres_detectee:
+              distanceDetectee !== null ? Math.round(distanceDetectee) : null,
+            qr_invalide_detecte: qrInvalideDetecte,
+            a_verifier: aVerifier,
           });
         } else {
           if (p.heure_depart && !pointage.heure_depart) {
@@ -277,13 +340,37 @@ router.post("/sync", async (req, res) => {
               const [h2, m2] = p.heure_depart.split(":").map(Number);
               pointage.duree_minutes = h2 * 60 + m2 - (h1 * 60 + m1);
             }
+            if (p.coordonnees_agent) {
+              pointage.coordonnees_depart = p.coordonnees_agent;
+            }
           }
           pointage.sync_status = "synced";
           pointage.synced_at = new Date();
+          pointage.hors_zone_detectee =
+            pointage.hors_zone_detectee || horsZoneDetectee;
+          if (distanceDetectee !== null) {
+            pointage.distance_metres_detectee = Math.round(distanceDetectee);
+          }
+          pointage.qr_invalide_detecte =
+            pointage.qr_invalide_detecte || qrInvalideDetecte;
+          pointage.a_verifier = pointage.a_verifier || aVerifier;
         }
 
         await pointage.save();
         if (p.local_id) syncedLocalIds.push(p.local_id);
+
+        // On synchronise quand même (on ne perd jamais un pointage
+        // terrain), mais on notifie en direct si quelque chose cloche
+        // pour qu'un admin puisse vérifier rapidement.
+        if (aVerifier) {
+          const io = req.app.get("io");
+          if (io && pointage.site_id) {
+            io.to(`site:${pointage.site_id}`).emit(
+              "pointage:a_verifier",
+              pointage,
+            );
+          }
+        }
       } catch (e) {
         console.error("Erreur sync pointage individuel:", e);
       }

@@ -9,6 +9,7 @@ import { renderSites } from "./pages/sites.js";
 import { renderKiosque } from "./pages/kiosque.js";
 import { renderUsers } from "./pages/users.js";
 import { renderConges } from "./pages/conges.js";
+import { renderBadge } from "./pages/badge.js";
 import {
   renderNavbar,
   initResponsiveSidebar,
@@ -149,6 +150,14 @@ function mountLayout(route, user, queryParams = {}) {
     return;
   }
 
+  // ─── Badge agent — identité propre (agent-portal), pas de login staff ──
+  if (route === "/badge") {
+    app.className = "";
+    app.innerHTML = "";
+    renderBadge(app);
+    return;
+  }
+
   // ── Construire le layout UNE SEULE FOIS — évite le glitch de rechargement ──
   const layoutExists = app.classList.contains("layout-with-sidebar") &&
     document.getElementById("main-content") &&
@@ -243,6 +252,13 @@ async function router() {
   }
 
   if (route === "/register") {
+    mountLayout(route, null);
+    return;
+  }
+
+  // Badge agent — authentification propre à l'agent (agent-portal),
+  // indépendante de la session staff (JWT admin/pointeur/etc).
+  if (route === "/badge") {
     mountLayout(route, null);
     return;
   }

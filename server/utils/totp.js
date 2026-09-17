@@ -49,4 +49,42 @@ function validateQRData(qrData, matricule, secret) {
   return { valid: false, reason: "Code expire ou invalide" };
 }
 
-module.exports = { generateQRData, validateQRData, getTimeWindow };
+// Validation "différée" — utilisée à la synchronisation offline.
+// Contrairement à validateQRData(), on NE compare PAS à la fenêtre
+// temporelle actuelle (le scan a pu avoir lieu des heures plus tôt,
+// hors ligne). On revalide plutôt que le token correspond bien au
+// HMAC attendu POUR LA FENÊTRE REVENDIQUÉE dans le QR lui-même.
+// Ça prouve que le token a été généré par quelqu'un qui possédait le
+// secret de l'agent à ce moment-là (donc pas forgé a posteriori),
+// même si on ne peut plus garantir la fraîcheur/anti-rejeu à ce stade.
+function validateQRDataOffline(qrData, matricule, secret) {
+  const parts = (qrData || "").split(":");
+  if (parts.length !== 4 || parts[0] !== "SP") {
+    return { valid: false, reason: "Format invalide" };
+  }
+
+  const [, scannedMatricule, scannedToken, scannedWindowStr] = parts;
+
+  if (scannedMatricule.toUpperCase() !== matricule.toUpperCase()) {
+    return { valid: false, reason: "Matricule incorrect" };
+  }
+
+  const scannedWindow = Number(scannedWindowStr);
+  if (!Number.isFinite(scannedWindow)) {
+    return { valid: false, reason: "Fenêtre temporelle invalide" };
+  }
+
+  const expectedToken = generateToken(matricule, secret, scannedWindow);
+  if (scannedToken !== expectedToken) {
+    return { valid: false, reason: "Token falsifié ou secret incorrect" };
+  }
+
+  return { valid: true, matricule, window: scannedWindow };
+}
+
+module.exports = {
+  generateQRData,
+  validateQRData,
+  validateQRDataOffline,
+  getTimeWindow,
+};

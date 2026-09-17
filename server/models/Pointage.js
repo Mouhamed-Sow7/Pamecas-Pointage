@@ -79,6 +79,24 @@ const PointageSchema = new Schema(
       longitude: { type: Number, default: null },
       precision: { type: Number, default: null },
     },
+    // Flags anti-fraude appliqués lors d'une synchronisation différée
+    // (pointage capturé hors ligne, vérifié seulement au retour réseau)
+    hors_zone_detectee: {
+      type: Boolean,
+      default: false,
+    },
+    distance_metres_detectee: {
+      type: Number,
+      default: null,
+    },
+    qr_invalide_detecte: {
+      type: Boolean,
+      default: false,
+    },
+    a_verifier: {
+      type: Boolean,
+      default: false,
+    },
     est_partiel: {
       type: Boolean,
       default: false,
